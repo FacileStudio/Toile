@@ -95,7 +95,10 @@
 
   function resetView() {
     commitEdit();
-    animateCamera({ x: 0, y: 0, scale: 1 });
+    const cx = window.innerWidth / 2;
+    const cy = window.innerHeight / 2;
+    const w = toWorld(cx, cy);
+    animateCamera({ x: cx - w.x, y: cy - w.y, scale: 1 });
   }
 
   function zoomBy(factor: number) {
