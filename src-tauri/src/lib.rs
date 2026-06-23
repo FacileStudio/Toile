@@ -71,6 +71,26 @@ fn hash_str(s: &str) -> u64 {
     h.finish()
 }
 
+fn hash_bytes(b: &[u8]) -> u64 {
+    let mut h = std::collections::hash_map::DefaultHasher::new();
+    b.hash(&mut h);
+    h.finish()
+}
+
+fn sanitize_ext(ext: &str) -> String {
+    let cleaned: String = ext
+        .chars()
+        .filter(|c| c.is_ascii_alphanumeric())
+        .take(5)
+        .collect::<String>()
+        .to_ascii_lowercase();
+    if cleaned.is_empty() {
+        "png".to_string()
+    } else {
+        cleaned
+    }
+}
+
 fn expand_tilde(p: &str) -> PathBuf {
     if p == "~" {
         if let Some(home) = dirs::home_dir() {
@@ -241,6 +261,21 @@ fn write_note(note: Note, state: State<Arc<SyncState>>) -> Result<(), String> {
     std::fs::write(&path, content).map_err(|e| e.to_string())
 }
 
+// Store an image as a content-hashed file under <folder>/assets and hand back
+// the relative path. Same bytes => same name, so paste-the-same-image is free.
+// The note body just gets a portable `![](assets/…)` ref — Obsidian reads it too.
+#[tauri::command]
+fn save_image(data: Vec<u8>, ext: String, state: State<Arc<SyncState>>) -> Result<String, String> {
+    let dir = state.folder.join("assets");
+    std::fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
+    let name = format!("{:x}.{}", hash_bytes(&data), sanitize_ext(&ext));
+    let path = dir.join(&name);
+    if !path.exists() {
+        std::fs::write(&path, &data).map_err(|e| e.to_string())?;
+    }
+    Ok(format!("assets/{}", name))
+}
+
 #[tauri::command]
 fn delete_note(id: String, state: State<Arc<SyncState>>) -> Result<(), String> {
     state.deleted.lock().unwrap().insert(id.clone());
@@ -289,7 +324,12 @@ fn handle_fs_event(handle: &AppHandle, state: &Arc<SyncState>, paths: Vec<PathBu
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
-        .invoke_handler(tauri::generate_handler![init_board, write_note, delete_note])
+        .invoke_handler(tauri::generate_handler![
+            init_board,
+            write_note,
+            delete_note,
+            save_image
+        ])
         .setup(|app| {
             let folder = load_config_folder();
             std::fs::create_dir_all(&folder).ok();

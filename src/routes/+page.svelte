@@ -1,13 +1,21 @@
 <script lang="ts">
   import { onMount } from "svelte";
-  import { fade, scale } from "svelte/transition";
+  import { fade } from "svelte/transition";
   import { listen } from "@tauri-apps/api/event";
   import Postit from "$lib/Postit.svelte";
+  import Palette from "$lib/Palette.svelte";
+  import AttachButton from "$lib/AttachButton.svelte";
+  import ZoomControls from "$lib/ZoomControls.svelte";
+  import Trash from "$lib/Trash.svelte";
+  import ContextMenu from "$lib/ContextMenu.svelte";
+  import Lightbox from "$lib/Lightbox.svelte";
   import {
     board,
     COLORS,
     MIN_SCALE,
     MAX_SCALE,
+    isImageOnly,
+    noteImages,
     type Note,
   } from "$lib/board.svelte";
 
@@ -20,6 +28,7 @@
   let panning = $state(false);
 
   let menu = $state<{ x: number; y: number; id: string } | null>(null);
+  let lightbox = $state<string[] | null>(null);
 
   let dragNote: Note | null = null;
   let last = { x: 0, y: 0 };
@@ -120,13 +129,103 @@
         MAX_SCALE,
       );
       const w = toWorld(e.clientX, e.clientY);
-      board.camera = { x: e.clientX - w.x * ns, y: e.clientY - w.y * ns, scale: ns };
+      board.camera = {
+        x: e.clientX - w.x * ns,
+        y: e.clientY - w.y * ns,
+        scale: ns,
+      };
     } else {
       board.camera = {
         ...board.camera,
         x: board.camera.x - e.deltaX,
         y: board.camera.y - e.deltaY,
       };
+    }
+  }
+
+  // ---- images: paste / drop / pick -> save bytes -> markdown ref in a note ----
+  const IMG_EXT: Record<string, string> = {
+    "image/png": "png",
+    "image/jpeg": "jpg",
+    "image/gif": "gif",
+    "image/webp": "webp",
+    "image/svg+xml": "svg",
+    "image/bmp": "bmp",
+    "image/avif": "avif",
+  };
+
+  const randomColor = () => COLORS[Math.floor(Math.random() * COLORS.length)];
+
+  async function storeImage(file: File): Promise<string> {
+    const bytes = new Uint8Array(await file.arrayBuffer());
+    const ext = IMG_EXT[file.type] ?? file.type.split("/")[1] ?? "png";
+    return `![](${await board.saveImage(bytes, ext)})`;
+  }
+
+  function appendImages(note: Note, md: string) {
+    note.text = note.text ? `${note.text}\n${md}` : md;
+  }
+
+  async function addImageNotes(files: File[]) {
+    const images = files.filter((f) => f.type.startsWith("image/"));
+    if (!images.length) return;
+    const refs = await Promise.all(images.map(storeImage));
+    commitEdit();
+    const c = viewCenterWorld();
+    refs.forEach((md, i) =>
+      board.add(randomColor(), c.x + i * 24, c.y + i * 24, md),
+    );
+  }
+
+  async function onPaste(e: ClipboardEvent) {
+    const items = e.clipboardData?.items;
+    if (!items) return;
+    const images: File[] = [];
+    for (const it of items) {
+      if (it.kind === "file" && it.type.startsWith("image/")) {
+        const f = it.getAsFile();
+        if (f) images.push(f);
+      }
+    }
+    if (!images.length) return; // no image -> let normal text paste run
+    e.preventDefault();
+    const md = (await Promise.all(images.map(storeImage))).join("\n");
+    const editing = editingId && board.notes.find((n) => n.id === editingId);
+    if (editing) {
+      appendImages(editing, md);
+    } else {
+      const c = viewCenterWorld();
+      board.add(randomColor(), c.x, c.y, md);
+    }
+  }
+
+  function onDragOver(e: DragEvent) {
+    if (e.dataTransfer?.types.includes("Files")) {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = "copy";
+    }
+  }
+
+  async function onDrop(e: DragEvent) {
+    const files = Array.from(e.dataTransfer?.files ?? []).filter((f) =>
+      f.type.startsWith("image/"),
+    );
+    if (!files.length) return;
+    e.preventDefault();
+    const world = toWorld(e.clientX, e.clientY);
+    const noteEl = (e.target as HTMLElement).closest(
+      "[data-note]",
+    ) as HTMLElement | null;
+    const refs = await Promise.all(files.map(storeImage));
+    const onto = noteEl && board.notes.find((n) => n.id === noteEl.dataset.note);
+    if (onto) {
+      appendImages(onto, refs.join("\n"));
+      board.bringToFront(onto);
+    } else {
+      commitEdit();
+      refs.forEach((md, i) =>
+        board.add(randomColor(), world.x + i * 24, world.y + i * 24, md),
+      );
     }
   }
 
@@ -239,14 +338,21 @@
     ) as HTMLElement | null;
     if (!noteEl) return;
     const note = board.notes.find((n) => n.id === noteEl.dataset.note);
-    if (note) {
-      board.bringToFront(note);
-      focusNote(note);
+    if (!note) return;
+    if (isImageOnly(note.text)) {
+      lightbox = noteImages(note.text);
+      return;
     }
+    board.bringToFront(note);
+    focusNote(note);
   }
 
   function onKeyDown(e: KeyboardEvent) {
     if (e.key === "Escape") {
+      if (lightbox) {
+        lightbox = null;
+        return;
+      }
       commitEdit();
       menu = null;
     }
@@ -356,14 +462,19 @@
     if (!ctx || !gridCanvas || !dotTile) return;
     if (!dotPattern) dotPattern = ctx.createPattern(dotTile, "repeat");
     if (!dotPattern) return;
+    const w = gridCanvas.width;
+    const h = gridCanvas.height;
+    const s = board.camera.scale;
     ctx.setTransform(1, 0, 0, 1, 0, 0);
-    ctx.clearRect(0, 0, gridCanvas.width, gridCanvas.height);
-    const m = new DOMMatrix();
-    m.translateSelf(board.camera.x * dpr, board.camera.y * dpr);
-    m.scaleSelf(board.camera.scale);
-    dotPattern.setTransform(m);
+    ctx.clearRect(0, 0, w, h);
+    ctx.setTransform(s, 0, 0, s, board.camera.x * dpr, board.camera.y * dpr);
     ctx.fillStyle = dotPattern;
-    ctx.fillRect(0, 0, gridCanvas.width, gridCanvas.height);
+    ctx.fillRect(
+      (-board.camera.x * dpr) / s,
+      (-board.camera.y * dpr) / s,
+      w / s,
+      h / s,
+    );
   }
 
   $effect(() => {
@@ -378,10 +489,15 @@
     window.addEventListener("resize", resizeGrid);
     return () => window.removeEventListener("resize", resizeGrid);
   });
+
   const worldStyle = $derived(
     `transform:translate(${board.camera.x}px,${board.camera.y}px) scale(${board.camera.scale});`,
   );
   const zoomPct = $derived(Math.round(board.camera.scale * 100));
+  const menuImageOnly = $derived(
+    !!menu &&
+      isImageOnly(board.notes.find((n) => n.id === menu!.id)?.text ?? ""),
+  );
 </script>
 
 <svelte:window
@@ -389,6 +505,7 @@
   onpointerup={onPointerUp}
   onpointercancel={endInteraction}
   onkeydown={onKeyDown}
+  onpaste={onPaste}
 />
 
 <div class="titlebar" data-ui data-tauri-drag-region></div>
@@ -400,6 +517,8 @@
   onpointerdown={onPointerDown}
   ondblclick={onDblClick}
   oncontextmenu={onContextMenu}
+  ondragover={onDragOver}
+  ondrop={onDrop}
 >
   <canvas bind:this={gridCanvas} class="grid"></canvas>
   <div class="world" style={worldStyle}>
@@ -420,94 +539,35 @@
     </div>
   {/if}
 
-  <div
-    bind:this={trashEl}
-    class="trash"
-    class:hot={trashHot}
-    class:armed={dragId !== null}
-    data-ui
-    aria-label="Drag a note here to delete"
-  >
-    <svg
-      viewBox="0 0 24 24"
-      width="26"
-      height="26"
-      fill="none"
-      stroke="currentColor"
-      stroke-width="1.8"
-      stroke-linecap="round"
-      stroke-linejoin="round"
-    >
-      <path d="M19 6l-.8 13.1a2 2 0 0 1-2 1.9H7.8a2 2 0 0 1-2-1.9L5 6" />
-      <path d="M10 11v6M14 11v6" />
-      <g class="lid">
-        <path d="M3 6h18" />
-        <path d="M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2" />
-      </g>
-    </svg>
+  <Trash bind:el={trashEl} hot={trashHot} armed={dragId !== null} />
+
+  <div class="dock" data-ui>
+    <Palette colors={COLORS} onpick={addNote} />
+    <AttachButton onfiles={addImageNotes} />
   </div>
 
-  <div class="palette" data-ui transition:fade={{ duration: 200 }}>
-    {#each COLORS as color, i}
-      <button
-        class="swatch"
-        style="--c:{color}; animation-delay:{i * 40}ms"
-        title="Add note"
-        aria-label="Add note"
-        onclick={() => addNote(color)}
-      ></button>
-    {/each}
-  </div>
-
-  <div class="zoom" data-ui>
-    <button class="znav" onclick={() => zoomBy(1 / 1.25)} aria-label="Zoom out">−</button>
-    <button class="zinfo" onclick={resetView} title="Reset to 100%"
-      ><span class="zinner"><span class="zval">{zoomPct}</span><span class="zpct"
-          >%</span
-        ></span
-      ></button
-    >
-    <button class="znav" onclick={() => zoomBy(1.25)} aria-label="Zoom in">+</button>
-  </div>
+  <ZoomControls
+    zoom={zoomPct}
+    onZoomIn={() => zoomBy(1.25)}
+    onZoomOut={() => zoomBy(1 / 1.25)}
+    onReset={resetView}
+  />
 </main>
 
 {#if menu}
-  <!-- svelte-ignore a11y_no_static_element_interactions -->
-  <div
-    class="ctx-backdrop"
-    data-ui
-    onpointerdown={() => (menu = null)}
-    oncontextmenu={(e) => {
-      e.preventDefault();
-      menu = null;
-    }}
-  ></div>
-  <div
-    class="ctx-menu"
-    data-ui
-    style="left:{menu.x}px; top:{menu.y}px"
-    transition:scale={{ duration: 130, start: 0.9, opacity: 0 }}
-  >
-    <div class="ctx-colors">
-      {#each COLORS as color}
-        <button
-          class="ctx-swatch"
-          style="--c:{color}"
-          aria-label="Set color"
-          onclick={() => setColor(menu!.id, color)}
-        ></button>
-      {/each}
-    </div>
-    <button class="ctx-delete" onclick={() => deleteFromMenu(menu!.id)}>
-      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M19 6l-.8 13.1a2 2 0 0 1-2 1.9H7.8a2 2 0 0 1-2-1.9L5 6" />
-        <path d="M10 11v6M14 11v6" />
-        <path d="M3 6h18" />
-        <path d="M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2" />
-      </svg>
-      Delete
-    </button>
-  </div>
+  <ContextMenu
+    x={menu.x}
+    y={menu.y}
+    colors={COLORS}
+    showColors={!menuImageOnly}
+    oncolor={(c) => setColor(menu!.id, c)}
+    ondelete={() => deleteFromMenu(menu!.id)}
+    onclose={() => (menu = null)}
+  />
+{/if}
+
+{#if lightbox}
+  <Lightbox images={lightbox} onclose={() => (lightbox = null)} />
 {/if}
 
 <style>
@@ -569,248 +629,19 @@
     color: rgba(67, 65, 59, 0.28);
   }
 
-  .trash {
-    position: fixed;
-    left: 22px;
-    bottom: 22px;
-    z-index: 40;
-    width: 54px;
-    height: 54px;
-    display: grid;
-    place-items: center;
-    border-radius: 16px;
-    color: var(--ink-soft);
-    background: rgba(255, 255, 255, 0.7);
-    backdrop-filter: blur(8px);
-    border: 1px solid rgba(40, 38, 32, 0.08);
-    box-shadow: 0 4px 16px rgba(40, 38, 32, 0.08);
-    opacity: 0.55;
-    transition:
-      transform 0.3s var(--ease-soft),
-      opacity 0.3s var(--ease-soft),
-      color 0.3s ease,
-      background 0.3s ease,
-      box-shadow 0.3s ease;
-  }
-  .trash.armed {
-    opacity: 1;
-    transform: scale(1.16);
-    color: var(--ink);
-    box-shadow: 0 8px 24px rgba(40, 38, 32, 0.18);
-  }
-  .trash.hot {
-    color: #e5484d;
-    background: #ffeaea;
-    border-color: rgba(229, 72, 77, 0.4);
-    transform: scale(1.34) rotate(-4deg);
-    box-shadow: 0 12px 30px rgba(229, 72, 77, 0.3);
-  }
-  .trash svg {
-    overflow: visible;
-  }
-  .trash .lid {
-    transition: transform 0.32s var(--ease-soft);
-    transform-box: fill-box;
-    transform-origin: 100% 100%;
-  }
-  .trash.armed .lid {
-    transform: rotate(14deg);
-  }
-  .trash.hot .lid {
-    transform: translateY(-1.5px) rotate(26deg);
-  }
-
-  .palette {
+  .dock {
     position: fixed;
     left: 50%;
     bottom: 24px;
     z-index: 40;
     transform: translateX(-50%);
     display: flex;
+    align-items: center;
     gap: 12px;
-    padding: 12px 16px;
-    border-radius: 999px;
-    background: rgba(255, 255, 255, 0.72);
-    backdrop-filter: blur(12px);
-    border: 1px solid rgba(40, 38, 32, 0.07);
-    box-shadow: 0 6px 24px rgba(40, 38, 32, 0.1);
-  }
-  .swatch {
-    width: 30px;
-    height: 30px;
-    border-radius: 50%;
-    border: none;
-    background: var(--c);
-    cursor: pointer;
-    box-shadow:
-      inset 0 0 0 1px rgba(40, 38, 32, 0.06),
-      0 2px 5px rgba(40, 38, 32, 0.12);
-    transition:
-      transform 0.22s var(--ease-soft),
-      box-shadow 0.22s var(--ease-soft);
-    animation: pop 0.4s var(--ease-soft) both;
-  }
-  .swatch:hover {
-    transform: translateY(-4px) scale(1.12);
-    box-shadow:
-      inset 0 0 0 1px rgba(40, 38, 32, 0.06),
-      0 6px 14px rgba(40, 38, 32, 0.2);
-  }
-  .swatch:active {
-    transform: translateY(-1px) scale(0.96);
-  }
-
-  /* zoom controls: circle nav buttons + center pill, matched to palette height */
-  .zoom {
-    position: fixed;
-    right: 22px;
-    bottom: 24px;
-    z-index: 40;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-  }
-  .znav,
-  .zinfo {
-    background: rgba(255, 255, 255, 0.72);
-    backdrop-filter: blur(12px);
-    border: 1px solid rgba(40, 38, 32, 0.07);
-    box-shadow: 0 6px 24px rgba(40, 38, 32, 0.1);
-    color: var(--ink);
-    cursor: pointer;
-    font-family: inherit;
-    transition:
-      transform 0.18s var(--ease-soft),
-      background 0.18s ease;
-  }
-  .znav {
-    width: 54px;
-    height: 54px;
-    border-radius: 50%;
-    font-size: 24px;
-    font-weight: 500;
-    display: grid;
-    place-items: center;
-    line-height: 1;
-  }
-  .zinfo {
-    height: 54px;
-    border-radius: 999px;
-    padding: 0 18px;
-    min-width: 70px;
-    display: grid;
-    place-items: center;
-    white-space: nowrap;
-    font-size: 17px;
-    font-weight: 650;
-    color: var(--ink);
-    font-variant-numeric: tabular-nums;
-    font-feature-settings: "tnum" 1;
-    line-height: 1;
-  }
-  .zinner {
-    display: inline-flex;
-    align-items: baseline;
-    transform: translateX(2px);
-  }
-  .zpct {
-    margin-left: 1px;
-    font-size: 13px;
-    font-weight: 600;
-    color: var(--ink-soft);
-  }
-  .znav:hover,
-  .zinfo:hover {
-    background: rgba(255, 255, 255, 0.95);
-  }
-  .znav:active,
-  .zinfo:active {
-    transform: scale(0.92);
-  }
-
-  /* right-click context menu */
-  .ctx-backdrop {
-    position: fixed;
-    inset: 0;
-    z-index: 90;
-  }
-  .ctx-menu {
-    position: fixed;
-    z-index: 91;
-    transform-origin: top left;
-    display: flex;
-    flex-direction: column;
-    align-items: stretch;
-    gap: 8px;
-  }
-  .ctx-colors {
-    display: flex;
-    justify-content: center;
-    gap: 8px;
-    padding: 8px 10px;
-    border-radius: 999px;
-    background: rgba(255, 255, 255, 0.85);
-    backdrop-filter: blur(16px);
-    border: 1px solid rgba(40, 38, 32, 0.08);
-    box-shadow: 0 10px 34px rgba(40, 38, 32, 0.2);
-  }
-  .ctx-swatch {
-    width: 24px;
-    height: 24px;
-    border-radius: 50%;
-    border: none;
-    background: var(--c);
-    cursor: pointer;
-    box-shadow:
-      inset 0 0 0 1px rgba(40, 38, 32, 0.08),
-      0 1px 3px rgba(40, 38, 32, 0.14);
-    transition: transform 0.16s var(--ease-soft);
-  }
-  .ctx-swatch:hover {
-    transform: scale(1.18);
-  }
-  .ctx-delete {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 7px;
-    height: 38px;
-    border: 1px solid rgba(229, 72, 77, 0.18);
-    border-radius: 999px;
-    background: rgba(255, 235, 235, 0.9);
-    backdrop-filter: blur(16px);
-    color: #e5484d;
-    font-family: inherit;
-    font-size: 14px;
-    font-weight: 600;
-    cursor: pointer;
-    box-shadow: 0 8px 28px rgba(229, 72, 77, 0.18);
-    transition:
-      background 0.16s ease,
-      transform 0.16s var(--ease-soft);
-  }
-  .ctx-delete:hover {
-    background: #e5484d;
-    color: #fff;
-  }
-  .ctx-delete:active {
-    transform: scale(0.96);
-  }
-
-  @keyframes pop {
-    from {
-      opacity: 0;
-      transform: translateY(8px) scale(0.6);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0) scale(1);
-    }
   }
 
   @media (prefers-reduced-motion: reduce) {
-    *,
-    .swatch {
+    * {
       animation: none !important;
       transition: none !important;
     }
