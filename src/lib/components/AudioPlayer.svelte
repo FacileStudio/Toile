@@ -1,34 +1,78 @@
 <script lang="ts">
+  import { onMount } from "svelte";
+
   let {
     src,
     name,
     onfail,
   }: { src: string; name: string; onfail?: () => void } = $props();
 
-  // A Material-3-style wavy scrubber: the played portion is a sine wave that
-  // travels while playing and flattens (scaleY → ~0) when paused. The path is
-  // periodic over LAMBDA so the travel loop is seamless; it's drawn one extra
-  // wavelength wide so the leftward shift never reveals a gap.
-  const LAMBDA = 24;
-  const AMP = 6;
-  const MID = 12;
+  // The wave is drawn in JS (rAF) rather than CSS so the thumb can ride the
+  // exact sinusoidal tip of the played line. Phase advances while playing;
+  // amplitude eases to 0 on pause so the wave morphs flat (Material-style).
   const VB_W = 200;
-
-  const wavePath = (() => {
-    let d = `M0 ${MID}`;
-    for (let x = 0; x <= VB_W + LAMBDA; x += 3) {
-      const y = MID + AMP * Math.sin((2 * Math.PI * x) / LAMBDA);
-      d += ` L${x} ${y.toFixed(2)}`;
-    }
-    return d;
-  })();
+  const MID = 12;
+  const LAMBDA = 34;
+  const AMP = 4.5;
+  const SPEED = 0.0045; // phase advance (rad/ms) while playing
 
   let audio = $state<HTMLAudioElement | null>(null);
   let playing = $state(false);
   let cur = $state(0);
   let dur = $state(0);
-
   const pct = $derived(dur > 0 ? Math.min(100, (cur / dur) * 100) : 0);
+
+  let wavePath = $state(`M0 ${MID} L${VB_W} ${MID}`);
+  let tipY = $state(MID); // viewBox y of the wave at the playhead → drives the thumb
+  const thumbTop = $derived((tipY / 24) * 100);
+
+  let phase = 0;
+  let amp = 0;
+  let raf = 0;
+  let prev = 0;
+
+  const waveAt = (x: number) => MID + amp * Math.sin((2 * Math.PI * x) / LAMBDA + phase);
+
+  function render() {
+    let d = `M0 ${waveAt(0).toFixed(2)}`;
+    for (let x = 4; x <= VB_W; x += 4) d += ` L${x} ${waveAt(x).toFixed(2)}`;
+    wavePath = d;
+    tipY = waveAt((pct / 100) * VB_W);
+  }
+
+  function frame(t: number) {
+    const dt = prev ? Math.min(48, t - prev) : 16;
+    prev = t;
+    if (playing) phase += SPEED * dt;
+    const target = playing ? AMP : 0;
+    amp += (target - amp) * Math.min(1, dt / 120);
+    render();
+    if (playing || Math.abs(amp - target) > 0.02) {
+      raf = requestAnimationFrame(frame);
+    } else {
+      amp = target;
+      render();
+      raf = 0;
+      prev = 0;
+    }
+  }
+
+  function kick() {
+    if (!raf) {
+      prev = 0;
+      raf = requestAnimationFrame(frame);
+    }
+  }
+
+  $effect(() => {
+    playing; // run the loop on play/pause (it also eases amplitude back to 0)
+    kick();
+  });
+
+  $effect(() => {
+    pct; // keep the thumb correct when seeking while the loop is idle (paused)
+    if (!raf) tipY = waveAt((pct / 100) * VB_W);
+  });
 
   function toggle() {
     const a = audio;
@@ -50,14 +94,13 @@
     const s = Math.floor(t % 60);
     return `${m}:${s.toString().padStart(2, "0")}`;
   }
+
+  onMount(() => () => {
+    if (raf) cancelAnimationFrame(raf);
+  });
 </script>
 
-<div
-  class="player note-audio"
-  style="--amp:{playing ? 1 : 0.14}"
-  data-src={src}
-  data-name={name}
->
+<div class="player note-audio" data-src={src} data-name={name}>
   <div class="row">
     <button
       class="play audio-ctl"
@@ -81,7 +124,6 @@
 
   <div
     class="bar audio-ctl"
-    class:playing
     onpointerdown={seek}
     role="slider"
     aria-label="Seek"
@@ -90,25 +132,13 @@
     aria-valuemax="100"
     tabindex="-1"
   >
-    <div class="layer bg" style="clip-path: inset(0 0 0 {pct}%)">
+    <span class="track" style="clip-path: inset(0 0 0 calc({pct}% + 4px))"></span>
+    <div class="fg" style="clip-path: inset(0 {100 - pct}% 0 0)">
       <svg class="wave" viewBox="0 0 {VB_W} 24" preserveAspectRatio="none">
-        <g class="amp">
-          <g class="travel">
-            <path d={wavePath} vector-effect="non-scaling-stroke" />
-          </g>
-        </g>
+        <path d={wavePath} vector-effect="non-scaling-stroke" />
       </svg>
     </div>
-    <div class="layer fg" style="clip-path: inset(0 {100 - pct}% 0 0)">
-      <svg class="wave" viewBox="0 0 {VB_W} 24" preserveAspectRatio="none">
-        <g class="amp">
-          <g class="travel">
-            <path d={wavePath} vector-effect="non-scaling-stroke" />
-          </g>
-        </g>
-      </svg>
-    </div>
-    <span class="thumb" style="left:{pct}%"></span>
+    <span class="thumb" style="left:{pct}%; top:{thumbTop}%"></span>
   </div>
 
   <audio
@@ -187,7 +217,17 @@
     cursor: pointer;
     touch-action: none;
   }
-  .layer {
+  .track {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 50%;
+    height: 3px;
+    transform: translateY(-50%);
+    border-radius: 99px;
+    background: rgba(40, 38, 32, 0.22);
+  }
+  .fg {
     position: absolute;
     inset: 0;
   }
@@ -197,57 +237,19 @@
     width: 100%;
     height: 100%;
     fill: none;
+    stroke: var(--ink);
     stroke-width: 2.4;
     stroke-linecap: round;
     stroke-linejoin: round;
   }
-  .layer.bg .wave {
-    stroke: rgba(40, 38, 32, 0.28);
-  }
-  .layer.fg .wave {
-    stroke: var(--ink);
-  }
-  .amp {
-    transform: scaleY(var(--amp));
-    transform-box: fill-box;
-    transform-origin: center;
-    transition: transform 0.4s cubic-bezier(0.22, 1, 0.36, 1);
-  }
-  .travel {
-    transform-box: fill-box;
-    animation: travel 1.15s linear infinite;
-    animation-play-state: paused;
-  }
-  .bar.playing .travel {
-    animation-play-state: running;
-  }
-  @keyframes travel {
-    from {
-      transform: translateX(0);
-    }
-    to {
-      transform: translateX(-24px);
-    }
-  }
   .thumb {
     position: absolute;
-    top: 50%;
     width: 11px;
     height: 11px;
-    margin-left: -5.5px;
-    transform: translateY(-50%);
+    margin: -5.5px 0 0 -5.5px;
     border-radius: 50%;
     background: var(--ink);
     box-shadow: 0 1px 3px rgba(40, 38, 32, 0.3);
     pointer-events: none;
-  }
-
-  @media (prefers-reduced-motion: reduce) {
-    .travel {
-      animation: none;
-    }
-    .amp {
-      transition: none;
-    }
   }
 </style>

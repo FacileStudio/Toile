@@ -24,6 +24,11 @@
   const BLUR_OFF = "blur(0px) saturate(100%)";
   const DIM_ON = "rgba(40, 38, 32, 0.26)";
   const DIM_OFF = "rgba(40, 38, 32, 0)";
+  // the drop shadow fades with the same curve as the FLIP so it never pops when
+  // the hero lands and hands off to the (lightly-shadowed) source card.
+  const HAIR = "0 0 0 1px rgba(255, 255, 255, 0.12)";
+  const SHADOW_ON = `0 24px 60px rgba(0, 0, 0, 0.36), ${HAIR}`;
+  const SHADOW_OFF = `0 24px 60px rgba(0, 0, 0, 0), ${HAIR}`;
 
   let rootEl = $state<HTMLDivElement | null>(null);
   let backdropEl = $state<HTMLDivElement | null>(null);
@@ -89,10 +94,13 @@
     }
     const from = originTransform();
     if (from && heroEl) {
-      heroEl.animate([{ transform: from }, { transform: "none" }], {
-        duration: DUR,
-        easing: EASE,
-      });
+      heroEl.animate(
+        [
+          { transform: from, boxShadow: SHADOW_OFF },
+          { transform: "none", boxShadow: SHADOW_ON },
+        ],
+        { duration: DUR, easing: EASE },
+      );
     }
   }
 
@@ -115,7 +123,13 @@
       const to = originTransform();
       anim =
         to && heroEl
-          ? heroEl.animate([{ transform: "none" }, { transform: to }], opts)
+          ? heroEl.animate(
+              [
+                { transform: "none", boxShadow: SHADOW_ON },
+                { transform: to, boxShadow: SHADOW_OFF },
+              ],
+              opts,
+            )
           : backdropEl?.animate([{ opacity: 1 }, { opacity: 0.999 }], opts);
     }
     if (anim) anim.onfinish = () => onclose();
@@ -263,7 +277,7 @@
     object-fit: contain;
     border-radius: 18px;
     box-shadow:
-      0 30px 80px rgba(0, 0, 0, 0.4),
+      0 24px 60px rgba(0, 0, 0, 0.36),
       0 0 0 1px rgba(255, 255, 255, 0.12);
     transform-origin: center center;
   }
