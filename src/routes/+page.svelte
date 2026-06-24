@@ -20,9 +20,16 @@
 
   let trashEl = $state<HTMLDivElement | null>(null);
   let editingId = $state<string | null>(null);
+  let selectedId = $state<string | null>(null);
   let dragId = $state<string | null>(null);
   let trashHot = $state(false);
   let panning = $state(false);
+
+  // click vs drag bookkeeping for the select-then-activate interaction
+  let pressId: string | null = null;
+  let pressTarget: HTMLElement | null = null;
+  let pressMoved = false;
+  let pressStart = { x: 0, y: 0 };
 
   let menu = $state<{ x: number; y: number; id: string } | null>(null);
   let pasteMenu = $state<{
@@ -91,6 +98,7 @@
 
   function focusNote(note: Note) {
     editingId = note.id;
+    selectedId = note.id;
     const targetScale = clamp(
       Math.max(board.camera.scale, 1.3),
       MIN_SCALE,
@@ -337,21 +345,26 @@
     if (noteEl) {
       const id = noteEl.dataset.note!;
       if (id === editingId) return;
-      // let the audio controls take the pointer instead of dragging the note
-      if (target.closest("audio")) {
+      // media player controls own their own pointer — never drag/select the note
+      if (target.closest(".audio-ctl, .vid-ctl")) {
         const note = board.notes.find((n) => n.id === id);
         if (note) board.bringToFront(note);
         return;
       }
-      commitEdit();
+      if (id !== editingId) commitEdit();
       const note = board.notes.find((n) => n.id === id);
       if (!note) return;
       board.bringToFront(note);
       dragId = id;
       dragNote = note;
+      pressId = id;
+      pressTarget = target;
+      pressMoved = false;
+      pressStart = { x: e.clientX, y: e.clientY };
       last = { x: e.clientX, y: e.clientY };
     } else if (!target.closest("[data-ui]")) {
       commitEdit();
+      selectedId = null;
       stopTween();
       panning = true;
       last = { x: e.clientX, y: e.clientY };
@@ -365,6 +378,15 @@
       return;
     }
     if (dragId && dragNote) {
+      if (
+        !pressMoved &&
+        Math.hypot(e.clientX - pressStart.x, e.clientY - pressStart.y) > 4
+      ) {
+        pressMoved = true;
+        selectedId = dragId;
+        last = { x: e.clientX, y: e.clientY };
+      }
+      if (!pressMoved) return;
       dragNote.x += (e.clientX - last.x) / board.camera.scale;
       dragNote.y += (e.clientY - last.y) / board.camera.scale;
       last = { x: e.clientX, y: e.clientY };
@@ -382,13 +404,47 @@
   function endInteraction() {
     dragId = null;
     dragNote = null;
+    pressId = null;
+    pressTarget = null;
+    pressMoved = false;
     trashHot = false;
     panning = false;
   }
 
   function onPointerUp() {
-    if (dragId && trashHot) board.remove(dragId);
+    if (dragId && trashHot) {
+      if (selectedId === dragId) selectedId = null;
+      board.remove(dragId);
+    } else if (dragId && !pressMoved) {
+      activate(dragId, pressTarget);
+    }
     endInteraction();
+  }
+
+  // First click selects; clicking an already-selected note acts on it — open a
+  // file, zoom an image/video, or (for a plain note) drop into edit mode.
+  function activate(id: string, target: HTMLElement | null) {
+    const wasSelected = selectedId === id;
+    selectedId = id;
+    if (!wasSelected) return;
+
+    const note = board.notes.find((n) => n.id === id);
+    if (!note) return;
+
+    const chip = target?.closest(".note-file") as HTMLElement | null;
+    if (chip?.dataset.asset) return openAsset(chip.dataset.asset);
+
+    const img = target?.closest(".note-img") as HTMLImageElement | null;
+    if (img) return openLightbox(img, "image");
+
+    const video = target?.closest(".note-media") as HTMLVideoElement | null;
+    if (video) return openLightbox(video, "video");
+
+    if (target?.closest(".note-audio")) return; // audio drives its own controls
+    if (isAssetOnly(note.text)) return; // bare media with no hit — nothing to do
+
+    board.bringToFront(note);
+    focusNote(note);
   }
 
   function overTrash(cx: number, cy: number): boolean {
@@ -412,6 +468,7 @@
   // hide the on-canvas one, so a single image/video appears to fly out and blur
   // the board, then back. Visibility is restored once the close animation lands.
   function openLightbox(el: HTMLImageElement | HTMLVideoElement, kind: "image" | "video") {
+    if (el instanceof HTMLVideoElement) el.pause();
     lightboxOrigin = el.getBoundingClientRect();
     lightboxSourceEl = el;
     lightboxKind = kind;
@@ -425,33 +482,6 @@
     lightbox = null;
   }
 
-  function onDblClick(e: MouseEvent) {
-    const target = e.target as HTMLElement;
-    const chip = target.closest(".note-file") as HTMLElement | null;
-    if (chip?.dataset.asset) {
-      openAsset(chip.dataset.asset);
-      return;
-    }
-    const img = target.closest(".note-img") as HTMLImageElement | null;
-    if (img) {
-      openLightbox(img, "image");
-      return;
-    }
-    const video = target.closest(".note-media") as HTMLVideoElement | null;
-    if (video) {
-      openLightbox(video, "video");
-      return;
-    }
-    if (target.closest(".note-audio")) return;
-    const noteEl = target.closest("[data-note]") as HTMLElement | null;
-    if (!noteEl) return;
-    const note = board.notes.find((n) => n.id === noteEl.dataset.note);
-    if (!note) return;
-    if (isAssetOnly(note.text)) return;
-    board.bringToFront(note);
-    focusNote(note);
-  }
-
   function onKeyDown(e: KeyboardEvent) {
     if (e.key === "Escape") {
       // the lightbox owns Escape while open (animated close)
@@ -462,6 +492,7 @@
       }
       commitEdit();
       menu = null;
+      selectedId = null;
     }
   }
 
@@ -622,7 +653,6 @@
   class:panning
   onwheel={onWheel}
   onpointerdown={onPointerDown}
-  ondblclick={onDblClick}
   oncontextmenu={onContextMenu}
   ondragover={onDragOver}
   ondrop={onDrop}
@@ -633,6 +663,7 @@
       <Postit
         {note}
         editing={editingId === note.id}
+        selected={selectedId === note.id}
         dragging={dragId === note.id}
         doomed={dragId === note.id && trashHot}
       />

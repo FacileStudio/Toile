@@ -13,11 +13,13 @@
   let {
     note,
     editing = false,
+    selected = false,
     dragging = false,
     doomed = false,
   }: {
     note: Note;
     editing?: boolean;
+    selected?: boolean;
     dragging?: boolean;
     doomed?: boolean;
   } = $props();
@@ -73,6 +75,7 @@
 <div
   class="note"
   class:editing
+  class:selected={selected && !editing}
   class:dragging
   class:doomed
   class:asset-only={assetOnly && !editing}
@@ -112,6 +115,7 @@
     position: absolute;
     border-radius: 14px;
     will-change: transform;
+    --sel: #4f8fd6;
   }
 
   .inner {
@@ -156,6 +160,17 @@
   .note.doomed .inner {
     transform: scale(0.82) rotate(-3deg);
     opacity: 0.55;
+  }
+
+  .note.selected .inner,
+  .note.selected:hover .inner {
+    box-shadow:
+      0 0 0 2.5px var(--sel),
+      0 2px 4px rgba(40, 38, 32, 0.1),
+      0 14px 30px rgba(40, 38, 32, 0.16);
+  }
+  .note.selected:hover .inner {
+    transform: translateY(-3px);
   }
 
   .text,
