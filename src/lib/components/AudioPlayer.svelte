@@ -34,6 +34,9 @@
   const waveAt = (x: number) => MID + amp * Math.sin((2 * Math.PI * x) / LAMBDA + phase);
 
   function render() {
+    // read the live position every frame — `timeupdate` only fires ~4×/s, which
+    // makes the thumb jump in steps; currentTime is continuous, so it glides.
+    if (audio) cur = audio.currentTime;
     let d = `M0 ${waveAt(0).toFixed(2)}`;
     for (let x = 4; x <= VB_W; x += 4) d += ` L${x} ${waveAt(x).toFixed(2)}`;
     wavePath = d;

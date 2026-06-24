@@ -197,7 +197,6 @@
     height: auto;
     margin: 6px 0;
     border-radius: 8px;
-    box-shadow: 0 1px 3px rgba(40, 38, 32, 0.18);
     user-select: none;
     -webkit-user-drag: none;
   }
@@ -220,9 +219,6 @@
     width: 100%;
     margin: 0;
     border-radius: 14px;
-    box-shadow:
-      0 1px 2px rgba(40, 38, 32, 0.1),
-      0 8px 18px rgba(40, 38, 32, 0.14);
   }
   .note.asset-only .note-img + .note-img {
     margin-top: 6px;

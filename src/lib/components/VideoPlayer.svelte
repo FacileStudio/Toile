@@ -96,7 +96,6 @@
     margin: 6px 0;
     border-radius: 12px;
     overflow: hidden;
-    box-shadow: 0 1px 3px rgba(40, 38, 32, 0.18);
     font-size: 0;
     line-height: 0;
   }

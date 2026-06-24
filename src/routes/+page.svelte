@@ -487,10 +487,11 @@
   function openAudioLightbox(el: HTMLElement) {
     (el.querySelector("audio") as HTMLAudioElement | null)?.pause();
     lightboxOrigin = el.getBoundingClientRect();
-    lightboxSourceEl = el;
+    // audio has no shared element to morph, so leave the card on the board
+    // (behind the blur) — the viewer just scale-fades over it and back.
+    lightboxSourceEl = null;
     lightboxKind = "audio";
     lightboxName = el.dataset.name ?? "";
-    el.style.visibility = "hidden";
     lightbox = el.dataset.src ?? "";
   }
 
