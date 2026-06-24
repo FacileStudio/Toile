@@ -40,13 +40,13 @@
     animation: pop 0.4s var(--ease-soft) both;
   }
   .swatch:hover {
-    transform: translateY(-4px) scale(1.12);
+    transform: scale(1.12);
     box-shadow:
       inset 0 0 0 1px rgba(40, 38, 32, 0.06),
       0 6px 14px rgba(40, 38, 32, 0.2);
   }
   .swatch:active {
-    transform: translateY(-1px) scale(0.96);
+    transform: scale(0.96);
   }
 
   @keyframes pop {

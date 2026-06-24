@@ -2,22 +2,19 @@
   import { onMount } from "svelte";
   import { fade } from "svelte/transition";
   import { listen } from "@tauri-apps/api/event";
-  import Postit from "$lib/Postit.svelte";
-  import Palette from "$lib/Palette.svelte";
-  import AttachButton from "$lib/AttachButton.svelte";
-  import ZoomControls from "$lib/ZoomControls.svelte";
-  import Trash from "$lib/Trash.svelte";
-  import ContextMenu from "$lib/ContextMenu.svelte";
-  import Lightbox from "$lib/Lightbox.svelte";
-  import {
-    board,
-    COLORS,
-    MIN_SCALE,
-    MAX_SCALE,
-    isImageOnly,
-    noteImages,
-    type Note,
-  } from "$lib/board.svelte";
+  import { readImage } from "@tauri-apps/plugin-clipboard-manager";
+  import { openPath, openUrl } from "@tauri-apps/plugin-opener";
+  import type { Image } from "@tauri-apps/api/image";
+  import Postit from "$lib/components/Postit.svelte";
+  import Palette from "$lib/components/Palette.svelte";
+  import AttachButton from "$lib/components/AttachButton.svelte";
+  import ZoomControls from "$lib/components/ZoomControls.svelte";
+  import Trash from "$lib/components/Trash.svelte";
+  import ContextMenu from "$lib/components/ContextMenu.svelte";
+  import PasteMenu from "$lib/components/PasteMenu.svelte";
+  import Lightbox from "$lib/components/Lightbox.svelte";
+  import { board, COLORS, MIN_SCALE, MAX_SCALE, type Note } from "$lib/board.svelte";
+  import { assetKind, assetPath, isAssetOnly } from "$lib/assets";
 
   const GRID = 26;
 
@@ -28,7 +25,17 @@
   let panning = $state(false);
 
   let menu = $state<{ x: number; y: number; id: string } | null>(null);
-  let lightbox = $state<string[] | null>(null);
+  let pasteMenu = $state<{
+    x: number;
+    y: number;
+    wx: number;
+    wy: number;
+  } | null>(null);
+  let pasteImage: Image | null = null;
+  let lightbox = $state<string | null>(null);
+  let lightboxKind = $state<"image" | "video">("image");
+  let lightboxOrigin = $state<DOMRect | null>(null);
+  let lightboxSourceEl: HTMLElement | null = null;
 
   let dragNote: Note | null = null;
   let last = { x: 0, y: 0 };
@@ -122,6 +129,7 @@
     e.preventDefault();
     stopTween();
     menu = null;
+    pasteMenu = null;
     if (e.ctrlKey || e.metaKey) {
       const ns = clamp(
         board.camera.scale * Math.exp(-e.deltaY * 0.01),
@@ -143,33 +151,35 @@
     }
   }
 
-  // ---- images: paste / drop / pick -> save bytes -> markdown ref in a note ----
-  const IMG_EXT: Record<string, string> = {
-    "image/png": "png",
-    "image/jpeg": "jpg",
-    "image/gif": "gif",
-    "image/webp": "webp",
-    "image/svg+xml": "svg",
-    "image/bmp": "bmp",
-    "image/avif": "avif",
-  };
-
+  // ---- assets: paste / drop / pick -> save bytes -> markdown ref in a note ----
+  // Media embeds inline (`![name](…)`); anything else becomes a click-to-open
+  // file link (`[name](…)`). The original filename rides along so audio/video
+  // tiles can label themselves. Backend just hashes bytes — type-agnostic.
   const randomColor = () => COLORS[Math.floor(Math.random() * COLORS.length)];
 
-  async function storeImage(file: File): Promise<string> {
-    const bytes = new Uint8Array(await file.arrayBuffer());
-    const ext = IMG_EXT[file.type] ?? file.type.split("/")[1] ?? "png";
-    return `![](${await board.saveImage(bytes, ext)})`;
+  function extOf(file: File): string {
+    const dot = file.name.lastIndexOf(".");
+    if (dot > 0) return file.name.slice(dot + 1);
+    return file.type.split("/")[1] ?? "bin";
   }
 
-  function appendImages(note: Note, md: string) {
+  async function storeAsset(file: File): Promise<string> {
+    const bytes = new Uint8Array(await file.arrayBuffer());
+    const path = await board.saveAsset(bytes, extOf(file));
+    const name = (file.name || path.split("/").pop() || "file").replace(
+      /[\[\]\n]/g,
+      " ",
+    );
+    return assetKind(path) === "file" ? `[${name}](${path})` : `![${name}](${path})`;
+  }
+
+  function appendAssets(note: Note, md: string) {
     note.text = note.text ? `${note.text}\n${md}` : md;
   }
 
-  async function addImageNotes(files: File[]) {
-    const images = files.filter((f) => f.type.startsWith("image/"));
-    if (!images.length) return;
-    const refs = await Promise.all(images.map(storeImage));
+  async function addAssetNotes(files: File[]) {
+    if (!files.length) return;
+    const refs = await Promise.all(files.map(storeAsset));
     commitEdit();
     const c = viewCenterWorld();
     refs.forEach((md, i) =>
@@ -177,22 +187,60 @@
     );
   }
 
+  // Native clipboard peek (the web `paste` event only fires on ⌘V). Returns the
+  // clipboard image handle, or null when the clipboard holds no image.
+  async function clipboardImage(): Promise<Image | null> {
+    try {
+      return await readImage();
+    } catch {
+      return null;
+    }
+  }
+
+  async function pasteHere() {
+    const img = pasteImage;
+    const at = pasteMenu;
+    pasteMenu = null;
+    pasteImage = null;
+    if (!img || !at) return;
+    const { width, height } = await img.size();
+    const rgba = await img.rgba();
+    const canvas = document.createElement("canvas");
+    canvas.width = width;
+    canvas.height = height;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+    ctx.putImageData(
+      new ImageData(new Uint8ClampedArray(rgba), width, height),
+      0,
+      0,
+    );
+    const blob: Blob | null = await new Promise((res) =>
+      canvas.toBlob((b) => res(b), "image/png"),
+    );
+    if (!blob) return;
+    const md = await storeAsset(
+      new File([blob], "pasted.png", { type: "image/png" }),
+    );
+    board.add(randomColor(), at.wx, at.wy, md);
+  }
+
   async function onPaste(e: ClipboardEvent) {
     const items = e.clipboardData?.items;
     if (!items) return;
-    const images: File[] = [];
+    const files: File[] = [];
     for (const it of items) {
-      if (it.kind === "file" && it.type.startsWith("image/")) {
+      if (it.kind === "file") {
         const f = it.getAsFile();
-        if (f) images.push(f);
+        if (f) files.push(f);
       }
     }
-    if (!images.length) return; // no image -> let normal text paste run
+    if (!files.length) return; // no file -> let normal text paste run
     e.preventDefault();
-    const md = (await Promise.all(images.map(storeImage))).join("\n");
+    const md = (await Promise.all(files.map(storeAsset))).join("\n");
     const editing = editingId && board.notes.find((n) => n.id === editingId);
     if (editing) {
-      appendImages(editing, md);
+      appendAssets(editing, md);
     } else {
       const c = viewCenterWorld();
       board.add(randomColor(), c.x, c.y, md);
@@ -207,19 +255,17 @@
   }
 
   async function onDrop(e: DragEvent) {
-    const files = Array.from(e.dataTransfer?.files ?? []).filter((f) =>
-      f.type.startsWith("image/"),
-    );
+    const files = Array.from(e.dataTransfer?.files ?? []);
     if (!files.length) return;
     e.preventDefault();
     const world = toWorld(e.clientX, e.clientY);
     const noteEl = (e.target as HTMLElement).closest(
       "[data-note]",
     ) as HTMLElement | null;
-    const refs = await Promise.all(files.map(storeImage));
+    const refs = await Promise.all(files.map(storeAsset));
     const onto = noteEl && board.notes.find((n) => n.id === noteEl.dataset.note);
     if (onto) {
-      appendImages(onto, refs.join("\n"));
+      appendAssets(onto, refs.join("\n"));
       board.bringToFront(onto);
     } else {
       commitEdit();
@@ -229,15 +275,33 @@
     }
   }
 
-  function onContextMenu(e: MouseEvent) {
+  async function onContextMenu(e: MouseEvent) {
     e.preventDefault();
     const noteEl = (e.target as HTMLElement).closest(
       "[data-note]",
     ) as HTMLElement | null;
+
     if (!noteEl) {
+      // empty canvas: offer Paste only when the clipboard holds an image
       menu = null;
+      pasteMenu = null;
+      const cx = e.clientX;
+      const cy = e.clientY;
+      const world = toWorld(cx, cy);
+      const img = await clipboardImage();
+      if (!img) return;
+      pasteImage = img;
+      pasteMenu = {
+        x: Math.min(cx, window.innerWidth - 168),
+        y: Math.min(cy, window.innerHeight - 54),
+        wx: world.x,
+        wy: world.y,
+      };
       return;
     }
+
+    pasteMenu = null;
+    pasteImage = null;
     const id = noteEl.dataset.note!;
     const note = board.notes.find((n) => n.id === id);
     if (!note) return;
@@ -266,12 +330,19 @@
   function onPointerDown(e: PointerEvent) {
     if (e.button !== 0) return;
     menu = null;
+    pasteMenu = null;
     const target = e.target as HTMLElement;
     const noteEl = target.closest("[data-note]") as HTMLElement | null;
 
     if (noteEl) {
       const id = noteEl.dataset.note!;
       if (id === editingId) return;
+      // let the audio controls take the pointer instead of dragging the note
+      if (target.closest("audio")) {
+        const note = board.notes.find((n) => n.id === id);
+        if (note) board.bringToFront(note);
+        return;
+      }
       commitEdit();
       const note = board.notes.find((n) => n.id === id);
       if (!note) return;
@@ -332,25 +403,61 @@
     );
   }
 
+  function openAsset(raw: string) {
+    const isUrl = /^[a-z][a-z0-9+.-]*:/i.test(raw);
+    (isUrl ? openUrl(raw) : openPath(assetPath(raw))).catch(() => {});
+  }
+
+  // Shared-element zoom: hand the lightbox the very element the user clicked and
+  // hide the on-canvas one, so a single image/video appears to fly out and blur
+  // the board, then back. Visibility is restored once the close animation lands.
+  function openLightbox(el: HTMLImageElement | HTMLVideoElement, kind: "image" | "video") {
+    lightboxOrigin = el.getBoundingClientRect();
+    lightboxSourceEl = el;
+    lightboxKind = kind;
+    el.style.visibility = "hidden";
+    lightbox = el instanceof HTMLImageElement ? el.currentSrc || el.src : el.src;
+  }
+
+  function closeLightbox() {
+    if (lightboxSourceEl) lightboxSourceEl.style.visibility = "";
+    lightboxSourceEl = null;
+    lightbox = null;
+  }
+
   function onDblClick(e: MouseEvent) {
-    const noteEl = (e.target as HTMLElement).closest(
-      "[data-note]",
-    ) as HTMLElement | null;
+    const target = e.target as HTMLElement;
+    const chip = target.closest(".note-file") as HTMLElement | null;
+    if (chip?.dataset.asset) {
+      openAsset(chip.dataset.asset);
+      return;
+    }
+    const img = target.closest(".note-img") as HTMLImageElement | null;
+    if (img) {
+      openLightbox(img, "image");
+      return;
+    }
+    const video = target.closest(".note-media") as HTMLVideoElement | null;
+    if (video) {
+      openLightbox(video, "video");
+      return;
+    }
+    if (target.closest(".note-audio")) return;
+    const noteEl = target.closest("[data-note]") as HTMLElement | null;
     if (!noteEl) return;
     const note = board.notes.find((n) => n.id === noteEl.dataset.note);
     if (!note) return;
-    if (isImageOnly(note.text)) {
-      lightbox = noteImages(note.text);
-      return;
-    }
+    if (isAssetOnly(note.text)) return;
     board.bringToFront(note);
     focusNote(note);
   }
 
   function onKeyDown(e: KeyboardEvent) {
     if (e.key === "Escape") {
-      if (lightbox) {
-        lightbox = null;
+      // the lightbox owns Escape while open (animated close)
+      if (lightbox) return;
+      if (pasteMenu) {
+        pasteMenu = null;
         return;
       }
       commitEdit();
@@ -494,9 +601,9 @@
     `transform:translate(${board.camera.x}px,${board.camera.y}px) scale(${board.camera.scale});`,
   );
   const zoomPct = $derived(Math.round(board.camera.scale * 100));
-  const menuImageOnly = $derived(
+  const menuAssetOnly = $derived(
     !!menu &&
-      isImageOnly(board.notes.find((n) => n.id === menu!.id)?.text ?? ""),
+      isAssetOnly(board.notes.find((n) => n.id === menu!.id)?.text ?? ""),
   );
 </script>
 
@@ -543,7 +650,7 @@
 
   <div class="dock" data-ui>
     <Palette colors={COLORS} onpick={addNote} />
-    <AttachButton onfiles={addImageNotes} />
+    <AttachButton onfiles={addAssetNotes} />
   </div>
 
   <ZoomControls
@@ -559,15 +666,32 @@
     x={menu.x}
     y={menu.y}
     colors={COLORS}
-    showColors={!menuImageOnly}
+    showColors={!menuAssetOnly}
     oncolor={(c) => setColor(menu!.id, c)}
     ondelete={() => deleteFromMenu(menu!.id)}
     onclose={() => (menu = null)}
   />
 {/if}
 
+{#if pasteMenu}
+  <PasteMenu
+    x={pasteMenu.x}
+    y={pasteMenu.y}
+    onpaste={pasteHere}
+    onclose={() => {
+      pasteMenu = null;
+      pasteImage = null;
+    }}
+  />
+{/if}
+
 {#if lightbox}
-  <Lightbox images={lightbox} onclose={() => (lightbox = null)} />
+  <Lightbox
+    src={lightbox}
+    kind={lightboxKind}
+    origin={lightboxOrigin}
+    onclose={closeLightbox}
+  />
 {/if}
 
 <style>

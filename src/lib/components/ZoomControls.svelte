@@ -13,17 +13,38 @@
 </script>
 
 <div class="zoom" data-ui>
-  <button class="znav liquid-glass" onclick={onZoomOut} aria-label="Zoom out"
-    >−</button
-  >
+  <button class="znav liquid-glass" onclick={onZoomOut} aria-label="Zoom out">
+    <svg
+      viewBox="0 0 24 24"
+      width="22"
+      height="22"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="2"
+      stroke-linecap="round"
+    >
+      <line x1="6" y1="12" x2="18" y2="12" />
+    </svg>
+  </button>
   <button class="zinfo liquid-glass" onclick={onReset} title="Reset to 100%">
     <span class="zinner"
       ><span class="zval">{zoom}</span><span class="zpct">%</span></span
     >
   </button>
-  <button class="znav liquid-glass" onclick={onZoomIn} aria-label="Zoom in"
-    >+</button
-  >
+  <button class="znav liquid-glass" onclick={onZoomIn} aria-label="Zoom in">
+    <svg
+      viewBox="0 0 24 24"
+      width="22"
+      height="22"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="2"
+      stroke-linecap="round"
+    >
+      <line x1="12" y1="6" x2="12" y2="18" />
+      <line x1="6" y1="12" x2="18" y2="12" />
+    </svg>
+  </button>
 </div>
 
 <style>
@@ -49,17 +70,16 @@
     width: 54px;
     height: 54px;
     border-radius: 50%;
-    font-size: 24px;
-    font-weight: 500;
     display: grid;
     place-items: center;
-    line-height: 1;
+  }
+  .znav svg {
+    display: block;
   }
   .zinfo {
     height: 54px;
+    width: 84px;
     border-radius: 999px;
-    padding: 0 18px;
-    min-width: 70px;
     display: grid;
     place-items: center;
     white-space: nowrap;
@@ -82,7 +102,7 @@
   }
   .znav:hover,
   .zinfo:hover {
-    transform: translateY(-2px);
+    transform: scale(1.06);
   }
   .znav:active,
   .zinfo:active {

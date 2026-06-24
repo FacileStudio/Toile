@@ -1,4 +1,4 @@
-import { invoke, convertFileSrc } from "@tauri-apps/api/core";
+import { invoke } from "@tauri-apps/api/core";
 
 export type Note = {
   id: string;
@@ -30,31 +30,6 @@ const CAMERA_KEY = "tableau.camera.v1";
 
 function uid(): string {
   return Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
-}
-
-const IMAGE_RE = /!\[[^\]]*\]\([^)]+\)/g;
-
-// True when a note is nothing but image refs (whitespace aside): such notes
-// render bare — no colored card — and their menu skips the color swatches.
-export function isImageOnly(text: string): boolean {
-  const t = text.trim();
-  return t.length > 0 && t.replace(IMAGE_RE, "").trim() === "";
-}
-
-// Resolve a markdown image target to something the webview can load: external
-// urls/data uris pass through; relative `assets/…` paths get the asset protocol.
-export function resolveAssetSrc(raw: string): string {
-  if (/^[a-z][a-z0-9+.-]*:/i.test(raw)) return raw;
-  const abs = `${board.folder.replace(/\/$/, "")}/${raw.replace(/^\.?\//, "")}`;
-  return convertFileSrc(abs);
-}
-
-export function noteImages(text: string): string[] {
-  const re = /!\[[^\]]*\]\(([^)]+)\)/g;
-  const out: string[] = [];
-  let m: RegExpExecArray | null;
-  while ((m = re.exec(text))) out.push(resolveAssetSrc(m[1].trim()));
-  return out;
 }
 
 class Board {
@@ -98,8 +73,8 @@ class Board {
     return note;
   }
 
-  async saveImage(bytes: Uint8Array, ext: string): Promise<string> {
-    return invoke<string>("save_image", { data: Array.from(bytes), ext });
+  async saveAsset(bytes: Uint8Array, ext: string): Promise<string> {
+    return invoke<string>("save_asset", { data: Array.from(bytes), ext });
   }
 
   remove(id: string): void {

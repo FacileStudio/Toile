@@ -1,7 +1,14 @@
 <script lang="ts">
   import { scale } from "svelte/transition";
   import { cubicOut } from "svelte/easing";
-  import { isImageOnly, resolveAssetSrc, type Note } from "./board.svelte";
+  import AssetTile from "./AssetTile.svelte";
+  import {
+    assetKind,
+    isAssetOnly,
+    resolveAssetSrc,
+    type AssetKind,
+  } from "../assets";
+  import type { Note } from "../board.svelte";
 
   let {
     note,
@@ -17,28 +24,40 @@
 
   let textarea = $state<HTMLTextAreaElement | null>(null);
 
-  // Split the body into text + image segments. Images are markdown refs
-  // (`![](assets/…)`); everything else stays plain text, so the note still
-  // reads as a sticky note — it just renders pinned pictures inline.
-  type Segment = { img: false; value: string } | { img: true; src: string };
+  // Split the body into text + asset segments. `![alt](path)` embeds carry media
+  // (image inline, video/audio via AssetTile); `[name](path)` links render as a
+  // click-to-open file tile. Everything else stays plain text, so a note still
+  // reads as a sticky — it just pins whatever you dropped on it.
+  type Segment =
+    | { kind: "text"; value: string }
+    | { kind: "image"; src: string; alt: string }
+    | { kind: Exclude<AssetKind, "image">; raw: string; name: string };
 
-  // A note that is nothing but image(s) sheds the colored card and renders as
-  // the bare rounded image at its natural ratio. Text notes keep the card.
-  const imageOnly = $derived(isImageOnly(note.text));
+  // A note that is nothing but asset refs sheds the colored card and renders as
+  // its own asset component. Notes with prose keep the sticky card.
+  const assetOnly = $derived(isAssetOnly(note.text));
+
+  const fileName = (label: string, raw: string) =>
+    label.trim() || (raw.split("/").pop() ?? raw);
 
   const segments = $derived.by<Segment[]>(() => {
     const out: Segment[] = [];
-    const re = /!\[[^\]]*\]\(([^)]+)\)/g;
+    const re = /(!?)\[([^\]]*)\]\(([^)]+)\)/g;
     let last = 0;
     let m: RegExpExecArray | null;
     while ((m = re.exec(note.text))) {
       if (m.index > last)
-        out.push({ img: false, value: note.text.slice(last, m.index) });
-      out.push({ img: true, src: resolveAssetSrc(m[1].trim()) });
+        out.push({ kind: "text", value: note.text.slice(last, m.index) });
+      const raw = m[3].trim();
+      const name = fileName(m[2], raw);
+      const kind = m[1] === "!" ? assetKind(raw) : "file";
+      if (kind === "image")
+        out.push({ kind, src: resolveAssetSrc(raw), alt: name });
+      else out.push({ kind, raw, name });
       last = m.index + m[0].length;
     }
     if (last < note.text.length)
-      out.push({ img: false, value: note.text.slice(last) });
+      out.push({ kind: "text", value: note.text.slice(last) });
     return out;
   });
 
@@ -56,7 +75,7 @@
   class:editing
   class:dragging
   class:doomed
-  class:image-only={imageOnly && !editing}
+  class:asset-only={assetOnly && !editing}
   data-note={note.id}
   style="left:{note.x}px; top:{note.y}px; width:{note.w}px; height:{note.h}px; z-index:{note.z}; --bg:{note.color}"
   in:scale={{ duration: 280, start: 0.82, opacity: 0, easing: cubicOut }}
@@ -74,9 +93,11 @@
       <div class="text" class:empty={!note.text}>
         {#if note.text}
           {#each segments as seg}
-            {#if seg.img}
-              <img class="note-img" src={seg.src} alt="" draggable="false" />
-            {:else}{seg.value}{/if}
+            {#if seg.kind === "image"}
+              <img class="note-img" src={seg.src} alt={seg.alt} draggable="false" />
+            {:else if seg.kind === "text"}{seg.value}{:else}
+              <AssetTile kind={seg.kind} raw={seg.raw} name={seg.name} />
+            {/if}
           {/each}
         {:else}
           Write something…
@@ -166,21 +187,21 @@
     -webkit-user-drag: none;
   }
 
-  /* image-only note: no card, just the rounded image at its natural ratio */
-  .note.image-only {
+  /* asset-only note: no card, the asset renders as its own component */
+  .note.asset-only {
     height: auto !important;
   }
-  .note.image-only .inner {
+  .note.asset-only .inner {
     height: auto;
     padding: 0;
     background: transparent;
     box-shadow: none;
     overflow: visible;
   }
-  .note.image-only:hover .inner {
+  .note.asset-only:hover .inner {
     box-shadow: none;
   }
-  .note.image-only .note-img {
+  .note.asset-only .note-img {
     width: 100%;
     margin: 0;
     border-radius: 14px;
@@ -188,7 +209,7 @@
       0 1px 2px rgba(40, 38, 32, 0.1),
       0 8px 18px rgba(40, 38, 32, 0.14);
   }
-  .note.image-only .note-img + .note-img {
+  .note.asset-only .note-img + .note-img {
     margin-top: 6px;
   }
 

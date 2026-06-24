@@ -85,7 +85,7 @@ fn sanitize_ext(ext: &str) -> String {
         .collect::<String>()
         .to_ascii_lowercase();
     if cleaned.is_empty() {
-        "png".to_string()
+        "bin".to_string()
     } else {
         cleaned
     }
@@ -261,11 +261,12 @@ fn write_note(note: Note, state: State<Arc<SyncState>>) -> Result<(), String> {
     std::fs::write(&path, content).map_err(|e| e.to_string())
 }
 
-// Store an image as a content-hashed file under <folder>/assets and hand back
-// the relative path. Same bytes => same name, so paste-the-same-image is free.
-// The note body just gets a portable `![](assets/…)` ref — Obsidian reads it too.
+// Store any file as a content-hashed asset under <folder>/assets and hand back
+// the relative path. Same bytes => same name, so dropping the same file twice is
+// free. The note body gets a portable `![](assets/…)` (media) or `[name](assets/…)`
+// (everything else) ref — Obsidian reads both.
 #[tauri::command]
-fn save_image(data: Vec<u8>, ext: String, state: State<Arc<SyncState>>) -> Result<String, String> {
+fn save_asset(data: Vec<u8>, ext: String, state: State<Arc<SyncState>>) -> Result<String, String> {
     let dir = state.folder.join("assets");
     std::fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
     let name = format!("{:x}.{}", hash_bytes(&data), sanitize_ext(&ext));
@@ -324,11 +325,12 @@ fn handle_fs_event(handle: &AppHandle, state: &Arc<SyncState>, paths: Vec<PathBu
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
+        .plugin(tauri_plugin_clipboard_manager::init())
         .invoke_handler(tauri::generate_handler![
             init_board,
             write_note,
             delete_note,
-            save_image
+            save_asset
         ])
         .setup(|app| {
             let folder = load_config_folder();

@@ -111,6 +111,7 @@
     justify-content: center;
     gap: 7px;
     height: 38px;
+    padding: 0 18px;
     border-radius: 999px;
     color: #e5484d;
     font-family: inherit;

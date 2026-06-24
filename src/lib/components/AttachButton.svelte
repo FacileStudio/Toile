@@ -17,8 +17,8 @@
 
 <button
   class="attach liquid-glass"
-  title="Add image"
-  aria-label="Add image"
+  title="Add file"
+  aria-label="Add file"
   onclick={pick}
 >
   <svg
@@ -40,7 +40,6 @@
   bind:this={input}
   class="file-input"
   type="file"
-  accept="image/*"
   multiple
   onchange={onChange}
 />
@@ -59,11 +58,11 @@
       color 0.2s ease;
   }
   .attach:hover {
-    transform: translateY(-3px) scale(1.06);
+    transform: scale(1.06);
     color: var(--ink);
   }
   .attach:active {
-    transform: translateY(-1px) scale(0.94);
+    transform: scale(0.94);
   }
   .file-input {
     display: none;
