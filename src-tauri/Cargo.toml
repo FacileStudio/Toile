@@ -27,3 +27,10 @@ notify = "6"
 dirs = "5"
 tauri-plugin-clipboard-manager = "2.3.2"
 
+[target.'cfg(target_os = "macos")'.dependencies]
+objc2-web-kit = { version = "0.3", features = [
+    "WKWebView",
+    "WKWebViewConfiguration",
+    "WKPreferences",
+] }
+

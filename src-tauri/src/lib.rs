@@ -333,6 +333,20 @@ pub fn run() {
             save_asset
         ])
         .setup(|app| {
+            // WKWebView clamps glyph rasterization to a minimum font size (~9px),
+            // so at deep zoom-out the transform-scaled text bottoms out on the
+            // floor and stops shrinking while cards keep going -> text looks
+            // oversized relative to its card. Drop the floor to 0 so text scales
+            // uniformly all the way down.
+            #[cfg(target_os = "macos")]
+            if let Some(win) = app.get_webview_window("main") {
+                let _ = win.with_webview(|webview| unsafe {
+                    use objc2_web_kit::WKWebView;
+                    let wk = &*(webview.inner() as *mut WKWebView);
+                    wk.configuration().preferences().setMinimumFontSize(0.0);
+                });
+            }
+
             let folder = load_config_folder();
             std::fs::create_dir_all(&folder).ok();
 
