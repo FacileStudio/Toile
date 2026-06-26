@@ -806,7 +806,7 @@
 
   {#if board.notes.length === 0}
     <div class="hint" transition:fade={{ duration: 300 }}>
-      <div class="hint-title">Tableau</div>
+      <div class="hint-title">Toile</div>
       <div class="hint-sub">Pick a color below to drop your first note</div>
     </div>
   {/if}

@@ -105,31 +105,40 @@ fn expand_tilde(p: &str) -> PathBuf {
     PathBuf::from(p)
 }
 
+fn folder_from_config(path: &Path) -> Option<PathBuf> {
+    let txt = std::fs::read_to_string(path).ok()?;
+    let val = serde_yaml::from_str::<serde_yaml::Value>(&txt).ok()?;
+    let f = val.get("folder").and_then(|v| v.as_str())?.trim().to_string();
+    if f.is_empty() {
+        None
+    } else {
+        Some(expand_tilde(&f))
+    }
+}
+
 fn load_config_folder() -> PathBuf {
     let home = dirs::home_dir().unwrap_or_else(|| PathBuf::from("."));
-    let cfg = home.join(".tableau.yml");
-    let default_folder = home.join("Tableau");
+    let cfg = home.join(".toile.yml");
+    let legacy_cfg = home.join(".tableau.yml");
+    let default_folder = home.join("Toile");
 
-    if let Ok(txt) = std::fs::read_to_string(&cfg) {
-        if let Ok(val) = serde_yaml::from_str::<serde_yaml::Value>(&txt) {
-            if let Some(f) = val.get("folder").and_then(|v| v.as_str()) {
-                let f = f.trim();
-                if !f.is_empty() {
-                    return expand_tilde(f);
-                }
-            }
-        }
-        return default_folder;
+    if cfg.exists() {
+        return folder_from_config(&cfg).unwrap_or(default_folder);
+    }
+    // Pre-rename installs kept their board under `.tableau.yml` / ~/Tableau —
+    // honor it so existing notes keep loading without anyone moving a folder.
+    if legacy_cfg.exists() {
+        return folder_from_config(&legacy_cfg).unwrap_or_else(|| home.join("Tableau"));
     }
 
     let template = format!(
-        "# Tableau — where your notes live as markdown files.\n\
+        "# Toile — where your notes live as markdown files.\n\
          # Point this at any folder. To read your notes in Obsidian on your phone,\n\
          # set it to a folder inside an iCloud Obsidian vault, e.g.:\n\
-         # folder: ~/Library/Mobile Documents/iCloud~md~obsidian/Documents/MyVault/Tableau\n\
+         # folder: ~/Library/Mobile Documents/iCloud~md~obsidian/Documents/MyVault/Toile\n\
          #\n\
          # Every .md file in this folder becomes a postit. A note created by hand\n\
-         # (no frontmatter, just text) shows up automatically; Tableau only writes\n\
+         # (no frontmatter, just text) shows up automatically; Toile only writes\n\
          # layout frontmatter once you move or restyle it in the app.\n\
          folder: {}\n",
         default_folder.display()

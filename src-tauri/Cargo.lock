@@ -3547,22 +3547,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "tableau"
-version = "0.1.0"
-dependencies = [
- "dirs 5.0.1",
- "notify",
- "objc2-web-kit",
- "serde",
- "serde_json",
- "serde_yaml",
- "tauri",
- "tauri-build",
- "tauri-plugin-clipboard-manager",
- "tauri-plugin-opener",
-]
-
-[[package]]
 name = "tao"
 version = "0.35.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4017,6 +4001,22 @@ name = "tinyvec_macros"
 version = "0.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1f3ccbac311fea05f86f61904b462b55fb3df8837a366dfc601a0161d0532f20"
+
+[[package]]
+name = "toile"
+version = "0.1.0"
+dependencies = [
+ "dirs 5.0.1",
+ "notify",
+ "objc2-web-kit",
+ "serde",
+ "serde_json",
+ "serde_yaml",
+ "tauri",
+ "tauri-build",
+ "tauri-plugin-clipboard-manager",
+ "tauri-plugin-opener",
+]
 
 [[package]]
 name = "tokio"

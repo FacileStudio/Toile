@@ -1,4 +1,4 @@
-# Tableau
+# Toile
 
 An infinite canvas for sticky notes. Pan, zoom, drop colored notes anywhere, and drag them off when you're done. A small native desktop app built with Tauri + SvelteKit.
 

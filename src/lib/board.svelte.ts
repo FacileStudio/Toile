@@ -26,7 +26,7 @@ export const NOTE_SIZE = 224;
 export const MIN_SCALE = 0.2;
 export const MAX_SCALE = 3;
 
-const CAMERA_KEY = "tableau.camera.v1";
+const CAMERA_KEY = "toile.camera.v1";
 
 function uid(): string {
   return Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
