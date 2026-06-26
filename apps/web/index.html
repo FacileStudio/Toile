@@ -242,7 +242,7 @@
         position: relative;
         margin: 56px auto 0;
         max-width: 860px;
-        height: 360px;
+        height: 470px;
         border-radius: 22px;
         overflow: hidden;
         background-color: #fbfaf7;
@@ -257,37 +257,40 @@
       }
       .card {
         position: absolute;
-        padding: 14px 15px;
-        border-radius: 13px;
+        width: 152px;
+        min-height: 124px;
+        padding: 15px 16px;
+        border-radius: 12px;
         font-size: 14px;
         font-weight: 550;
-        line-height: 1.35;
+        line-height: 1.36;
+        text-align: left;
         color: #4a463d;
         box-shadow:
           inset 0 0 0 1px rgba(40, 38, 32, 0.07),
           0 7px 18px rgba(40, 38, 32, 0.14);
+        transform: var(--r);
         animation: float 7s var(--ease) infinite;
       }
       .card .t {
         font-family: var(--goga);
         font-weight: 700;
         display: block;
-        margin-bottom: 3px;
+        margin-bottom: 4px;
       }
-      .c1 { top: 42px; left: 56px; width: 168px; background: #ffe8a3; --r: rotate(-3deg); }
-      .c2 { top: 150px; left: 250px; width: 150px; background: #bfe0f2; --r: rotate(2.5deg); animation-delay: 1.4s; }
-      .c3 { top: 60px; right: 80px; width: 158px; background: #ffc9c9; --r: rotate(2deg); animation-delay: 2.6s; }
-      .c4 { bottom: 40px; left: 120px; width: 140px; background: #c9e8ca; --r: rotate(-2deg); animation-delay: 0.7s; }
-      .c5 { bottom: 52px; right: 130px; width: 132px; background: #e2cdf2; --r: rotate(3deg); animation-delay: 3.4s; }
-      .card { transform: var(--r); }
+      .c1 { top: 50px; left: 64px; background: #ffe8a3; --r: rotate(-3deg); }
+      .c2 { top: 252px; left: 318px; background: #bfe0f2; --r: rotate(2.5deg); animation-delay: 1.4s; }
+      .c3 { top: 70px; right: 86px; background: #ffc9c9; --r: rotate(2deg); animation-delay: 2.6s; }
+      .c4 { bottom: 52px; left: 150px; background: #c9e8ca; --r: rotate(-2deg); animation-delay: 0.7s; }
+      .c5 { bottom: 70px; right: 132px; background: #e2cdf2; --r: rotate(3deg); animation-delay: 3.4s; }
       @keyframes float {
         0%, 100% { transform: translateY(0) var(--r); }
         50% { transform: translateY(-7px) var(--r); }
       }
       .doodle {
         position: absolute;
-        top: 120px;
-        left: 150px;
+        top: 150px;
+        left: 200px;
         width: 150px;
         height: 90px;
         stroke: #c9885a;
@@ -295,6 +298,27 @@
         fill: none;
         stroke-linecap: round;
         opacity: 0.85;
+      }
+      @media (max-width: 680px) {
+        .board {
+          height: 360px;
+          margin-top: 40px;
+          border-radius: 18px;
+        }
+        .card {
+          width: 128px;
+          min-height: 100px;
+          font-size: 12.5px;
+          padding: 12px 13px;
+        }
+        .c1 { top: 26px; left: 18px; }
+        .c3 { top: 36px; right: 14px; }
+        .c4 { bottom: 24px; left: 26px; }
+        .c5 { bottom: 34px; right: 18px; }
+        .c2,
+        .doodle {
+          display: none;
+        }
       }
 
       .features {
@@ -349,10 +373,10 @@
             <path fill="currentColor" fill-rule="evenodd" clip-rule="evenodd" d="m20.83 10.715l-.518 1.932c-.605 2.255-.907 3.383-1.592 4.114a4 4 0 0 1-2.01 1.161q-.145.034-.295.052c-.915.113-2.032-.186-4.064-.73c-2.255-.605-3.383-.907-4.114-1.592a4 4 0 0 1-1.161-2.011c-.228-.976.074-2.103.679-4.358l.517-1.932l.244-.905c.455-1.666.761-2.583 1.348-3.21a4 4 0 0 1 2.01-1.16c.976-.228 2.104.074 4.36.679c2.254.604 3.382.906 4.113 1.59a4 4 0 0 1 1.161 2.012c.228.976-.075 2.103-.679 4.358m-9.778-.91a.75.75 0 0 1 .919-.53l4.83 1.295a.75.75 0 1 1-.389 1.448l-4.83-1.294a.75.75 0 0 1-.53-.918m-.776 2.898a.75.75 0 0 1 .918-.53l2.898.777a.75.75 0 1 1-.388 1.448l-2.898-.776a.75.75 0 0 1-.53-.919" />
             <path fill="currentColor" opacity=".4" d="M16.415 17.975a4 4 0 0 1-1.068 1.677c-.731.685-1.859.987-4.114 1.591s-3.383.907-4.358.679a4 4 0 0 1-2.011-1.161c-.685-.731-.988-1.859-1.592-4.114l-.517-1.932c-.605-2.255-.907-3.383-.68-4.358a4 4 0 0 1 1.162-2.011c.731-.685 1.859-.987 4.114-1.592q.638-.172 1.165-.309l-.244.906l-.517 1.932c-.605 2.255-.907 3.382-.68 4.358a4 4 0 0 0 1.162 2.011c.731.685 1.859.987 4.114 1.592c2.032.544 3.149.843 4.064.73" />
           </svg>
-          <span id="brandName" title="">Toile<span class="dot">.</span></span>
+          <span id="brandName" title="">Toile</span>
         </div>
         <a class="ghlink" href="https://github.com/FacileStudio/Toile">
-          <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 .5A11.5 11.5 0 0 0 .5 12a11.5 11.5 0 0 0 7.86 10.92c.58.1.79-.25.79-.56v-2c-3.2.7-3.88-1.37-3.88-1.37-.52-1.33-1.28-1.68-1.28-1.68-1.05-.72.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.03 1.77 2.7 1.26 3.36.96.1-.75.4-1.26.73-1.55-2.55-.29-5.24-1.28-5.24-5.68 0-1.26.45-2.29 1.19-3.1-.12-.29-.52-1.46.11-3.04 0 0 .97-.31 3.18 1.18a11 11 0 0 1 5.78 0C18.6 4.6 19.57 4.91 19.57 4.91c.63 1.58.23 2.75.11 3.04.74.81 1.19 1.84 1.19 3.1 0 4.41-2.69 5.39-5.25 5.67.41.36.78 1.06.78 2.14v3.18c0 .31.21.67.8.56A11.5 11.5 0 0 0 23.5 12 11.5 11.5 0 0 0 12 .5Z"/></svg>
+          <svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82a7.6 7.6 0 0 1 2-.27c.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8z"/></svg>
           GitHub
         </a>
       </header>
@@ -386,7 +410,7 @@
             <path d="M6 64 C 28 14, 52 14, 70 50 S 120 86, 144 24" />
           </svg>
           <div class="card c1"><span class="t">groceries</span>oat milk, tomatoes, a good loaf</div>
-          <div class="card c2"><span class="t">idea ✶</span>a calmer place to think</div>
+          <div class="card c2"><span class="t">idea</span>a calmer place to think</div>
           <div class="card c3"><span class="t">today</span>walk · write · ship the thing</div>
           <div class="card c4"><span class="t">trip</span>train at 9:40</div>
           <div class="card c5">just a thought, kept</div>
@@ -454,7 +478,7 @@
           el.classList.add("tick");
           if (n === 42) {
             done = true;
-            el.innerHTML = 'Tableau<span class="dot">.</span>';
+            el.textContent = "Tableau";
             el.classList.remove("tick");
             void el.offsetWidth;
             el.classList.add("morph");
