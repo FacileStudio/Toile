@@ -12,7 +12,7 @@ RUN printf 'server {\n\
   }\n\
 }\n' > /etc/nginx/conf.d/default.conf
 
-COPY . /usr/share/nginx/html
+COPY apps/web/ /usr/share/nginx/html
 RUN rm -f /usr/share/nginx/html/Dockerfile
 
 EXPOSE 80
