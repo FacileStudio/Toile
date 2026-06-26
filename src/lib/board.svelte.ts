@@ -14,26 +14,21 @@ export type Note = {
 
 export type FontKey = "sans" | "serif" | "mono";
 
-// A committed drawing stroke: the already-smoothed SVG path `d`, in world
-// coordinates, plus its ink. Width is in world units so it scales with zoom.
 export type Stroke = { id: string; color: string; width: number; d: string };
 
-// One undoable drawing action: a pen stroke added, or a batch of strokes erased
-// in a single eraser gesture (so one drag = one undo).
 type StrokeOp = { type: "add" | "erase"; strokes: Stroke[] };
 
 export type Camera = { x: number; y: number; scale: number };
 
-// A transparent color is the marker for a cardless "text" note (no sticky card).
 export const TEXT_COLOR = "transparent";
 
 export const COLORS = [
-  "#ffe8a3", // butter
-  "#ffc9c9", // blush
-  "#c9e8ca", // mint
-  "#bfe0f2", // sky
-  "#e2cdf2", // lavender
-  "#ffd6b0", // peach
+  "#ffe8a3",
+  "#ffc9c9",
+  "#c9e8ca",
+  "#bfe0f2",
+  "#e2cdf2",
+  "#ffd6b0",
 ];
 
 export const NOTE_SIZE = 224;
@@ -51,6 +46,7 @@ class Board {
   strokes = $state<Stroke[]>([]);
   camera = $state<Camera>({ x: 0, y: 0, scale: 1 });
   folder = $state("");
+  unfurl = $state(true);
   #zTop = 1;
   #undo = $state<StrokeOp[]>([]);
   #redo = $state<StrokeOp[]>([]);
@@ -62,12 +58,14 @@ class Board {
         const raw = localStorage.getItem(CAMERA_KEY);
         if (raw) this.camera = JSON.parse(raw);
       } catch {
-        /* ignore */
       }
     }
     try {
-      const data = await invoke<{ folder: string; notes: Note[] }>("init_board");
+      const data = await invoke<{ folder: string; notes: Note[]; unfurl: boolean }>(
+        "init_board",
+      );
       this.folder = data.folder;
+      this.unfurl = data.unfurl ?? true;
       this.notes = data.notes ?? [];
       this.#zTop = this.notes.reduce((m, n) => Math.max(m, n.z), 1);
     } catch (e) {
@@ -77,7 +75,6 @@ class Board {
       const parsed = JSON.parse(await invoke<string>("load_strokes"));
       if (Array.isArray(parsed?.strokes)) this.strokes = parsed.strokes;
     } catch {
-      /* no drawing yet */
     }
   }
 
@@ -98,7 +95,6 @@ class Board {
     return note;
   }
 
-  // ---- drawing ----
   get canUndo(): boolean {
     return this.#undo.length > 0;
   }
@@ -111,12 +107,10 @@ class Board {
     const s: Stroke = { id: uid(), color, width, d };
     this.strokes.push(s);
     this.#undo.push({ type: "add", strokes: [s] });
-    this.#redo = []; // a fresh action invalidates the redo branch
+    this.#redo = [];
     this.#saveStrokes();
   }
 
-  // Pull the given strokes out immediately (live erase feedback), no history —
-  // the caller batches a whole eraser gesture and records it via commitErase.
   removeStrokes(ids: Set<string>): Stroke[] {
     if (!ids.size) return [];
     const removed = this.strokes.filter((s) => ids.has(s.id));
@@ -168,9 +162,6 @@ class Board {
   }
 
   async saveAsset(bytes: Uint8Array, ext: string): Promise<string> {
-    // Pass the Uint8Array straight through: Tauri v2 transfers it as raw binary
-    // (received as Vec<u8>). Array.from() would box every byte into a JS number
-    // and JSON-serialise it — gigabytes of RAM for a large file, hence the crash.
     return invoke<string>("save_asset", { data: bytes, ext });
   }
 

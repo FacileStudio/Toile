@@ -29,34 +29,40 @@
     type FontKey,
   } from "$lib/board.svelte";
   import { smoothPath, simplify } from "$lib/draw";
-  import { assetKind, assetPath, isAssetOnly } from "$lib/assets";
+  import { assetKind, assetPath, isCardOnly } from "$lib/assets";
+  import { links } from "$lib/links.svelte";
+  import { safeExternal } from "$lib/links";
 
   const GRID = 26;
 
   let trashEl = $state<HTMLDivElement | null>(null);
   let searchOpen = $state(false);
   let editingId = $state<string | null>(null);
-  let selectedId = $state<string | null>(null);
+  let selectedIds = $state(new Set<string>());
   let dragId = $state<string | null>(null);
   let trashHot = $state(false);
   let panning = $state(false);
+  let marquee = $state<{ x0: number; y0: number; x1: number; y1: number } | null>(
+    null,
+  );
+  let spaceHeld = $state(false);
+  let attach = $state<{ open: () => void } | null>(null);
 
-  // Tool mode. "normal" is the sticky/text board; "draw" turns pointer drags
-  // into ink strokes and swaps the dock for drawing controls. Font controls
-  // appear on their own whenever a text note is being edited.
+  const selectOne = (id: string) => (selectedIds = new Set([id]));
+  const clearSelection = () => {
+    if (selectedIds.size) selectedIds = new Set();
+  };
+
   let mode = $state<"normal" | "draw">("normal");
   let drawTool = $state<"pen" | "eraser">("pen");
   let drawColor = $state("#43413b");
   let drawWidth = $state(5);
   let liveStroke = $state<{ x: number; y: number }[]>([]);
   let drawingPointer: number | null = null;
-  // eraser: strokes the current gesture has touched are marked (dimmed) and
-  // deleted as one undoable batch on release — tldraw-style.
   let erasePointer: number | null = null;
   let eraseMarks = $state(new Set<string>());
   let eraseLast: { x: number; y: number } | null = null;
 
-  // click vs drag bookkeeping for the select-then-activate interaction
   let pressId: string | null = null;
   let pressTarget: HTMLElement | null = null;
   let pressMoved = false;
@@ -70,12 +76,8 @@
     wy: number;
   } | null>(null);
   let pasteImage: Image | null = null;
-  // Media "focus": the note whose image/video/audio is zoomed in. The camera
-  // tweens to frame it (same move a postit makes entering edit mode) while the
-  // rest of the board blurs back. prevCamera restores the view on dismiss.
   let focusedId = $state<string | null>(null);
   let prevCamera: Camera | null = null;
-  // the view to glide back to when a postit leaves edit mode, mirroring media
   let editPrevCamera: Camera | null = null;
 
   let toast = $state<string | null>(null);
@@ -86,7 +88,7 @@
     toastTimer = setTimeout(() => (toast = null), 4200);
   }
 
-  let dragNote: Note | null = null;
+  let dragNotes: Note[] = [];
   let last = { x: 0, y: 0 };
   let raf: number | null = null;
 
@@ -138,7 +140,6 @@
     focusNote(note);
   }
 
-  // A text note: cardless free text (transparent color), default sans font.
   function addTextNote() {
     commitEdit();
     const c = viewCenterWorld();
@@ -146,7 +147,6 @@
     focusNote(note);
   }
 
-  // The dock shows font pickers whenever a text note is being edited.
   const editingNote = $derived(
     board.notes.find((n) => n.id === editingId) ?? null,
   );
@@ -158,7 +158,7 @@
 
   function enterDraw() {
     commitEdit();
-    selectedId = null;
+    clearSelection();
     menu = null;
     mode = "draw";
   }
@@ -168,15 +168,12 @@
     cancelErase();
   }
 
-  // ---- drawing: capture in world coords, commit a smoothed path ----
   function startStroke(e: PointerEvent) {
     drawingPointer = e.pointerId;
     const w = toWorld(e.clientX, e.clientY);
     liveStroke = [{ x: w.x, y: w.y }];
   }
   function extendStroke(e: PointerEvent) {
-    // drain coalesced samples for high-fidelity curves (WebKit got these
-    // ~Safari 18.2; the ?? [e] fallback keeps older webviews working).
     const evs = e.getCoalescedEvents?.() ?? [e];
     for (const ev of evs) {
       const w = toWorld(ev.clientX, ev.clientY);
@@ -186,7 +183,6 @@
   function finishStroke() {
     drawingPointer = null;
     if (liveStroke.length) {
-      // store width in world units so ink scales with the canvas
       const width = drawWidth / board.camera.scale;
       board.addStroke(smoothPath(simplify(liveStroke)), drawColor, width);
     }
@@ -197,9 +193,6 @@
     liveStroke = [];
   }
 
-  // ---- eraser: whole-stroke. Mark touched strokes (dimmed) during the drag,
-  // delete the batch as one undo on release (tldraw model). Hit-test via the
-  // native path.isPointInStroke in world coords, bbox-prefiltered for speed. ----
   type EraseCand = { id: string; el: SVGPathElement; bb: DOMRect; hw: number };
   let eraseCands: EraseCand[] = [];
 
@@ -219,9 +212,7 @@
             bb: el.getBBox(),
             hw: parseFloat(el.getAttribute("stroke-width") ?? "0") / 2,
           });
-        } catch {
-          /* detached/empty path */
-        }
+        } catch {}
       }
     }
     const w = toWorld(e.clientX, e.clientY);
@@ -233,8 +224,6 @@
     const evs = e.getCoalescedEvents?.() ?? [e];
     for (const ev of evs) {
       const w = toWorld(ev.clientX, ev.clientY);
-      // sample along the segment since the last point so a fast flick can't
-      // tunnel between two thin strokes without registering contact
       if (eraseLast) {
         const dx = w.x - eraseLast.x;
         const dy = w.y - eraseLast.y;
@@ -249,7 +238,7 @@
   }
 
   function markErase(wx: number, wy: number) {
-    const margin = 12 / board.camera.scale; // ~12 screen px tolerance
+    const margin = 12 / board.camera.scale;
     let changed = false;
     for (const c of eraseCands) {
       if (eraseMarks.has(c.id)) continue;
@@ -296,7 +285,7 @@
   function focusNote(note: Note) {
     editPrevCamera = { ...board.camera };
     editingId = note.id;
-    selectedId = note.id;
+    selectOne(note.id);
     const targetScale = clamp(
       Math.max(board.camera.scale, 1.3),
       MIN_SCALE,
@@ -311,25 +300,18 @@
     });
   }
 
-  // A text note left empty is an invisible orphan — drop it when its edit ends
-  // (whether the user typed nothing or cleared it out). Sticky notes can stay
-  // empty (they're a visible colored card you can fill later).
   function discardEmptyText(id: string | null) {
     if (!id) return;
     const n = board.notes.find((x) => x.id === id);
     if (n && n.color === TEXT_COLOR && n.text.trim() === "") board.remove(id);
   }
 
-  // bare close, no camera move — used by flows that immediately do their own
-  // thing (add a note, drop assets, reset the view).
   function commitEdit() {
     discardEmptyText(editingId);
     editingId = null;
     editPrevCamera = null;
   }
 
-  // user-driven exit (Escape / click-away): close and glide back to where the
-  // view was before edit mode, exactly like dismissing a zoomed-in media note.
   function exitEdit() {
     if (editingId === null) return;
     discardEmptyText(editingId);
@@ -415,12 +397,22 @@
     fitBox(b);
   }
 
-  // Zoom-to-fit the selected note (⇧2), or everything when nothing's selected.
+  // Zoom-to-fit the selection (⇧2) — one note or many — else everything.
   function fitSelection() {
-    const n = board.notes.find((x) => x.id === selectedId);
-    if (!n) return fitView();
+    const sel = board.notes.filter((n) => selectedIds.has(n.id));
+    if (!sel.length) return fitView();
     commitEdit();
-    fitBox({ x: n.x, y: n.y, w: n.w, h: n.h });
+    let x0 = Infinity,
+      y0 = Infinity,
+      x1 = -Infinity,
+      y1 = -Infinity;
+    for (const n of sel) {
+      x0 = Math.min(x0, n.x);
+      y0 = Math.min(y0, n.y);
+      x1 = Math.max(x1, n.x + n.w);
+      y1 = Math.max(y1, n.y + n.h);
+    }
+    fitBox({ x: x0, y: y0, w: x1 - x0, h: y1 - y0 });
   }
 
   // Minimap recenter: snap (no tween) so dragging the viewport rect tracks the
@@ -450,7 +442,7 @@
     const n = board.notes.find((x) => x.id === id);
     if (!n) return;
     board.bringToFront(n);
-    selectedId = n.id;
+    selectOne(n.id);
     const s = clamp(Math.max(board.camera.scale, 1), MIN_SCALE, MAX_SCALE);
     const cx = n.x + n.w / 2;
     const cy = n.y + n.h / 2;
@@ -688,6 +680,17 @@
   }
 
   function onPointerDown(e: PointerEvent) {
+    // middle-mouse drag pans from anywhere (Figma/Miro/Excalidraw parity)
+    if (e.button === 1) {
+      e.preventDefault();
+      menu = null;
+      pasteMenu = null;
+      commitEdit();
+      stopTween();
+      panning = true;
+      last = { x: e.clientX, y: e.clientY };
+      return;
+    }
     if (e.button !== 0) return;
     menu = null;
     pasteMenu = null;
@@ -718,8 +721,17 @@
     if (editingId) {
       if (noteEl?.dataset.note !== editingId) {
         exitEdit();
-        selectedId = null;
+        clearSelection();
       }
+      return;
+    }
+
+    // space-drag pans the board from anywhere — even over a note (Figma parity).
+    if (spaceHeld) {
+      commitEdit();
+      stopTween();
+      panning = true;
+      last = { x: e.clientX, y: e.clientY };
       return;
     }
 
@@ -737,7 +749,10 @@
       if (!note) return;
       board.bringToFront(note);
       dragId = id;
-      dragNote = note;
+      dragNotes =
+        selectedIds.has(id) && selectedIds.size > 1
+          ? board.notes.filter((n) => selectedIds.has(n.id))
+          : [note];
       pressId = id;
       pressTarget = target;
       pressMoved = false;
@@ -745,9 +760,9 @@
       last = { x: e.clientX, y: e.clientY };
     } else if (!target.closest("[data-ui]")) {
       commitEdit();
-      selectedId = null;
       stopTween();
-      panning = true;
+      clearSelection();
+      marquee = { x0: e.clientX, y0: e.clientY, x1: e.clientX, y1: e.clientY };
       last = { x: e.clientX, y: e.clientY };
     }
   }
@@ -770,24 +785,42 @@
       return;
     }
     // recover if the button was released outside the window
-    if ((dragId || panning) && e.buttons === 0) {
+    if ((dragId || panning || marquee) && e.buttons === 0) {
       endInteraction();
       return;
     }
-    if (dragId && dragNote) {
+    if (dragId && dragNotes.length) {
       if (
         !pressMoved &&
         Math.hypot(e.clientX - pressStart.x, e.clientY - pressStart.y) > 4
       ) {
         pressMoved = true;
-        selectedId = dragId;
+        if (dragNotes.length === 1) selectOne(dragId);
         last = { x: e.clientX, y: e.clientY };
       }
       if (!pressMoved) return;
-      dragNote.x += (e.clientX - last.x) / board.camera.scale;
-      dragNote.y += (e.clientY - last.y) / board.camera.scale;
+      const dx = (e.clientX - last.x) / board.camera.scale;
+      const dy = (e.clientY - last.y) / board.camera.scale;
+      for (const n of dragNotes) {
+        n.x += dx;
+        n.y += dy;
+      }
       last = { x: e.clientX, y: e.clientY };
       trashHot = overTrash(e.clientX, e.clientY);
+    } else if (marquee) {
+      marquee = { ...marquee, x1: e.clientX, y1: e.clientY };
+      const a = toWorld(marquee.x0, marquee.y0);
+      const b = toWorld(e.clientX, e.clientY);
+      const rx0 = Math.min(a.x, b.x);
+      const ry0 = Math.min(a.y, b.y);
+      const rx1 = Math.max(a.x, b.x);
+      const ry1 = Math.max(a.y, b.y);
+      const hit = new Set<string>();
+      for (const n of board.notes) {
+        if (n.x < rx1 && n.x + n.w > rx0 && n.y < ry1 && n.y + n.h > ry0)
+          hit.add(n.id);
+      }
+      selectedIds = hit;
     } else if (panning) {
       board.camera = {
         ...board.camera,
@@ -800,12 +833,13 @@
 
   function endInteraction() {
     dragId = null;
-    dragNote = null;
+    dragNotes = [];
     pressId = null;
     pressTarget = null;
     pressMoved = false;
     trashHot = false;
     panning = false;
+    marquee = null;
   }
 
   function onPointerUp() {
@@ -818,8 +852,10 @@
       return;
     }
     if (dragId && trashHot) {
-      if (selectedId === dragId) selectedId = null;
-      board.remove(dragId);
+      const ids = dragNotes.length > 1 ? dragNotes.map((n) => n.id) : [dragId];
+      for (const id of ids) board.remove(id);
+      if (ids.some((id) => selectedIds.has(id)))
+        selectedIds = new Set([...selectedIds].filter((id) => !ids.includes(id)));
     } else if (dragId && !pressMoved) {
       activate(dragId, pressTarget);
     }
@@ -829,8 +865,8 @@
   // First click selects; clicking an already-selected note acts on it — open a
   // file, zoom an image/video, or (for a plain note) drop into edit mode.
   function activate(id: string, target: HTMLElement | null) {
-    const wasSelected = selectedId === id;
-    selectedId = id;
+    const wasSelected = selectedIds.has(id) && selectedIds.size === 1;
+    selectOne(id);
     if (!wasSelected) return;
 
     const note = board.notes.find((n) => n.id === id);
@@ -839,12 +875,15 @@
     const chip = target?.closest(".note-file") as HTMLElement | null;
     if (chip?.dataset.asset) return openAsset(chip.dataset.asset);
 
+    // link cards (bookmark or YouTube facade) handle their own click
+    if (target?.closest(".link")) return;
+
     const media = target?.closest(
       ".note-img, .note-media, .note-audio",
     ) as HTMLElement | null;
     if (media) return focusMedia(note, media);
 
-    if (isAssetOnly(note.text)) return; // bare media with no hit — nothing to do
+    if (isCardOnly(note.text)) return; // bare media/link with no hit — nothing to do
 
     board.bringToFront(note);
     focusNote(note);
@@ -864,7 +903,11 @@
 
   function openAsset(raw: string) {
     const isUrl = /^[a-z][a-z0-9+.-]*:/i.test(raw);
-    (isUrl ? openUrl(raw) : openPath(assetPath(raw))).catch(() => {});
+    if (isUrl) {
+      if (safeExternal(raw)) openUrl(raw).catch(() => {});
+      return;
+    }
+    openPath(assetPath(raw)).catch(() => {});
   }
 
   // Zoom the board so the clicked media fills the view — the same camera move a
@@ -873,7 +916,7 @@
   function focusMedia(note: Note, el: HTMLElement) {
     prevCamera = { ...board.camera };
     board.bringToFront(note);
-    selectedId = note.id;
+    selectOne(note.id);
     focusedId = note.id;
 
     // Fit the media's own box (fall back to the whole note) into ~84% of the
@@ -932,6 +975,11 @@
       openSearch();
       return;
     }
+    // hold Space to pan — the pan itself starts on pointerdown; here we just
+    // record intent (and never while typing in a note).
+    if (e.code === "Space" && editingId === null && !e.repeat) {
+      spaceHeld = true;
+    }
     // ⇧1 fit everything, ⇧2 fit selection — but not while typing in a note
     // (e.code is layout-independent, so this survives the Shift+digit remap).
     if (editingId === null && e.shiftKey && e.code === "Digit1") {
@@ -943,6 +991,54 @@
       e.preventDefault();
       fitSelection();
       return;
+    }
+    // Backspace / Delete removes the whole selection (never while editing or
+    // zoomed into a media note).
+    if (
+      (e.key === "Backspace" || e.key === "Delete") &&
+      editingId === null &&
+      focusedId === null &&
+      mode === "normal" &&
+      selectedIds.size
+    ) {
+      e.preventDefault();
+      for (const id of selectedIds) board.remove(id);
+      selectedIds = new Set();
+      return;
+    }
+    // single-key tools & zoom — not while typing, zoomed into media, or holding ⌘/Ctrl
+    if (editingId === null && focusedId === null && !meta) {
+      // zoom: `=`/`+` in, `-`/`_` out (repeat-friendly so holding works)
+      if (e.key === "=" || e.key === "+") {
+        e.preventDefault();
+        zoomBy(1.25);
+        return;
+      }
+      if (e.key === "-" || e.key === "_") {
+        e.preventDefault();
+        zoomBy(1 / 1.25);
+        return;
+      }
+      // D toggles draw mode; ignore auto-repeat so a held key doesn't thrash
+      if (!e.repeat && (e.key === "d" || e.key === "D")) {
+        e.preventDefault();
+        if (mode === "draw") exitDraw();
+        else enterDraw();
+        return;
+      }
+      // T new text note, F pick a file — only from the normal canvas
+      if (!e.repeat && mode === "normal") {
+        if (e.key === "t" || e.key === "T") {
+          e.preventDefault();
+          addTextNote();
+          return;
+        }
+        if (e.key === "f" || e.key === "F") {
+          e.preventDefault();
+          attach?.open();
+          return;
+        }
+      }
     }
     // draw mode owns Escape (leave the tool) and ⌘/Ctrl-Z undo/redo
     if (mode === "draw") {
@@ -981,8 +1077,12 @@
       }
       exitEdit();
       menu = null;
-      selectedId = null;
+      clearSelection();
     }
+  }
+
+  function onKeyUp(e: KeyboardEvent) {
+    if (e.code === "Space") spaceHeld = false;
   }
 
   // ---- live file sync ----
@@ -990,6 +1090,7 @@
     let unlisten: Array<() => void> = [];
     (async () => {
       await board.init();
+      await links.init(board.unfurl);
       for (const n of board.notes) lastSig.set(n.id, JSON.stringify(n));
 
       unlisten.push(
@@ -1142,7 +1243,7 @@
   const spotlightId = $derived(focusedId ?? editingId);
   const menuAssetOnly = $derived(
     !!menu &&
-      isAssetOnly(board.notes.find((n) => n.id === menu!.id)?.text ?? ""),
+      isCardOnly(board.notes.find((n) => n.id === menu!.id)?.text ?? ""),
   );
 </script>
 
@@ -1151,6 +1252,8 @@
   onpointerup={onPointerUp}
   onpointercancel={endInteraction}
   onkeydown={onKeyDown}
+  onkeyup={onKeyUp}
+  onblur={() => (spaceHeld = false)}
   onpaste={onPaste}
 />
 
@@ -1159,6 +1262,7 @@
 <main
   class="viewport"
   class:panning
+  class:space={spaceHeld && !panning}
   class:drawing={mode === "draw"}
   onwheel={onWheel}
   onpointerdown={onPointerDown}
@@ -1182,7 +1286,7 @@
         <Postit
           {note}
           editing={editingId === note.id}
-          selected={selectedId === note.id && focusedId !== note.id}
+          selected={selectedIds.has(note.id) && focusedId !== note.id}
           dragging={dragId === note.id}
           doomed={dragId === note.id && trashHot}
           dimmed={spotlightId !== null && spotlightId !== note.id}
@@ -1191,6 +1295,18 @@
       {/each}
     </div>
   </div>
+
+  {#if marquee}
+    <div
+      class="marquee"
+      style="left:{Math.min(marquee.x0, marquee.x1)}px; top:{Math.min(
+        marquee.y0,
+        marquee.y1,
+      )}px; width:{Math.abs(marquee.x1 - marquee.x0)}px; height:{Math.abs(
+        marquee.y1 - marquee.y0,
+      )}px"
+    ></div>
+  {/if}
 
   {#if board.notes.length === 0}
     <div class="hint" transition:fade={{ duration: 300 }}>
@@ -1224,19 +1340,19 @@
           onwidth={(w) => (drawWidth = w)}
         />
       {/if}
-      <CircleButton title="Undo" onclick={() => board.undoStroke()} disabled={!board.canUndo}>
+      <CircleButton title="Undo" kbd="⌘Z" onclick={() => board.undoStroke()} disabled={!board.canUndo}>
         <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <path d="M9 14 4 9l5-5" />
           <path d="M4 9h11a6 6 0 0 1 0 12h-4" />
         </svg>
       </CircleButton>
-      <CircleButton title="Redo" onclick={() => board.redoStroke()} disabled={!board.canRedo}>
+      <CircleButton title="Redo" kbd="⇧⌘Z" onclick={() => board.redoStroke()} disabled={!board.canRedo}>
         <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <path d="m15 14 5-5-5-5" />
           <path d="M20 9H9a6 6 0 0 0 0 12h4" />
         </svg>
       </CircleButton>
-      <CircleButton title="Done" onclick={exitDraw}>
+      <CircleButton title="Done" kbd="Esc" onclick={exitDraw}>
         <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
           <path d="M20 6 9 17l-5-5" />
         </svg>
@@ -1245,16 +1361,16 @@
       <FontControls font={editingFont} onpick={setEditingFont} />
     {:else}
       <Palette colors={COLORS} onpick={addNote} />
-      <CircleButton title="Add text" onclick={addTextNote}>
+      <CircleButton title="Add text" kbd="T" onclick={addTextNote}>
         <span class="tt">T</span>
       </CircleButton>
-      <CircleButton title="Draw" onclick={enterDraw}>
+      <CircleButton title="Draw" kbd="D" onclick={enterDraw}>
         <svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <path d="M12 20h9" />
           <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z" />
         </svg>
       </CircleButton>
-      <AttachButton onfiles={addAssetNotes} />
+      <AttachButton kbd="F" onfiles={addAssetNotes} bind:this={attach} />
     {/if}
   </div>
 
@@ -1353,8 +1469,19 @@
   .viewport.panning {
     cursor: grabbing;
   }
+  .viewport.space {
+    cursor: grab;
+  }
   .viewport.drawing {
     cursor: crosshair;
+  }
+  .marquee {
+    position: absolute;
+    z-index: 5;
+    pointer-events: none;
+    border: 1px solid var(--ink);
+    background: rgba(67, 65, 59, 0.08);
+    border-radius: 3px;
   }
   .tt {
     font-family: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;

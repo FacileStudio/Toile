@@ -11,7 +11,6 @@
     onwidth: (w: number) => void;
   } = $props();
 
-  // ink palette — board-friendly, muted to match Toile's paper
   const INKS = ["#43413b", "#c45b4c", "#3f7cc4", "#3f9b6a", "#9a6dd0", "#d39a2e"];
 </script>
 

@@ -5,9 +5,6 @@
     focused = false,
   }: { src: string; onfail?: () => void; focused?: boolean } = $props();
 
-  // Minimal custom player — no native chrome. The #t=0.001 fragment paints a
-  // still first frame as the poster; the centre button plays inline, and a thin
-  // bar tracks/seeks progress. When `focused` (zoomed in) the controls stay up.
   const posterSrc = $derived(`${src}#t=0.001`);
 
   let video = $state<HTMLVideoElement | null>(null);
@@ -30,7 +27,6 @@
     try {
       v.currentTime = 0.001;
     } catch {
-      /* fragment already handled the poster */
     }
   }
 
@@ -141,7 +137,6 @@
   .vid-play:active {
     transform: translate(-50%, -50%) scale(0.94);
   }
-  /* once playing, the centre button steps back and surfaces on hover */
   .vplayer.playing .vid-play {
     opacity: 0;
   }
@@ -183,7 +178,6 @@
   .vplayer.focused .vbar {
     opacity: 1;
   }
-  /* zoomed-in: keep the full controls up the whole time, playing or paused */
   .vplayer.focused .vid-play {
     opacity: 1;
   }

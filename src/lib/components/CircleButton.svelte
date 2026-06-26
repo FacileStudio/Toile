@@ -4,12 +4,14 @@
   let {
     onclick,
     title = "",
+    kbd = "",
     active = false,
     disabled = false,
     children,
   }: {
     onclick: () => void;
     title?: string;
+    kbd?: string;
     active?: boolean;
     disabled?: boolean;
     children?: Snippet;
@@ -21,10 +23,12 @@
   class:active
   {onclick}
   {disabled}
-  {title}
   aria-label={title}
 >
   {@render children?.()}
+  {#if title}
+    <span class="tip">{title}{#if kbd}<kbd>{kbd}</kbd>{/if}</span>
+  {/if}
 </button>
 
 <style>

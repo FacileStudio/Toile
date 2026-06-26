@@ -31,7 +31,6 @@
     return () => window.removeEventListener("resize", onResize);
   });
 
-  // Viewport rect in world coords: world = (screen - camera) / scale.
   const view = $derived({
     x: -camera.x / camera.scale,
     y: -camera.y / camera.scale,
@@ -39,7 +38,6 @@
     h: winH / camera.scale,
   });
 
-  // World bbox = notes ∪ viewport ∪ origin, then padded.
   const bbox = $derived.by(() => {
     let minX = Math.min(view.x, 0);
     let minY = Math.min(view.y, 0);
@@ -58,7 +56,6 @@
     return { x: minX - px, y: minY - py, w: w + px * 2, h: h + py * 2 };
   });
 
-  // Uniform, letterboxed fit of the world bbox into the inner pixel box.
   const fit = $derived.by(() => {
     const s = Math.min(INNER_W / bbox.w, INNER_H / bbox.h);
     const offX = (INNER_W - bbox.w * s) / 2;
@@ -80,7 +77,6 @@
     };
   }
 
-  const originPt = $derived(worldToMini(0, 0));
   const viewRect = $derived.by(() => {
     const tl = worldToMini(view.x, view.y);
     return { x: tl.x, y: tl.y, w: view.w * fit.s, h: view.h * fit.s };
@@ -139,11 +135,6 @@
       {/if}
     {/each}
 
-    <g class="origin" transform="translate({originPt.x},{originPt.y})">
-      <line x1="-3.5" y1="0" x2="3.5" y2="0" />
-      <line x1="0" y1="-3.5" x2="0" y2="3.5" />
-    </g>
-
     <rect
       class="view-rect"
       x={viewRect.x}
@@ -171,7 +162,6 @@
       opacity 0.3s var(--ease-soft),
       transform 0.3s var(--ease-soft);
   }
-  /* slide up and out while a media note is fullscreen */
   .minimap.hidden {
     opacity: 0;
     transform: translateY(-12px);
@@ -191,12 +181,6 @@
   }
   .ink-dot {
     fill: var(--ink-soft);
-  }
-  .origin line {
-    stroke: var(--ink-soft);
-    stroke-width: 1px;
-    stroke-linecap: round;
-    opacity: 0.7;
   }
   .view-rect {
     fill: rgba(67, 65, 59, 0.06);

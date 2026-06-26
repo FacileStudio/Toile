@@ -7,41 +7,33 @@
     onfail,
   }: { src: string; name: string; onfail?: () => void } = $props();
 
-  // The wave is drawn in JS (rAF) rather than CSS so the thumb can ride the
-  // exact sinusoidal tip of the played line. Phase advances while playing;
-  // amplitude eases to 0 on pause so the wave morphs flat (Material-style).
   const VB_W = 200;
   const MID = 12;
   const LAMBDA = 34;
   const AMP = 4.5;
-  const SPEED = 0.0045; // phase advance (rad/ms) while playing
+  const SPEED = 0.0045;
 
   let audio = $state<HTMLAudioElement | null>(null);
   let playing = $state(false);
   let cur = $state(0);
   let dur = $state(0);
-  // Play from an in-memory blob URL, not the asset:// src directly: WKWebView
-  // streams the asset protocol in ranges and stalls playback at a chunk boundary
-  // (progress freezes ~⅓ in, then resumes). A blob is fully in memory — no stall.
   let objectUrl = $state<string | null>(null);
   const pct = $derived(dur > 0 ? Math.min(100, (cur / dur) * 100) : 0);
 
-  const STEP = 3; // viewBox px between sampled points — denser = smoother curve
+  const STEP = 3;
   let wavePath = $state(`M0 ${MID} L0 ${MID}`);
-  let tipY = $state(MID); // viewBox y of the wave at the playhead → drives the thumb
+  let tipY = $state(MID);
   const thumbTop = $derived((tipY / 24) * 100);
 
   let phase = 0;
   let amp = 0;
   let raf = 0;
   let prev = 0;
-  let lastNow = 0; // performance.now() of the previous playing frame (see render)
+  let lastNow = 0;
+  let lastReal = 0;
 
   const waveAt = (x: number) => MID + amp * Math.sin((2 * Math.PI * x) / LAMBDA + phase);
 
-  // Draw the wave only up to the playhead (no clip-path — clipping the full path
-  // every frame is what made it stutter). The path literally ends at the tip, so
-  // stroke-linecap:round gives the leading edge a rounded cap.
   function buildWave() {
     const playX = (pct / 100) * VB_W;
     let d = `M0 ${waveAt(0).toFixed(2)}`;
@@ -52,23 +44,23 @@
   }
 
   function render() {
-    // Smooth, MONOTONIC playhead. `currentTime` advances in coarse, jittery
-    // steps (decoder-dependent ~250ms), so reading it raw makes the bar freeze
-    // then snap. We instead integrate the playhead off a wall clock each frame
-    // and only ever nudge it FORWARD toward reality — never snap it back (that
-    // was the visible backward jump). The lead is capped so it can't drift away.
     if (audio) {
       if (playing) {
         const now = performance.now();
         const dt = lastNow ? Math.min(0.25, (now - lastNow) / 1000) : 0;
         lastNow = now;
         const real = audio.currentTime;
-        let next = cur + dt * (audio.playbackRate || 1);
-        if (next < real)
-          next = real; // real ran ahead (seek / catch-up) → follow it forward
-        else if (next > real + 0.5) next = real + 0.5; // bound the lead, never trail back
-        if (dur) next = Math.min(next, dur);
-        cur = Math.max(cur, next); // monotonic: never step backward mid-play
+        if (real < lastReal - 0.05) {
+          cur = real;
+        } else {
+          let next = cur + dt * (audio.playbackRate || 1);
+          if (next < real)
+            next = real;
+          else if (next > real + 0.5) next = real + 0.5;
+          if (dur) next = Math.min(next, dur);
+          cur = Math.max(cur, next);
+        }
+        lastReal = real;
       } else {
         cur = audio.currentTime;
         lastNow = 0;
@@ -102,12 +94,12 @@
   }
 
   $effect(() => {
-    playing; // run the loop on play/pause (it also eases amplitude back to 0)
+    playing;
     kick();
   });
 
   $effect(() => {
-    pct; // keep the wave + thumb correct when seeking while idle (paused)
+    pct;
     if (!raf) buildWave();
   });
 
@@ -199,8 +191,6 @@
     <span class="thumb" style="left:{pct}%; top:{thumbTop}%"></span>
   </div>
 
-  <!-- src is an in-memory blob URL (see objectUrl) so playback never stalls on
-       the asset:// protocol's range requests. -->
   <audio
     bind:this={audio}
     src={objectUrl}
@@ -304,8 +294,6 @@
     inset: 0;
     width: 100%;
     height: 100%;
-    /* let the round cap at x=0 render — it sits just outside the viewBox and the
-       SVG's default overflow:hidden was clipping it flat. */
     overflow: visible;
     fill: none;
     stroke: var(--ink);

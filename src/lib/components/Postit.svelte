@@ -2,12 +2,15 @@
   import { scale } from "svelte/transition";
   import { cubicOut } from "svelte/easing";
   import AssetTile from "./AssetTile.svelte";
+  import LinkCard from "./LinkCard.svelte";
+  import { openUrl } from "@tauri-apps/plugin-opener";
   import {
     assetKind,
-    isAssetOnly,
+    isCardOnly,
     resolveAssetSrc,
     type AssetKind,
   } from "../assets";
+  import { isBareUrl, safeExternal } from "../links";
   import { renderMarkdown, toggleTask } from "../markdown";
   import { FONT_STACKS } from "../fonts";
   import { TEXT_COLOR, type Note } from "../board.svelte";
@@ -33,9 +36,6 @@
   let textarea = $state<HTMLTextAreaElement | null>(null);
   let textEl = $state<HTMLDivElement | null>(null);
 
-  // A checkbox toggle in the rendered markdown flips the matching `[ ]`/`[x]` in
-  // the raw note text. The clicked box's position among all checkboxes maps 1:1
-  // to the task markers in source order; mutating note.text auto-persists.
   function onToggle(e: Event) {
     const box = e.target as HTMLElement;
     if (!(box instanceof HTMLInputElement) || box.type !== "checkbox") return;
@@ -44,26 +44,47 @@
     if (i >= 0) note.text = toggleTask(note.text, i);
   }
 
-  // Split the body into text + asset segments. `![alt](path)` embeds carry media
-  // (image inline, video/audio via AssetTile); `[name](path)` links render as a
-  // click-to-open file tile. Everything else stays plain text, so a note still
-  // reads as a sticky — it just pins whatever you dropped on it.
+  function onLinkClick(e: MouseEvent) {
+    const a = (e.target as HTMLElement).closest("a.md-link") as HTMLAnchorElement | null;
+    if (!a) return;
+    e.preventDefault();
+    e.stopPropagation();
+    const href = a.getAttribute("href") ?? "";
+    if (safeExternal(href)) openUrl(href).catch(() => {});
+  }
+
   type Segment =
     | { kind: "text"; value: string }
+    | { kind: "link"; url: string }
     | { kind: "image"; src: string; alt: string }
     | { kind: Exclude<AssetKind, "image">; raw: string; name: string };
 
-  // A note that is nothing but asset refs sheds the colored card and renders as
-  // its own asset component. Notes with prose keep the sticky card.
-  const assetOnly = $derived(isAssetOnly(note.text));
-  // A "text" note (added via the Tt button) carries a transparent color so it
-  // renders as free text on the canvas — no sticky card. Its typeface is the
-  // note's font; sticky notes keep the default sans.
+  const cardOnly = $derived(isCardOnly(note.text));
   const textNote = $derived(note.color === TEXT_COLOR);
   const fontFamily = $derived(FONT_STACKS[note.font ?? "sans"] ?? FONT_STACKS.sans);
 
   const fileName = (label: string, raw: string) =>
     label.trim() || (raw.split("/").pop() ?? raw);
+
+  // A run of plain text between asset refs: any line that is *only* a URL becomes
+  // a rich link card; the surrounding prose stays text (marked autolinks inline
+  // URLs there). This is the "bare URL on its own line → card" convention.
+  function pushText(out: Segment[], chunk: string) {
+    let buf: string[] = [];
+    const flush = () => {
+      if (buf.join("\n").trim()) out.push({ kind: "text", value: buf.join("\n") });
+      buf = [];
+    };
+    for (const line of chunk.split(/\r?\n/)) {
+      if (isBareUrl(line)) {
+        flush();
+        out.push({ kind: "link", url: line.trim() });
+      } else {
+        buf.push(line);
+      }
+    }
+    flush();
+  }
 
   const segments = $derived.by<Segment[]>(() => {
     const out: Segment[] = [];
@@ -71,8 +92,7 @@
     let last = 0;
     let m: RegExpExecArray | null;
     while ((m = re.exec(note.text))) {
-      if (m.index > last)
-        out.push({ kind: "text", value: note.text.slice(last, m.index) });
+      if (m.index > last) pushText(out, note.text.slice(last, m.index));
       const raw = m[3].trim();
       const name = fileName(m[2], raw);
       const kind = m[1] === "!" ? assetKind(raw) : "file";
@@ -81,8 +101,7 @@
       else out.push({ kind, raw, name });
       last = m.index + m[0].length;
     }
-    if (last < note.text.length)
-      out.push({ kind: "text", value: note.text.slice(last) });
+    if (last < note.text.length) pushText(out, note.text.slice(last));
     return out;
   });
 
@@ -103,7 +122,7 @@
   class:doomed
   class:dimmed
   class:focused
-  class:asset-only={assetOnly && !editing}
+  class:asset-only={cardOnly && !editing}
   class:text-note={textNote}
   data-note={note.id}
   style="left:{note.x}px; top:{note.y}px; width:{note.w}px; height:{note.h}px; z-index:{note.z}; --bg:{note.color}; --family:{fontFamily}"
@@ -119,16 +138,21 @@
         spellcheck="false"
       ></textarea>
     {:else}
+      <!-- svelte-ignore a11y_click_events_have_key_events -->
+      <!-- svelte-ignore a11y_no_static_element_interactions -->
       <div
         class="text"
         class:empty={!note.text}
         bind:this={textEl}
         onchange={onToggle}
+        onclick={onLinkClick}
       >
         {#if note.text}
           {#each segments as seg}
             {#if seg.kind === "image"}
               <img class="note-img" src={seg.src} alt={seg.alt} draggable="false" />
+            {:else if seg.kind === "link"}
+              <LinkCard url={seg.url} />
             {:else if seg.kind === "text"}{@html renderMarkdown(seg.value)}{:else}
               <AssetTile kind={seg.kind} raw={seg.raw} name={seg.name} {focused} />
             {/if}
@@ -193,9 +217,6 @@
     opacity: 0.55;
   }
 
-  /* a media note is "focused" the way a postit enters edit mode: the camera
-     zooms to it while every other note recedes — blurred and dimmed — so the
-     focused element reads as lifted out of the board without leaving it. */
   .note.dimmed {
     pointer-events: none;
   }
@@ -206,8 +227,6 @@
     filter: drop-shadow(0 22px 48px rgba(40, 38, 32, 0.34));
   }
 
-  /* text note: free text on the canvas — no card, no shadow, no hover lift.
-     While editing it gets a faint sheet so you can see what you're typing in. */
   .note.text-note .inner {
     background: transparent;
     box-shadow: none;
@@ -244,7 +263,6 @@
     color: rgba(67, 65, 59, 0.38);
   }
 
-  /* rendered markdown — scoped to .text so the {@html} output stays tidy */
   .text :global(p),
   .text :global(ul),
   .text :global(ol),
@@ -321,6 +339,11 @@
   .text :global(a) {
     color: inherit;
     text-decoration: underline;
+    text-underline-offset: 2px;
+    cursor: pointer;
+  }
+  .text :global(a:hover) {
+    text-decoration-thickness: 2px;
   }
   .text :global(hr) {
     border: none;
@@ -328,13 +351,6 @@
     margin: 0.6em 0;
   }
 
-  /* Unified list markers. Plain bullets and task checkboxes share the same
-     gutter (li padding-left: 1.5em) and the same center, so a `-` row and a
-     `- [ ]` row line up exactly. Native bullets are off (browser positions them
-     opaquely and they never match a custom box), replaced by a drawn dot.
-     Vertical: line-height 1.45em, so a 1.05em box sits at top (1.45-1.05)/2 =
-     0.2em and a 0.34em dot at (1.45-0.34)/2 ≈ 0.55em — both centered on line 1.
-     Horizontal: box left 0.1em (center 0.625em), dot left 0.46em (center 0.63em). */
   .text :global(ul > li:not(:has(.md-task)))::before {
     content: "";
     position: absolute;

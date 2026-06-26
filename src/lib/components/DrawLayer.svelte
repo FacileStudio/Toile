@@ -17,9 +17,6 @@
   const liveD = $derived(smoothPath(live));
 </script>
 
-<!-- A zero-size SVG with overflow:visible so paths drawn in world coordinates
-     render across the whole canvas. Sits inside .world, so it pans/zooms with
-     everything else; pointer-events:none lets clicks fall through to notes. -->
 <svg class="draw-layer" aria-hidden="true">
   {#each board.strokes as s (s.id)}
     <path

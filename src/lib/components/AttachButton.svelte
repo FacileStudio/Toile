@@ -1,9 +1,10 @@
 <script lang="ts">
-  let { onfiles }: { onfiles: (files: File[]) => void } = $props();
+  let { onfiles, kbd = "" }: { onfiles: (files: File[]) => void; kbd?: string } =
+    $props();
 
   let input = $state<HTMLInputElement | null>(null);
 
-  function pick() {
+  export function open() {
     input?.click();
   }
 
@@ -17,9 +18,8 @@
 
 <button
   class="attach liquid-glass"
-  title="Add file"
   aria-label="Add file"
-  onclick={pick}
+  onclick={open}
 >
   <svg
     viewBox="0 0 24 24"
@@ -35,6 +35,7 @@
       d="M21.44 11.05l-9.19 9.19a5 5 0 0 1-7.07-7.07l9.19-9.19a3 3 0 0 1 4.24 4.24l-9.2 9.19a1 1 0 0 1-1.41-1.41l8.49-8.49"
     />
   </svg>
+  <span class="tip">Add file{#if kbd}<kbd>{kbd}</kbd>{/if}</span>
 </button>
 <input
   bind:this={input}

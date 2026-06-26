@@ -1,10 +1,5 @@
 import { marked } from "marked";
 
-// One-time config. GFM so task lists work; `breaks` so a lone newline becomes a
-// line break (notes are written line-by-line, like the old pre-wrap textarea);
-// tables disabled — the tokenizer bails, so `| a | b |` just renders as text.
-// Task checkboxes render live and interactive instead of marked's default
-// disabled inputs, tagged so the board's pointer layer leaves their clicks alone.
 marked.use({
   gfm: true,
   breaks: true,
@@ -19,6 +14,12 @@ marked.use({
         checked ? " checked" : ""
       } />`;
     },
+    // Inline/autolinked URLs stay clickable. `data-interactive` keeps the canvas
+    // pointer logic from treating the click as a note drag; Postit opens the href.
+    link({ href, text }) {
+      const safe = (href ?? "").replace(/"/g, "%22");
+      return `<a href="${safe}" class="md-link" data-interactive rel="noreferrer">${text ?? safe}</a>`;
+    },
   },
 });
 
@@ -28,8 +29,6 @@ export function renderMarkdown(src: string): string {
 
 const TASK_RE = /^([ \t]*[-*+] +)\[([ xX])\]/gm;
 
-// Flip the Nth task checkbox in the raw markdown. Source order matches the DOM
-// render order, so the index from the clicked checkbox lands on the right marker.
 export function toggleTask(text: string, index: number): string {
   let i = -1;
   return text.replace(TASK_RE, (full, prefix: string, mark: string) => {
