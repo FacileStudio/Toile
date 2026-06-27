@@ -222,11 +222,19 @@
   }
 
   .note.selected .inner {
-    outline: 2px solid var(--ink);
+    outline: 2px solid var(--ink-soft);
     outline-offset: 2px;
   }
   .note.asset-only.selected .inner {
     outline-offset: 0;
+  }
+  .note.text-note.selected .inner {
+    outline: none;
+  }
+  .note.text-note.selected .text {
+    outline: 2px solid var(--ink-soft);
+    outline-offset: 5px;
+    border-radius: 7px;
   }
 
   .note.doomed .inner {
@@ -244,9 +252,18 @@
     filter: drop-shadow(0 22px 48px rgba(40, 38, 32, 0.34));
   }
 
+  .note.text-note {
+    height: auto !important;
+  }
   .note.text-note .inner {
+    height: auto;
     background: transparent;
     box-shadow: none;
+  }
+  .note.text-note .text {
+    width: max-content;
+    max-width: 100%;
+    height: auto;
   }
   .note.text-note:hover .inner {
     transform: none;
