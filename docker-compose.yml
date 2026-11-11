@@ -1,0 +1,88 @@
+services:
+  toile-db:
+    container_name: toile-db
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: toile
+      POSTGRES_PASSWORD: ${TOILE_DB_PASSWORD:-toile-internal-db}
+      POSTGRES_DB: toile
+    volumes:
+    - db_data:/var/lib/postgresql/data
+    expose:
+    - '5432'
+    healthcheck:
+      test:
+      - CMD-SHELL
+      - pg_isready -U toile
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    deploy:
+      update_config:
+        order: stop-first
+        parallelism: 1
+      restart_policy:
+        condition: any
+  toile-api:
+    container_name: toile-api
+    restart: unless-stopped
+    build:
+      context: .
+      dockerfile: Dockerfile
+    expose:
+    - '4000'
+    networks:
+    - default
+    - dokploy-network
+    labels:
+      traefik.enable: 'true'
+      traefik.docker.network: dokploy-network
+      traefik.http.routers.toile-web.rule: "Host(`toile.facile.studio`)"
+      traefik.http.routers.toile-web.entrypoints: web
+      traefik.http.routers.toile-web.middlewares: redirect-to-https@file
+      traefik.http.routers.toile-web.service: toile-api
+      traefik.http.routers.toile-secure.rule: "Host(`toile.facile.studio`)"
+      traefik.http.routers.toile-secure.entrypoints: websecure
+      traefik.http.routers.toile-secure.tls.certresolver: letsencrypt
+      traefik.http.routers.toile-secure.service: toile-api
+      traefik.http.services.toile-api.loadbalancer.server.port: "4000"
+    environment:
+      DATABASE_URL: ${DATABASE_URL:-postgres://toile:${TOILE_DB_PASSWORD:-toile-internal-db}@toile-db:5432/toile?sslmode=disable}
+      PORT: '4000'
+      APP_ENV: ${APP_ENV:-production}
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+      TRUSTED_PROXIES: 'private,cloudflare'
+      JOURNAL_URL: ${JOURNAL_URL:-}
+      JOURNAL_TOKEN: ${JOURNAL_TOKEN:-}
+      OIDC_ISSUER: ${OIDC_ISSUER:-}
+      OIDC_CLIENT_ID: ${OIDC_CLIENT_ID:-}
+      OIDC_CLIENT_SECRET: ${OIDC_CLIENT_SECRET:-}
+      PORTE_TOKEN_KEY: ${PORTE_TOKEN_KEY:-}
+      OIDC_REDIRECT_URL: ${OIDC_REDIRECT_URL:-}
+      OIDC_SUCCESS_URL: ${OIDC_SUCCESS_URL:-}
+      OIDC_CLI_AUDIENCE: ${OIDC_CLI_AUDIENCE:-}
+      MCP_RESOURCE: ${MCP_RESOURCE:-}
+      MCP_STATE_KEY: ${MCP_STATE_KEY:-}
+    healthcheck:
+      test: ["CMD", "/api", "healthcheck"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    depends_on:
+      toile-db:
+        condition: service_healthy
+    deploy:
+      replicas: 1
+      update_config:
+        order: stop-first
+        parallelism: 1
+      restart_policy:
+        condition: any
+volumes:
+  db_data:
+    name: toile_db_data
+networks:
+  dokploy-network:
+    external: true
