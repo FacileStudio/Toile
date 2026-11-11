@@ -25,6 +25,7 @@
 	const path = $derived(page.url.pathname);
 	const onSettings = $derived(path.startsWith('/settings'));
 	const landing = $derived(path === '/');
+	const fullscreen = $derived(path.startsWith('/s/') || (path.startsWith('/b/') && !!session.user));
 
 	provideLocale(() => 'fr');
 	theme.restore();
@@ -59,6 +60,8 @@
 
 {#if !session.ready}
 	<div class="flex h-dvh w-full items-center justify-center bg-fc-page"><Spinner /></div>
+{:else if fullscreen}
+	{@render children()}
 {:else if !session.user && landing}
 	{@render children()}
 {:else if !session.user}
