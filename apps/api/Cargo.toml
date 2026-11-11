@@ -14,9 +14,13 @@ path = "src/main.rs"
 tronc = { git = "https://github.com/FacileStudio/tronc-rs", tag = "v0.4.0", features = ["http", "health", "spa", "migrate", "journal", "apiref", "bulle", "mcp"] }
 porte = { git = "https://github.com/FacileStudio/porte-rs", tag = "v0.6.1", features = ["pg", "oidc", "directory", "spaces", "exchange", "forfait"] }
 async-trait = "0.1.92"
-axum = { version = "0.8.9", features = ["ws", "macros"] }
+axum = { version = "0.8.9", features = ["ws", "macros", "multipart"] }
 futures-util = { version = "0.3.34", default-features = false, features = ["std", "sink"] }
+imagesize = "0.15.0"
 http = "1.5.0"
+reqwest = { version = "0.13.5", default-features = false, features = ["rustls", "json", "stream", "query"] }
+bytes = "1.12.1"
+sha2 = "0.11.1"
 serde = { version = "1.0.229", features = ["derive"] }
 serde_json = "1.0.154"
 sqlx = { version = "0.9.0", default-features = false, features = ["runtime-tokio", "tls-rustls", "postgres", "uuid", "time", "json", "migrate", "derive", "macros"] }
@@ -24,6 +28,7 @@ time = { version = "0.3.55", features = ["serde", "formatting", "parsing", "serd
 tokio = { version = "1.54.1", features = ["rt-multi-thread", "macros", "signal", "sync", "time", "net"] }
 tokio-util = "0.7.20"
 tracing = "0.1.44"
+url = "2.5.8"
 utoipa = "6.0.0"
 uuid = { version = "1.29.2", features = ["v4", "serde"] }
 yrs = { version = "0.28.1", features = ["sync"] }
@@ -31,8 +36,6 @@ yrs = { version = "0.28.1", features = ["sync"] }
 [dev-dependencies]
 tronc = { git = "https://github.com/FacileStudio/tronc-rs", tag = "v0.4.0", features = ["testdb"] }
 http-body-util = "0.1.5"
-reqwest = { version = "0.13.5", default-features = false, features = ["rustls", "json"] }
-url = "2.5.8"
 tokio-tungstenite = "0.29.0"
 tower = { version = "0.5.3", features = ["util"] }
 

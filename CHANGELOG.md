@@ -42,4 +42,15 @@ All notable changes to Toile. Versions follow SemVer.
   users' exchanged tokens dropped, and the forfait plans (`ai.access`, `toile.upload_mb`) fed by
   every directory snapshot and saved in `entitlement_state`; `GET /api/me/entitlements`
 - Client: a `412` from a token exchange opens a prompt to sign in to Facile again
+- API: board images (migration `0005_assets.sql`): `POST /api/boards/{id}/assets` sniffs PNG,
+  JPEG, GIF and WebP (SVG refused), caps the size at the plan's `toile.upload_mb` (402 with
+  `key` and `limit`) and stores the file in the uploader's Nuage app folder; members read it at
+  `/api/boards/{id}/assets/{asset}` and link holders at `/api/share/{token}/assets/{asset}`,
+  with an ETag and a year of private cache
+- API: `POST /api/cards/resolve`: live cards for Docs, Feuilles, Opus and Agenda links, read
+  with the viewer's own token, and Open Graph unfurls behind an SSRF guard, cached 10 minutes
+- API: `POST /api/boards/{id}/shapes/{shape}/task` turns a sticky into an Opus task and writes
+  its card beside the sticky through the room
+- Client: image paste, drop and picker upload through `$lib/api/assets.ts`, images load from
+  the board or share route, and a pasted link's card fills its title and kind from the API
 - API: the CSP allows `connect-src https://api-ardoise.facile.studio` for the plan catalog
