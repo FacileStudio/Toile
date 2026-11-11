@@ -30,6 +30,11 @@
 	"dependencies": {
 		"@facile/client": "github:FacileStudio/facile-client#v0.2.0",
 		"@facile/mise-en-scene": "github:FacileStudio/mise-en-scene#v0.1.1",
-		"@facile/muse": "github:FacileStudio/muse#v0.18.1"
+		"@facile/muse": "github:FacileStudio/muse#v0.18.1",
+		"lib0": "^0.2.120",
+		"perfect-freehand": "^1.2.3",
+		"y-protocols": "^1.0.7",
+		"y-websocket": "^3.1.0",
+		"yjs": "^13.6.33"
 	}
 }
