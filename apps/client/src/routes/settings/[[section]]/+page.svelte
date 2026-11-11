@@ -2,13 +2,19 @@
 	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
 	import { PreferencesSection, ProfileSection, SettingsLayout, icons, sectionHref, settingsRoute } from '@facile/muse';
+	import AppsSection from '$lib/components/settings/AppsSection.svelte';
+	import PlanSection from '$lib/components/settings/PlanSection.svelte';
+	import ShortcutsSection from '$lib/components/settings/ShortcutsSection.svelte';
 	import { session } from '$lib/session.svelte';
 	import { theme } from '$lib/theme';
 
 	const sections = [
-		{ id: 'profile', label: 'Profil', icon: icons.userCircle, href: sectionHref('/settings', 'profile') },
-		{ id: 'preferences', label: 'Préférences', icon: icons.palette, href: sectionHref('/settings', 'preferences') }
-	];
+		{ id: 'profile', label: 'Profil', icon: icons.userCircle },
+		{ id: 'preferences', label: 'Apparence', icon: icons.palette },
+		{ id: 'shortcuts', label: 'Raccourcis', icon: icons.bolt },
+		{ id: 'apps', label: 'Applications', icon: icons.plug },
+		{ id: 'subscription', label: 'Forfait', icon: icons.card }
+	].map((section) => ({ ...section, href: sectionHref('/settings', section.id) }));
 
 	const route = $derived(settingsRoute(page.params.section, sections));
 	const role = $derived(
@@ -33,8 +39,19 @@
 					avatar={session.user?.avatar_url}
 					{role}
 				/>
+			{:else if current === 'preferences'}
+				<PreferencesSection
+					title="Apparence"
+					showLanguage={false}
+					theme={theme.mode}
+					onThemeChange={(mode) => theme.set(mode)}
+				/>
+			{:else if current === 'shortcuts'}
+				<ShortcutsSection />
+			{:else if current === 'apps'}
+				<AppsSection />
 			{:else}
-				<PreferencesSection title="Préférences" theme={theme.mode} onThemeChange={(mode) => theme.set(mode)} />
+				<PlanSection />
 			{/if}
 		{/snippet}
 	</SettingsLayout>
