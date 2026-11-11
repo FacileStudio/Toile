@@ -3,7 +3,8 @@ import { toast } from '@facile/muse';
 import { fitBox, type Point } from '$lib/canvas/camera';
 import { Editor } from '$lib/canvas/editor.svelte';
 import { canComment, canEdit, commentApi, type Anchor, type BoardRole, type Comment } from './api';
-import { imageLoader, uploadImage } from './assets';
+import { assetUrl, uploadError, uploadImage as store } from '$lib/api/assets';
+import { imageLoader, setAssets, uploadImage } from './assets';
 import { Presence, type Peer, type PresenceUser } from './presence';
 import { openRoom, type Connection, type Room, type RoomTarget, type Stop } from './provider';
 
@@ -39,6 +40,15 @@ export class BoardSession {
 		readonly boardId: string
 	) {
 		const ydoc = new Y.Doc();
+		const token = 'token' in target ? target.token : undefined;
+		setAssets({
+			upload: (board, file) =>
+				store(board, file).catch((error: unknown) => {
+					toast.danger(uploadError(error));
+					return null;
+				}),
+			url: (board, asset) => assetUrl(board, asset, token)
+		});
 		this.comment = commentApi('board' in target ? { board: target.board } : { token: target.token });
 		this.editor = new Editor(ydoc, {
 			uploadImage: (file) => (canEdit(role) && 'board' in target ? uploadImage(boardId, file) : Promise.resolve(null)),
