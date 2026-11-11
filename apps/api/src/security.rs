@@ -2,8 +2,12 @@ use std::path::Path;
 
 use tronc::http::{SecurityConfig, Sources};
 
+/// The origin of the suite plan catalog.
+pub const CATALOG: &str = "https://api-ardoise.facile.studio";
+
 /// The CSP sources Toile's client needs on top of tronc's policy: the inline scripts
-/// adapter-static writes, hashed from the build the binary serves.
+/// adapter-static writes, hashed from the build the binary serves, and the suite plan catalog
+/// muse's `PricingPlans` fetches.
 pub fn sources(client_dir: &Path) -> Sources {
     let mut scripts = Vec::new();
     if tronc::spa::available(client_dir) {
@@ -12,7 +16,7 @@ pub fn sources(client_dir: &Path) -> Sources {
             Err(error) => tracing::error!(%error, "failed to hash the client's inline scripts"),
         }
     }
-    Sources::from([("script-src".to_owned(), scripts)])
+    Sources::from([("script-src".to_owned(), scripts), ("connect-src".to_owned(), vec![CATALOG.to_owned()])])
 }
 
 /// tronc's security configuration with [`sources`].

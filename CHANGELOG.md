@@ -16,3 +16,9 @@ All notable changes to Toile. Versions follow SemVer.
 - Client: the signed-in shell (muse `SideBar`, `UserMenu`, `SettingsLayout`), the board list at
   `/boards`, and a placeholder landing at `/` for signed-out visitors
 - `docs/board-schema.md`: the normative board document contract, schema 1
+- Client: the public landing at `/` (an animated faux board, features, suite apps, download
+  links to the latest release assets, muse legal footer), Open Graph and canonical meta, and a
+  new Toile mark with its favicons, app icons and manifest (`scripts/icons.sh` regenerates them)
+- Client: settings sections for appearance, keyboard shortcuts, connected apps and plan;
+  `$lib/shortcuts.ts` is the one list of board shortcuts the canvas binds
+- API: the CSP allows `connect-src https://api-ardoise.facile.studio` for the plan catalog
