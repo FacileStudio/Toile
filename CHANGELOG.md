@@ -61,3 +61,12 @@ All notable changes to Toile. Versions follow SemVer.
 - API: `POST /api/boards/meeting`, one board and edit link per (host, Echo room), with a
   credentialed CORS rule for `https://echo.facile.studio` on that route only
 - API: the CSP allows `connect-src https://api-ardoise.facile.studio` for the plan catalog
+- Native apps: a Tauri 2 desktop shell (`apps/desktop`) and a Capacitor 8 Android and iOS shell
+  (`apps/client/android`, `apps/client/ios`). They sign in through porte's CLI flow (a loopback
+  redirect on the desktop, a pasted code on a phone), keep the session token in the OS keychain
+  or the Android Keystore, and call the API with a bearer
+- API: CORS always allows the four app origins, and the board socket accepts the bearer as a
+  `bearer.<token>` WebSocket subprotocol
+- `.github/workflows/release.yml`: a `desktop-v*` tag builds the macOS dmg (arm64, x64), the
+  Linux deb and AppImage, the Windows msi and the Android APK, and publishes them under fixed
+  names

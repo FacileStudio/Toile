@@ -12,6 +12,7 @@ pub mod router;
 pub mod scene;
 pub mod security;
 pub mod server;
+pub mod socket;
 pub mod state;
 pub mod version;
 

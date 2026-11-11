@@ -1,0 +1,11 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "default",
+  "description": "The main window keeps its bearer in the OS keychain, opens sign-in in the system browser and hears the loopback answer.",
+  "windows": ["main"],
+  "permissions": [
+    "core:default",
+    "opener:default",
+    "core:window:allow-set-focus"
+  ]
+}

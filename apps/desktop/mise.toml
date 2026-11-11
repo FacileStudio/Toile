@@ -1,0 +1,7 @@
+[tasks.dev]
+description = "Run the desktop app against the client dev server"
+run = "bun run tauri dev"
+
+[tasks.build]
+description = "Build the client, then the desktop installers for this OS"
+run = "bun install --frozen-lockfile && bun run tauri build"

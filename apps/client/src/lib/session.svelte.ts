@@ -1,5 +1,6 @@
 import { createSession } from '@facile/client/session';
 import { api, backend } from './backend';
+import { clearToken } from './platform';
 import type { SessionUser, Space } from './types';
 
 const SPACE_KEY = 'toile.space';
@@ -48,8 +49,12 @@ class Session {
 	}
 
 	async logout(): Promise<void> {
-		await this.account.logout();
-		this.spaces = [];
+		try {
+			await this.account.logout();
+		} finally {
+			await clearToken();
+			this.spaces = [];
+		}
 	}
 }
 
