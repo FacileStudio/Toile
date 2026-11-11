@@ -26,7 +26,7 @@
 </script>
 
 <svelte:head>
-	<title>Toile · le tableau blanc infini de Facile</title>
+	<title>Toile · An infinite shared whiteboard</title>
 </svelte:head>
 
 <div class="min-h-dvh bg-fc-page text-fc-fg">

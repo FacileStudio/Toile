@@ -1,8 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630">
-	<rect width="1200" height="630" fill="#0a0a0a"/>
-	<g color="#fafafa" transform="translate(96 96) scale(5)"><path fill="currentColor" opacity=".5" d="M2 6.5A4.5 4.5 0 0 1 6.5 2h7A4.5 4.5 0 0 1 18 6.5V10h-5.5A2.5 2.5 0 0 0 10 12.5V18H6.5A4.5 4.5 0 0 1 2 13.5Z"/><path fill="currentColor" d="M12 14a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v2.2h-2.8a2.6 2.6 0 0 0-2.6 2.6V22H14a2 2 0 0 1-2-2Z"/><path fill="currentColor" opacity=".5" d="M22 17.4 17.4 22v-2.9a1.7 1.7 0 0 1 1.7-1.7Z"/><path fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" d="M6 6.5h6M6 10h2.5"/></g>
-	<text x="96" y="330" font-family="DejaVu Sans" font-weight="bold" font-size="96" fill="#fafafa" letter-spacing="-2">Toile</text>
-	<text x="96" y="410" font-family="DejaVu Sans" font-size="40" fill="#a3a3a3">Le tableau blanc infini de Facile.</text>
-	<text x="96" y="466" font-family="DejaVu Sans" font-size="40" fill="#a3a3a3">Post-it, flèches et dessin, à plusieurs et en direct.</text>
-	<text x="96" y="560" font-family="DejaVu Sans" font-size="28" fill="#737373">toile.facile.studio</text>
-</svg>
