@@ -25,6 +25,8 @@ porte's configuration. A missing required variable, or an inconsistent pair, exi
 | `NUAGE_URL`, `OPUS_URL`, `DOCS_URL`, `FEUILLES_URL`, `AGENDA_URL` | no | `https://<app>.facile.studio` | Public origin of each suite app Toile calls; links to it become live cards |
 | `NUAGE_CLIENT_ID` | for uploads | none | Nuage's Registre client id, the audience of upload tokens. Without it uploads answer 503 |
 | `OPUS_CLIENT_ID`, `DOCS_CLIENT_ID`, `FEUILLES_CLIENT_ID`, `AGENDA_CLIENT_ID` | no | none | Each app's Registre client id. Without one its links stay host-only cards, and without Opus's, sticky-to-task answers 503 |
+| `BULLE_URL` | no | `https://bulle.facile.studio` | Bulle's origin. Every AI route calls its `POST /api/ai/complete` |
+| `BULLE_CLIENT_ID` | no | `bulle` | The audience of the tokens exchanged for Bulle, as Registre's seed names it. Empty turns AI off (503) |
 | `TEST_DATABASE_URL` | tests | none | Postgres the integration tests create their schemas in |
 | `APP_VERSION` | build | `dev` | Read at compile time; the Dockerfile stamps it from `apps/client/package.json` |
 
@@ -56,6 +58,7 @@ first snapshot with entitlements, every feature is on and unlimited.
 | Image upload | the plan's `toile.upload_mb`, never over 100 MiB; PNG, JPEG, GIF, WebP only (SVG refused) | `modules/assets/upload.rs` |
 | Link unfurl | `https` only, public addresses only (checked at every DNS answer and redirect), 3 redirects, 1 MiB, 5 s | `modules/cards/guard.rs` |
 | Resolved card | cached 10 minutes per person and URL | `modules/cards/cache.rs` |
+| AI board input | 60 KiB of board text per call (Bulle caps input at 64 KiB); cluster 200 shapes; generate prompt 2000 characters; 90 s per call | `modules/ai` |
 | Board document | see [board-schema.md](board-schema.md) | enforced once rooms ship |
 
 Back to the [documentation index](README.md).

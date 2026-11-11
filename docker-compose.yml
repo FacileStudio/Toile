@@ -74,6 +74,8 @@ services:
       FEUILLES_CLIENT_ID: ${FEUILLES_CLIENT_ID:-}
       AGENDA_URL: ${AGENDA_URL:-https://agenda.facile.studio}
       AGENDA_CLIENT_ID: ${AGENDA_CLIENT_ID:-}
+      BULLE_URL: ${BULLE_URL:-https://bulle.facile.studio}
+      BULLE_CLIENT_ID: ${BULLE_CLIENT_ID:-bulle}
     healthcheck:
       test: ["CMD", "/api", "healthcheck"]
       interval: 10s

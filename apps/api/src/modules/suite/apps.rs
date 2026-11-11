@@ -5,7 +5,8 @@ use tronc::env::Vars;
 /// the audience of the tokens exchanged for it. An empty audience turns the integration off.
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct App {
-    /// The app's key: `nuage`, `opus`, `docs`, `feuilles` or `agenda`, the prefix of its scopes.
+    /// The app's key: `nuage`, `opus`, `docs`, `feuilles`, `agenda` or `bulle`, the prefix of
+    /// its scopes.
     pub key: &'static str,
     /// The public origin, without a trailing slash.
     pub url: String,
@@ -14,11 +15,11 @@ pub struct App {
 }
 
 impl App {
-    fn from_vars(vars: &Vars, key: &'static str) -> Self {
+    fn from_vars(vars: &Vars, key: &'static str, audience: &str) -> Self {
         let upper = key.to_ascii_uppercase();
         let fallback = format!("https://{key}.facile.studio");
         let url = vars.string(&format!("{upper}_URL"), &fallback).trim().trim_end_matches('/').to_owned();
-        let audience = vars.string(&format!("{upper}_CLIENT_ID"), "").trim().to_owned();
+        let audience = vars.string(&format!("{upper}_CLIENT_ID"), audience).trim().to_owned();
         App { key, url, audience }
     }
 
@@ -55,17 +56,21 @@ pub struct Apps {
     pub feuilles: App,
     /// Events.
     pub agenda: App,
+    /// The suite's AI, behind every AI feature.
+    pub bulle: App,
 }
 
 impl Apps {
-    /// Reads `<APP>_URL` (default `https://<app>.facile.studio`) and `<APP>_CLIENT_ID`.
+    /// Reads `<APP>_URL` (default `https://<app>.facile.studio`) and `<APP>_CLIENT_ID` (none,
+    /// except Bulle's: `bulle`, the audience Registre mints for it).
     pub fn from_vars(vars: &Vars) -> Self {
         Apps {
-            nuage: App::from_vars(vars, "nuage"),
-            opus: App::from_vars(vars, "opus"),
-            docs: App::from_vars(vars, "docs"),
-            feuilles: App::from_vars(vars, "feuilles"),
-            agenda: App::from_vars(vars, "agenda"),
+            nuage: App::from_vars(vars, "nuage", ""),
+            opus: App::from_vars(vars, "opus", ""),
+            docs: App::from_vars(vars, "docs", ""),
+            feuilles: App::from_vars(vars, "feuilles", ""),
+            agenda: App::from_vars(vars, "agenda", ""),
+            bulle: App::from_vars(vars, "bulle", "bulle"),
         }
     }
 }

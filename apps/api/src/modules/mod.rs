@@ -1,5 +1,6 @@
 //! The HTTP modules under `/api`.
 
+pub mod ai;
 pub mod assets;
 pub mod board;
 pub mod boards;

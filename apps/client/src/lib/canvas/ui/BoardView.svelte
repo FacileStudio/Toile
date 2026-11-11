@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
-	import { Alert, Icon, IconButton, Spinner, Tooltip, icons } from '@facile/muse';
+	import { Alert, Icon, IconButton, Spinner, Tooltip, icons, toast, type PlanLimitError } from '@facile/muse';
+	import { aiError, aiPlanLimit, summarizeBoard } from '$lib/api/ai';
 	import { canEdit } from '$lib/board/api';
 	import { STOP_TEXT, type BoardSession } from '$lib/board/session.svelte';
 	import type { CommandUi } from '../commands';
@@ -8,6 +9,8 @@
 	import type { Input } from '../input';
 	import { pasteInto } from '../paste';
 	import { zoomFit } from '../view';
+	import AiMenu from './AiMenu.svelte';
+	import AiPanel from './AiPanel.svelte';
 	import AvatarStack from './AvatarStack.svelte';
 	import Board from './Board.svelte';
 	import Cheatsheet from './Cheatsheet.svelte';
@@ -30,7 +33,11 @@
 	let comments = $state(false);
 	let minimap = $state(true);
 	let thread = $state<string | null>(null);
+	let summary = $state<string | null>(null);
+	let thinking = $state(false);
+	let limit = $state<PlanLimitError | null>(null);
 	let picker: HTMLInputElement;
+	const aiBoard = $derived('board' in session.target && canEdit(session.role) ? session.target.board : null);
 	let fitted = false;
 
 	const ui: CommandUi = {
@@ -50,6 +57,22 @@
 	$effect(() => {
 		if (session.draft) comments = true;
 	});
+
+	async function summarize() {
+		if (!aiBoard) return;
+		comments = false;
+		summary = '';
+		thinking = true;
+		try {
+			summary = await summarizeBoard(aiBoard);
+		} catch (error) {
+			summary = null;
+			limit = aiPlanLimit(error);
+			if (!limit) toast.danger(aiError(error));
+		} finally {
+			thinking = false;
+		}
+	}
 
 	async function picked() {
 		const files = picker.files;
@@ -101,11 +124,14 @@
 							variant="ghost"
 							aria-label="Commentaires"
 							aria-pressed={comments}
-							onclick={() => (comments = !comments)}
+							onclick={() => ((comments = !comments), (summary = null))}
 						>
 							<Icon icon={toolIcons.comment} size={20} />
 						</IconButton>
 					</Tooltip>
+					{#if aiBoard}
+						<AiMenu board={aiBoard} {editor} bind:busy={thinking} bind:limit onsummarize={summarize} />
+					{/if}
 					<span class="hidden md:inline-flex">
 						<Tooltip text="Raccourcis (?)">
 							<IconButton variant="ghost" aria-label="Raccourcis clavier" onclick={() => (help = true)}
@@ -135,7 +161,11 @@
 		{/if}
 
 		<div class="flex min-h-0 flex-1 justify-end">
-			{#if comments}
+			{#if summary !== null}
+				<div class="absolute right-3 bottom-24 left-3 md:static md:h-full">
+					<AiPanel markdown={summary} busy={thinking} onretry={summarize} onclose={() => (summary = null)} />
+				</div>
+			{:else if comments}
 				<div class="absolute right-3 bottom-24 left-3 md:static md:h-full">
 					<CommentPanel {session} bind:active={thread} onclose={() => (comments = false)} />
 				</div>
