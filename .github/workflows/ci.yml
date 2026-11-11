@@ -64,7 +64,13 @@ jobs:
 
       - name: Install Playwright's Chromium
         working-directory: apps/client
-        run: bunx playwright-core install --with-deps chromium || bunx playwright-core install chromium-headless-shell
+        run: |
+          bunx playwright-core install --only-shell chromium && exit 0
+          for attempt in 1 2 3; do
+            bunx playwright-core install --with-deps --only-shell chromium && exit 0
+            sleep 30
+          done
+          exit 1
 
       - name: gate
         run: sh scripts/check.sh
