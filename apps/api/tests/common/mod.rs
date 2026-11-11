@@ -1,8 +1,11 @@
 #![allow(dead_code)]
 
+pub mod board;
 pub mod directory;
 pub mod fixture;
 pub mod http;
+pub mod server;
+pub mod ysync;
 
 use std::sync::Arc;
 
@@ -40,13 +43,28 @@ pub async fn pool(prefix: &str) -> Option<PgPool> {
 
 pub async fn app(pool: PgPool) -> App {
     let config = Config::from_vars(&Vars::from_pairs(vec![("DATABASE_URL", "postgres://unused/x")])).unwrap();
-    let kits = Kits::new(&config, &pool).await.unwrap();
-    let state = AppState { pool: pool.clone(), issuer: Arc::from(ISSUER) };
+    let hub = api::modules::rooms::Hub::default();
+    let kits = Kits::new(&config, &pool, &hub).await.unwrap();
+    let state = AppState {
+        pool: pool.clone(),
+        sessions: kits.sessions.clone(),
+        issuer: Arc::from(ISSUER),
+        hub,
+        socket_recheck: std::time::Duration::from_millis(200),
+    };
     let router = api::router::build_router(state.clone(), &kits).unwrap();
     App { router, state, kits, pool }
 }
 
 impl App {
+    pub async fn serve(&self) -> String {
+        let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let addr = listener.local_addr().unwrap();
+        let router = self.router.clone().into_make_service_with_connect_info::<std::net::SocketAddr>();
+        tokio::spawn(async move { axum::serve(listener, router).await.unwrap() });
+        format!("ws://{addr}")
+    }
+
     pub async fn person(&self, name: &str) -> Person {
         let subject = format!("{name}-{}", uuid::Uuid::new_v4());
         let user_id: i64 = sqlx::query_scalar("INSERT INTO porte_users (email, name) VALUES ($1, $2) RETURNING id")

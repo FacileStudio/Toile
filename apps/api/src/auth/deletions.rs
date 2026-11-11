@@ -1,17 +1,22 @@
 use porte::directory::{DirectoryError, PersonDeleted, StateStore};
 use sqlx::{PgConnection, PgPool};
+use uuid::Uuid;
 
-/// The app's half of a GDPR erase: personal boards, memberships, then the account row. Space
-/// boards stay with their space.
+use crate::modules::rooms::{Command, Hub};
+
+/// The app's half of a GDPR erase: personal boards, memberships, then the account row (their
+/// comments go with it). Space boards stay with their space. The person's sockets close in every
+/// room and their personal boards unload.
 #[derive(Clone)]
 pub struct AppData {
     pool: PgPool,
+    hub: Hub,
 }
 
 impl AppData {
-    /// An eraser over `pool`.
-    pub fn new(pool: PgPool) -> Self {
-        AppData { pool }
+    /// An eraser over `pool`, closing sockets through `hub`.
+    pub fn new(pool: PgPool, hub: Hub) -> Self {
+        AppData { pool, hub }
     }
 }
 
@@ -19,14 +24,15 @@ fn failed(error: sqlx::Error) -> DirectoryError {
     DirectoryError::Failed(error.to_string())
 }
 
-async fn erase(tx: &mut PgConnection, users: &[i64], subject: &str) -> Result<(), sqlx::Error> {
-    sqlx::query("DELETE FROM boards WHERE space_id IS NULL AND owner_user_id = ANY($1)")
-        .bind(users)
-        .execute(&mut *tx)
-        .await?;
+async fn erase(tx: &mut PgConnection, users: &[i64], subject: &str) -> Result<Vec<Uuid>, sqlx::Error> {
+    let boards: Vec<Uuid> =
+        sqlx::query_scalar("DELETE FROM boards WHERE space_id IS NULL AND owner_user_id = ANY($1) RETURNING id")
+            .bind(users)
+            .fetch_all(&mut *tx)
+            .await?;
     sqlx::query("DELETE FROM space_members WHERE subject = $1").bind(subject).execute(&mut *tx).await?;
     sqlx::query("DELETE FROM porte_users WHERE id = ANY($1)").bind(users).execute(&mut *tx).await?;
-    Ok(())
+    Ok(boards)
 }
 
 #[async_trait::async_trait]
@@ -40,8 +46,11 @@ impl PersonDeleted for AppData {
                 .fetch_all(&mut *tx)
                 .await
                 .map_err(failed)?;
-        erase(&mut tx, &users, subject).await.map_err(failed)?;
-        tx.commit().await.map_err(failed)
+        let boards = erase(&mut tx, &users, subject).await.map_err(failed)?;
+        tx.commit().await.map_err(failed)?;
+        self.hub.tell_all(|| Command::Evict(users.clone())).await;
+        self.hub.close(&boards).await;
+        Ok(())
     }
 }
 

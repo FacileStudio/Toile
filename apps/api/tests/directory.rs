@@ -23,7 +23,7 @@ async fn the_space_store_passes_porte_conformance() {
 #[tokio::test]
 async fn a_snapshot_replaces_spaces_and_members_once_per_version() {
     let Some(pool) = common::pool("toile_directory").await else { return };
-    let apply = SpacesApply::new(pool.clone());
+    let apply = SpacesApply::new(pool.clone(), Default::default());
     let version = base();
     assert!(
         apply.apply_snapshot(&snapshot(version, vec![space("a", &[("s1", "owner")]), space("b", &[])])).await.unwrap()
@@ -45,7 +45,7 @@ async fn a_space_missing_from_a_snapshot_takes_its_boards_with_it() {
     let app = common::app(pool.clone()).await;
     let roles = fixture::roles(&app).await;
     let board = fixture::id(&fixture::board(&app, &roles.owner, Some(&roles.space), "Plan").await);
-    let apply = SpacesApply::new(pool.clone());
+    let apply = SpacesApply::new(pool.clone(), Default::default());
     let version = base();
     assert!(apply.apply_snapshot(&snapshot(version, vec![space("other", &[])])).await.unwrap());
     for who in [&roles.owner, &roles.member] {
@@ -62,7 +62,9 @@ async fn an_empty_snapshot_is_refused_while_spaces_exist() {
     let Some(pool) = common::pool("toile_dir_empty").await else { return };
     let app = common::app(pool.clone()).await;
     let roles = fixture::roles(&app).await;
-    assert!(SpacesApply::new(pool.clone()).apply_snapshot(&snapshot(base(), vec![])).await.is_err());
+    assert!(
+        SpacesApply::new(pool.clone(), Default::default()).apply_snapshot(&snapshot(base(), vec![])).await.is_err()
+    );
     let listed = app.call("GET", "/api/spaces", Some(&roles.member), None).await.json();
     assert_eq!(listed["spaces"][0]["id"], json!(roles.space));
 }
@@ -74,7 +76,10 @@ async fn erasing_a_person_removes_their_personal_boards_memberships_and_account(
     let roles = fixture::roles(&app).await;
     let personal = fixture::id(&fixture::board(&app, &roles.member, None, "Mien").await);
     let shared = fixture::id(&fixture::board(&app, &roles.member, Some(&roles.space), "Nôtre").await);
-    AppData::new(pool.clone()).on_person_deleted(common::ISSUER, &roles.member.subject).await.unwrap();
+    AppData::new(pool.clone(), Default::default())
+        .on_person_deleted(common::ISSUER, &roles.member.subject)
+        .await
+        .unwrap();
     let ids = [uuid::Uuid::parse_str(&personal).unwrap(), uuid::Uuid::parse_str(&shared).unwrap()];
     let left: Vec<uuid::Uuid> =
         sqlx::query_scalar("SELECT id FROM boards WHERE id = ANY($1)").bind(&ids[..]).fetch_all(&pool).await.unwrap();

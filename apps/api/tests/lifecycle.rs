@@ -11,7 +11,8 @@ async fn a_created_board_is_listed_newest_first_in_its_scope_only() {
     let first = fixture::board(&app, &roles.member, Some(&roles.space), "  Rétro  ").await;
     assert_eq!(first["name"], json!("Rétro"));
     assert_eq!(first["space_id"], json!(roles.space));
-    assert_eq!(first["access"], json!("editor"));
+    assert_eq!(first["role"], json!("editor"));
+    assert_eq!(first["thumbnail_url"], json!(null));
     let second = fixture::board(&app, &roles.owner, Some(&roles.space), "").await;
     assert_eq!(second["name"], json!("Sans titre"));
     fixture::board(&app, &roles.member, None, "À moi").await;

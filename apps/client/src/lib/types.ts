@@ -8,7 +8,7 @@ export type Role = 'member' | 'admin' | 'owner';
 export type Space = { id: string; name: string; role: Role };
 
 /** What the caller may do with a board. */
-export type Access = 'viewer' | 'editor' | 'manager';
+export type BoardRole = 'owner' | 'editor' | 'commenter' | 'viewer';
 
 /** A board as `GET /api/boards` answers it. */
 export type Board = {
@@ -17,5 +17,7 @@ export type Board = {
 	name: string;
 	created_at: string;
 	updated_at: string;
-	access: Access;
+	role: BoardRole;
+	thumbnail_url: string | null;
+	deleted_at?: string;
 };

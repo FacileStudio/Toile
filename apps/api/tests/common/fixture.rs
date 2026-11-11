@@ -36,3 +36,11 @@ pub async fn board(app: &App, who: &Person, space: Option<&str>, name: &str) -> 
 pub fn id(board: &Value) -> String {
     board["id"].as_str().unwrap().to_owned()
 }
+
+pub async fn link(app: &App, who: &Person, board: &str, role: &str) -> (String, String) {
+    let answer = app.call("POST", &format!("/api/boards/{board}/shares"), Some(who), Some(json!({"role": role}))).await;
+    assert_eq!(answer.status, 201, "{}", answer.text());
+    let body = answer.json();
+    assert_eq!(body["url"], json!(format!("/s/{}", body["token"].as_str().unwrap())));
+    (body["id"].as_str().unwrap().to_owned(), body["token"].as_str().unwrap().to_owned())
+}
