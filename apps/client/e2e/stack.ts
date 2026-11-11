@@ -15,7 +15,7 @@ const api = resolve(target, 'debug/api');
 const seeder = resolve(target, 'debug/examples/e2e_seed');
 const clientDir = resolve(root, 'apps/client/build');
 const admin = process.env.E2E_ADMIN_URL ?? 'postgres://postgres:postgres@127.0.0.1:5657/postgres?sslmode=disable';
-const database = 'toile_e2e';
+const database = process.env.E2E_DATABASE ?? 'toile_e2e';
 
 function freePort(): number {
 	const probe = Bun.serve({ port: 0, fetch: () => new Response() });
