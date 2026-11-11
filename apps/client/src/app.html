@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="fr">
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<meta name="color-scheme" content="light dark" />
+		<meta name="description" content="Toile : le tableau blanc infini et collaboratif de Facile." />
+		<link rel="icon" href="%sveltekit.assets%/favicon.svg" type="image/svg+xml" />
+		<link rel="manifest" href="%sveltekit.assets%/site.webmanifest" />
+		<meta name="theme-color" media="(prefers-color-scheme: light)" content="#ffffff" />
+		<meta name="theme-color" media="(prefers-color-scheme: dark)" content="#0a0a0a" />
+		<script>try{var t=localStorage.getItem('toile.theme');if(t==='dark'||t==='light')document.documentElement.classList.add(t)}catch(e){}</script>
+		%sveltekit.head%
+		<title>Toile</title>
+	</head>
+	<body data-sveltekit-preload-data="hover">
+		<div style="display: contents">%sveltekit.body%</div>
+	</body>
+</html>

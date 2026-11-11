@@ -1,0 +1,51 @@
+# Toile's coding standard, enforced by filet.
+# https://github.com/FacileStudio/filet
+#
+#   filet check .     the rules
+#   filet roast .     the rules, with commentary
+#   filet docker .    the Dockerfile
+#
+# Copied from Docs' filet.yml with the limits unchanged: a Rust API and a
+# SvelteKit client, one container.
+
+kind: app
+
+ignore:
+  - node_modules
+  - vendor
+  - build
+  - dist
+  - testdata
+  - coverage
+  - target
+
+# Rust for the API, TypeScript and Svelte for the client, and the shell scripts
+# every suite app inherits.
+extensions: [.rs, .ts, .svelte, .sh]
+
+limits:
+  fileLines: 250
+  funcsPerFile: 8
+  funcLines: 30
+  funcStatements: 25
+  lineLength: 120
+  params: 5
+  nesting: 4
+  complexity: 10
+
+architecture:
+  requiredDirs: [apps/api, apps/client]
+  # A module that owns HTTP declares it in router.rs.
+  requiredFiles:
+    "apps/api/src/modules/*": [mod.rs, router.rs]
+
+style:
+  banInlineComments: true
+  banTODO: true
+  banTrailingSpace: true
+
+disabled:
+  # rustfmt and prettier own line breaking; every survivor is a line no
+  # formatter could have wrapped.
+  - gen.line.long
+failOn: error
