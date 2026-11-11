@@ -11,6 +11,7 @@ use std::sync::Arc;
 use std::time::Duration;
 
 use porte::directory::{self, Deletions, Syncer};
+use porte::exchange::{self, Exchanger};
 use porte::http_client::HttpClient;
 use porte::oidc::{self, Kit};
 use porte::pg;
@@ -25,6 +26,7 @@ pub use store::SpaceStore;
 
 use crate::env::Config;
 use crate::modules::rooms::Hub;
+use crate::modules::suite::{Plans, Suite};
 
 /// Every auth kit the app builds once at boot.
 #[derive(Clone)]
@@ -37,6 +39,8 @@ pub struct Kits {
     pub syncer: Option<Syncer>,
     /// The deletion loop and receiver, when Registre is configured.
     pub deletions: Option<Deletions>,
+    /// Token exchange and plans.
+    pub suite: Suite,
 }
 
 type BootError = Box<dyn std::error::Error + Send + Sync>;
@@ -56,7 +60,12 @@ impl Kits {
             now: None,
         };
         let oidc = Kit::new(&cfg.porte, deps).await?;
-        let mut kits = Kits { sessions, oidc, syncer: None, deletions: None };
+        let exchanger = match cfg.porte.enabled() {
+            true => Some(Exchanger::new(exchange::Config::from_porte(&cfg.porte, store.identities()))?),
+            false => None,
+        };
+        let suite = Suite { exchanger, plans: Plans::new(pool.clone(), &cfg.porte.issuer) };
+        let mut kits = Kits { sessions, oidc, syncer: None, deletions: None, suite };
         if cfg.porte.enabled() {
             kits.directory(cfg, pool, hub, store);
         }
@@ -70,7 +79,7 @@ impl Kits {
             client_secret: cfg.porte.client_secret.clone(),
             http: HttpClient::new(),
         };
-        let apply = Arc::new(SpacesApply::new(pool.clone(), hub.clone()));
+        let apply = Arc::new(SpacesApply::new(pool.clone(), hub.clone(), self.suite.plans.clone()));
         self.syncer = Some(Syncer::new(client.clone(), apply, Duration::ZERO));
         let data = Arc::new(AppData::new(pool.clone(), hub.clone()));
         let state = Arc::new(DeletionState::new(pool.clone()));

@@ -4,6 +4,7 @@
 	import { page } from '$app/state';
 	import {
 		AuthScreen,
+		ConfirmModal,
 		Icon,
 		MobileNav,
 		SideBar,
@@ -15,6 +16,7 @@
 	} from '@facile/muse';
 	import { backend } from '$lib/backend';
 	import { boardIcon, logoIcon } from '$lib/brand';
+	import { reconnect } from '$lib/reconnect.svelte';
 	import { session } from '$lib/session.svelte';
 	import { theme } from '$lib/theme';
 
@@ -98,5 +100,14 @@
 		<MobileNav items={pages} user={navUser} profileHref="/settings" profileActive={onSettings} {userMenu} />
 	</div>
 {/if}
+
+<ConfirmModal
+	bind:open={reconnect.needed}
+	title="Reconnectez votre session Facile"
+	description="Votre session Facile a expiré. Reconnectez-vous pour utiliser les autres apps de la suite depuis Toile."
+	confirmLabel="Se reconnecter"
+	cancelLabel="Plus tard"
+	onConfirm={() => window.location.assign(backend.loginUrl())}
+/>
 
 <Toaster />

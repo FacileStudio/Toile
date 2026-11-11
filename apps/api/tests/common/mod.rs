@@ -4,6 +4,7 @@ pub mod board;
 pub mod directory;
 pub mod fixture;
 pub mod http;
+pub mod registre;
 pub mod server;
 pub mod ysync;
 
@@ -25,6 +26,7 @@ pub struct App {
     pub state: AppState,
     pub kits: Kits,
     pub pool: PgPool,
+    pub registre: Arc<registre::Registre>,
 }
 
 pub struct Person {
@@ -44,16 +46,19 @@ pub async fn pool(prefix: &str) -> Option<PgPool> {
 pub async fn app(pool: PgPool) -> App {
     let config = Config::from_vars(&Vars::from_pairs(vec![("DATABASE_URL", "postgres://unused/x")])).unwrap();
     let hub = api::modules::rooms::Hub::default();
-    let kits = Kits::new(&config, &pool, &hub).await.unwrap();
+    let mut kits = Kits::new(&config, &pool, &hub).await.unwrap();
+    let registre = Arc::new(registre::Registre::default());
+    kits.suite.exchanger = Some(registre.exchanger(&pool));
     let state = AppState {
         pool: pool.clone(),
         sessions: kits.sessions.clone(),
         issuer: Arc::from(ISSUER),
         hub,
         socket_recheck: std::time::Duration::from_millis(200),
+        suite: kits.suite.clone(),
     };
     let router = api::router::build_router(state.clone(), &kits).unwrap();
-    App { router, state, kits, pool }
+    App { router, state, kits, pool, registre }
 }
 
 impl App {
@@ -73,10 +78,11 @@ impl App {
             .fetch_one(&self.pool)
             .await
             .unwrap();
-        sqlx::query("INSERT INTO porte_identities (user_id, provider, subject) VALUES ($1, $2, $3)")
+        sqlx::query("INSERT INTO porte_identities (user_id, provider, subject, refresh_token) VALUES ($1, $2, $3, $4)")
             .bind(user_id)
             .bind(ISSUER)
             .bind(&subject)
+            .bind(format!("rt-{user_id}"))
             .execute(&self.pool)
             .await
             .unwrap();

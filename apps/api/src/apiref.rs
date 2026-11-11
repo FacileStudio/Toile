@@ -43,6 +43,7 @@ const ROUTES: &[Row] = &[
     ("DELETE", "/boards/{id}/comments/{comment}", "comments", "Deletes a comment and its replies", "204"),
     ("GET", "/share/{token}/comments", "comments", "The comments a guest sees", "200"),
     ("POST", "/share/{token}/comments", "comments", "A guest's comment, signed with its name", "201"),
+    ("GET", "/me/entitlements", "suite", "The plan values of the personal scope or of a space", "200"),
 ];
 
 fn method(name: &str) -> HttpMethod {

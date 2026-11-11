@@ -16,6 +16,10 @@ path.
   `unauthenticated` 401, `permission_denied` 403, `not_found` 404, `internal` 500).
 - Request bodies refuse unknown fields.
 - A board the caller cannot see is always 404. Seen but not allowed is 403.
+- A route that acts in another suite app for the caller (through Registre token exchange)
+  answers `412 failed_precondition` when the person's Facile session behind it expired; the
+  client then asks them to sign in again. Signing out drops every exchanged token.
+- A plan limit is `402 payment_required` with `upgrade_url` (muse `planLimitFrom` reads it).
 
 ## Types
 
@@ -126,6 +130,7 @@ refetch the comments.
 | `DELETE` | `/boards/{id}/comments/{comment}` | Its author or an `owner`; replies go with it |
 | `GET` | `/share/{token}/comments` | Public: the comments a link holder sees |
 | `POST` | `/share/{token}/comments` | Public: `{"name", "anchor", "body", "parent"?}`, needs a `comment` or `edit` link (else 403) |
+| `GET` | `/me/entitlements?space_id=` | `{"scope": "personal|space", "entitlements": {"ai.access": bool, "toile.upload_mb": n}, "upgrade_url"}`. No `space_id` is the caller's own plan; a space they are not in is 404. `-1` is unlimited |
 
 Public share routes allow 2 requests a second per client IP (burst 30); guest comment posts 1
 every 2 seconds (burst 10); past that, 429.

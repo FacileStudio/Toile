@@ -6,3 +6,4 @@ pub mod comments;
 pub mod rooms;
 pub mod share;
 pub mod spaces;
+pub mod suite;

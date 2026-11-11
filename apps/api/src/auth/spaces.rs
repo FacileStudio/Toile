@@ -3,6 +3,7 @@ use sqlx::{PgConnection, PgPool};
 
 use super::retire::{refuse_empty, retire};
 use crate::modules::rooms::{Command, Hub};
+use crate::modules::suite::Plans;
 
 /// Applies Registre's directory snapshot to `spaces` and `space_members`, then closes the room
 /// connections of people who lost access and the rooms of boards it trashed.
@@ -10,12 +11,13 @@ use crate::modules::rooms::{Command, Hub};
 pub struct SpacesApply {
     pool: PgPool,
     hub: Hub,
+    plans: Plans,
 }
 
 impl SpacesApply {
-    /// An applier over `pool` that evicts from `hub`.
-    pub fn new(pool: PgPool, hub: Hub) -> Self {
-        SpacesApply { pool, hub }
+    /// An applier over `pool` that evicts from `hub` and feeds every snapshot to `plans`.
+    pub fn new(pool: PgPool, hub: Hub, plans: Plans) -> Self {
+        SpacesApply { pool, hub, plans }
     }
 }
 
@@ -117,6 +119,7 @@ impl SpacesApply {
 #[async_trait::async_trait]
 impl Apply for SpacesApply {
     async fn apply(&self, snapshot: &Snapshot) -> Result<(), DirectoryError> {
-        self.apply_snapshot(snapshot).await.map(|_| ())
+        self.apply_snapshot(snapshot).await?;
+        self.plans.apply(snapshot).await.map_err(failed)
     }
 }

@@ -57,7 +57,7 @@ async fn session(State(state): State<AppState>, identity: Option<Identity>) -> J
 /// answers 200 with `{"user": null}` for an anonymous browser.
 pub fn routes(kits: &Kits) -> Router<AppState> {
     Router::new()
-        .merge(kits.sessions.routes())
+        .merge(crate::modules::suite::logout_routes(&kits.sessions, kits.suite.clone()))
         .merge(kits.oidc.routes())
         .route("/auth/me", get(me).route_layer(kits.sessions.require_auth()))
         .route("/auth/session", get(session).route_layer(kits.sessions.optional()))

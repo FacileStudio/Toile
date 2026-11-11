@@ -11,6 +11,8 @@ All notable changes to Toile. Versions follow SemVer.
 - Favicons, touch and manifest icons, the link preview image (`og-image.png`) and the head
   metadata come from the muse v0.19.0 brand generator and match the suite catalog. `og.png`,
   `og.svg`, `icon.svg` and `scripts/icons.sh` are gone
+- tronc-rs v0.4.0 (features `bulle`, `mcp`) and porte-rs v0.6.1 (features `exchange`,
+  `forfait`), one `tronc` crate in the tree
 
 ### Added
 
@@ -36,4 +38,8 @@ All notable changes to Toile. Versions follow SemVer.
   new Toile mark with its favicons, app icons and manifest (`scripts/icons.sh` regenerates them)
 - Client: settings sections for appearance, keyboard shortcuts, connected apps and plan;
   `$lib/shortcuts.ts` is the one list of board shortcuts the canvas binds
+- API: the `suite` module (migration `0004_suite.sql`): one porte token `Exchanger`, signed-out
+  users' exchanged tokens dropped, and the forfait plans (`ai.access`, `toile.upload_mb`) fed by
+  every directory snapshot and saved in `entitlement_state`; `GET /api/me/entitlements`
+- Client: a `412` from a token exchange opens a prompt to sign in to Facile again
 - API: the CSP allows `connect-src https://api-ardoise.facile.studio` for the plan catalog

@@ -1,6 +1,7 @@
 mod common;
 
 use api::auth::{AppData, SpaceStore, SpacesApply};
+use api::modules::suite::Plans;
 use common::directory::{base, snapshot, space};
 use common::fixture;
 use porte::directory::PersonDeleted;
@@ -23,7 +24,7 @@ async fn the_space_store_passes_porte_conformance() {
 #[tokio::test]
 async fn a_snapshot_replaces_spaces_and_members_once_per_version() {
     let Some(pool) = common::pool("toile_directory").await else { return };
-    let apply = SpacesApply::new(pool.clone(), Default::default());
+    let apply = SpacesApply::new(pool.clone(), Default::default(), Plans::new(pool.clone(), ""));
     let version = base();
     assert!(
         apply.apply_snapshot(&snapshot(version, vec![space("a", &[("s1", "owner")]), space("b", &[])])).await.unwrap()
@@ -45,7 +46,7 @@ async fn a_space_missing_from_a_snapshot_takes_its_boards_with_it() {
     let app = common::app(pool.clone()).await;
     let roles = fixture::roles(&app).await;
     let board = fixture::id(&fixture::board(&app, &roles.owner, Some(&roles.space), "Plan").await);
-    let apply = SpacesApply::new(pool.clone(), Default::default());
+    let apply = SpacesApply::new(pool.clone(), Default::default(), Plans::new(pool.clone(), ""));
     let version = base();
     assert!(apply.apply_snapshot(&snapshot(version, vec![space("other", &[])])).await.unwrap());
     for who in [&roles.owner, &roles.member] {
@@ -63,7 +64,10 @@ async fn an_empty_snapshot_is_refused_while_spaces_exist() {
     let app = common::app(pool.clone()).await;
     let roles = fixture::roles(&app).await;
     assert!(
-        SpacesApply::new(pool.clone(), Default::default()).apply_snapshot(&snapshot(base(), vec![])).await.is_err()
+        SpacesApply::new(pool.clone(), Default::default(), Plans::new(pool.clone(), ""))
+            .apply_snapshot(&snapshot(base(), vec![]))
+            .await
+            .is_err()
     );
     let listed = app.call("GET", "/api/spaces", Some(&roles.member), None).await.json();
     assert_eq!(listed["spaces"][0]["id"], json!(roles.space));
