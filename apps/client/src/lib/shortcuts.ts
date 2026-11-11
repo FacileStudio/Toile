@@ -40,6 +40,7 @@ export const SHORTCUTS: readonly Shortcut[] = [
 	{ id: 'edit.duplicate', group: 'edit', label: 'Dupliquer', keys: ['Mod+D'] },
 	{ id: 'edit.delete', group: 'edit', label: 'Supprimer', keys: ['Delete', 'Backspace'] },
 	{ id: 'edit.selectAll', group: 'edit', label: 'Tout sélectionner', keys: ['Mod+A'] },
+	{ id: 'edit.text', group: 'edit', label: 'Modifier le texte', keys: ['Enter'] },
 	{ id: 'edit.deselect', group: 'edit', label: 'Désélectionner', keys: ['Escape'] },
 	{ id: 'arrange.forward', group: 'arrange', label: 'Avancer', keys: [']'] },
 	{ id: 'arrange.backward', group: 'arrange', label: 'Reculer', keys: ['['] },
