@@ -64,7 +64,14 @@ impl Kits {
             true => Some(Exchanger::new(exchange::Config::from_porte(&cfg.porte, store.identities()))?),
             false => None,
         };
-        let suite = Suite { exchanger, plans: Plans::new(pool.clone(), &cfg.porte.issuer) };
+        let plans = Plans::new(pool.clone(), &cfg.porte.issuer);
+        let suite = Suite {
+            exchanger,
+            plans,
+            apps: cfg.apps.clone(),
+            http: crate::modules::suite::client(),
+            cards: Default::default(),
+        };
         let mut kits = Kits { sessions, oidc, syncer: None, deletions: None, suite };
         if cfg.porte.enabled() {
             kits.directory(cfg, pool, hub, store);

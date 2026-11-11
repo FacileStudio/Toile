@@ -3,7 +3,7 @@ use axum::routing::get;
 use tronc::health::{self, Check};
 
 use crate::auth::{self, Kits};
-use crate::modules::{board, boards, comments, rooms, share, spaces, suite};
+use crate::modules::{assets, board, boards, cards, comments, rooms, share, spaces, suite, tasks};
 use crate::state::AppState;
 
 async fn api_not_found() -> tronc::Error {
@@ -18,6 +18,9 @@ fn protected(kits: &Kits) -> Router<AppState> {
         .merge(share::routes())
         .merge(comments::routes())
         .merge(suite::routes())
+        .merge(assets::routes())
+        .merge(cards::routes())
+        .merge(tasks::routes())
         .route_layer(kits.sessions.require_auth())
 }
 
@@ -27,6 +30,7 @@ fn api(kits: &Kits) -> Router<AppState> {
         .merge(board::routes())
         .merge(share::public_routes())
         .merge(comments::public_routes())
+        .merge(assets::public_routes())
         .merge(protected(kits));
     if let Some(syncer) = &kits.syncer {
         api = api.route("/registre/sync", syncer.nudge_route());

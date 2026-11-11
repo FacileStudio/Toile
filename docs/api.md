@@ -130,7 +130,25 @@ refetch the comments.
 | `DELETE` | `/boards/{id}/comments/{comment}` | Its author or an `owner`; replies go with it |
 | `GET` | `/share/{token}/comments` | Public: the comments a link holder sees |
 | `POST` | `/share/{token}/comments` | Public: `{"name", "anchor", "body", "parent"?}`, needs a `comment` or `edit` link (else 403) |
+| `POST` | `/boards/{id}/assets` | Multipart `file`: 201 `{"asset", "url", "w", "h", "mime", "size"}`; needs `editor`. Stored in the uploader's Toile app folder in Nuage (`boards/<board>/<asset>.<ext>`). Over the plan's `toile.upload_mb`: 402 with `upgrade_url`, `key` and `limit`; not PNG, JPEG, GIF or WebP (SVG included): 400 |
+| `GET` | `/boards/{id}/assets/{asset}` | The image bytes, read from Nuage with the uploader's token; needs `viewer`. `ETag` (sha-256), `Cache-Control: private, max-age=31536000, immutable`, 304 on `If-None-Match`. 503 while the uploader's Facile session is expired |
+| `GET` | `/share/{token}/assets/{asset}` | Public: the same for a link holder (20 a second per IP, burst 200) |
+| `POST` | `/share/{token}/assets` | Public: always 403, guests cannot upload |
+| `POST` | `/cards/resolve` | `{"url"}` (http or https, at most 2048 characters): `{"kind", "title", "subtitle"?, "status"?, "icon", "url"}`. See "Live cards" |
+| `POST` | `/boards/{id}/shapes/{shape}/task` | `{"project": <Opus project id>}`: creates an Opus task from sticky `shape` (title = its first line, description = its text) for the caller and writes a `card` shape (`kind: opus`) right of the sticky through the room. 201 `{"task": {"id", "title", "url"}, "card": "<shape id>"}`; needs `editor`. Not a sticky or empty: 400; no such shape or Opus project: 404 |
 | `GET` | `/me/entitlements?space_id=` | `{"scope": "personal|space", "entitlements": {"ai.access": bool, "toile.upload_mb": n}, "upgrade_url"}`. No `space_id` is the caller's own plan; a space they are not in is 404. `-1` is unlimited |
+
+### Live cards
+
+`kind` is `docs`, `feuilles`, `opus`, `agenda`, `nuage` or `link`; `icon` is the same key. A link
+whose origin is a suite app's `<APP>_URL` is read from that app with the caller's own exchanged
+token: Docs `/d/{id}`, Feuilles `/w/{id}`, Opus `/dashboard/workspace/{w}/project/{p}/task/{id}`
+(with its `status`), Agenda `/events/{id}` or `?event={id}` (`subtitle` is `start_at`). Any other
+page of those apps, an item the caller cannot open, and every Nuage link (Toile only has
+app-folder access) answer a card titled with the host. Other links are unfurled from their Open
+Graph tags (`og:title` or `<title>`, `og:description` as `subtitle`) under the SSRF guard: `https`
+only, public addresses only at every DNS answer and redirect, 3 redirects, 1 MiB, 5 s; anything
+it refuses is a host-only `link` card. Cards are cached per person and URL for 10 minutes.
 
 Public share routes allow 2 requests a second per client IP (burst 30); guest comment posts 1
 every 2 seconds (burst 10); past that, 429.

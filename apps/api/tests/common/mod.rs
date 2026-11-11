@@ -2,10 +2,12 @@
 
 pub mod board;
 pub mod directory;
+pub mod fakes;
 pub mod fixture;
 pub mod http;
 pub mod registre;
 pub mod server;
+pub mod upload;
 pub mod ysync;
 
 use std::sync::Arc;
@@ -44,11 +46,16 @@ pub async fn pool(prefix: &str) -> Option<PgPool> {
 }
 
 pub async fn app(pool: PgPool) -> App {
+    app_with(pool, api::modules::suite::Apps::default()).await
+}
+
+pub async fn app_with(pool: PgPool, apps: api::modules::suite::Apps) -> App {
     let config = Config::from_vars(&Vars::from_pairs(vec![("DATABASE_URL", "postgres://unused/x")])).unwrap();
     let hub = api::modules::rooms::Hub::default();
     let mut kits = Kits::new(&config, &pool, &hub).await.unwrap();
     let registre = Arc::new(registre::Registre::default());
     kits.suite.exchanger = Some(registre.exchanger(&pool));
+    kits.suite.apps = apps;
     let state = AppState {
         pool: pool.clone(),
         sessions: kits.sessions.clone(),

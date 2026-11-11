@@ -43,6 +43,18 @@ const ROUTES: &[Row] = &[
     ("DELETE", "/boards/{id}/comments/{comment}", "comments", "Deletes a comment and its replies", "204"),
     ("GET", "/share/{token}/comments", "comments", "The comments a guest sees", "200"),
     ("POST", "/share/{token}/comments", "comments", "A guest's comment, signed with its name", "201"),
+    (
+        "POST",
+        "/boards/{id}/assets",
+        "assets",
+        "Uploads an image (multipart `file`) into the uploader's Nuage app folder",
+        "201",
+    ),
+    ("GET", "/boards/{id}/assets/{asset}", "assets", "An image of the board, cached by ETag", "200"),
+    ("GET", "/share/{token}/assets/{asset}", "assets", "An image of the board, for a link holder", "200"),
+    ("POST", "/share/{token}/assets", "assets", "Always 403: guests cannot upload", "403"),
+    ("POST", "/cards/resolve", "cards", "Resolves a link into a live card for the caller", "200"),
+    ("POST", "/boards/{id}/shapes/{shape}/task", "tasks", "Turns a sticky into an Opus task and adds its card", "201"),
     ("GET", "/me/entitlements", "suite", "The plan values of the personal scope or of a space", "200"),
 ];
 

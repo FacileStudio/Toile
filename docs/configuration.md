@@ -22,6 +22,9 @@ porte's configuration. A missing required variable, or an inconsistent pair, exi
 | `PORTE_TOKEN_KEY` | prod | none | Seals stored OIDC tokens. Production refuses to boot without it |
 | `MCP_RESOURCE` | no | none | `https://toile.facile.studio/mcp`. Read and checked now; `/mcp` itself ships with track T5 |
 | `MCP_STATE_KEY` | with MCP | none | HMAC key of the MCP confirmation flow; boot fails without it when `MCP_RESOURCE` is set |
+| `NUAGE_URL`, `OPUS_URL`, `DOCS_URL`, `FEUILLES_URL`, `AGENDA_URL` | no | `https://<app>.facile.studio` | Public origin of each suite app Toile calls; links to it become live cards |
+| `NUAGE_CLIENT_ID` | for uploads | none | Nuage's Registre client id, the audience of upload tokens. Without it uploads answer 503 |
+| `OPUS_CLIENT_ID`, `DOCS_CLIENT_ID`, `FEUILLES_CLIENT_ID`, `AGENDA_CLIENT_ID` | no | none | Each app's Registre client id. Without one its links stay host-only cards, and without Opus's, sticky-to-task answers 503 |
 | `TEST_DATABASE_URL` | tests | none | Postgres the integration tests create their schemas in |
 | `APP_VERSION` | build | `dev` | Read at compile time; the Dockerfile stamps it from `apps/client/package.json` |
 
@@ -30,6 +33,8 @@ porte's configuration. A missing required variable, or an inconsistent pair, exi
 Token exchange to other suite apps reuses `OIDC_ISSUER`, `OIDC_CLIENT_ID` and
 `OIDC_CLIENT_SECRET` and the refresh token stored at sign-in (sealed by `PORTE_TOKEN_KEY`). It
 needs Registre's seed to grant Toile `offline_access` and a `token_exchange` entry per audience.
+Each `<APP>_CLIENT_ID` must equal that app's `OIDC_MACHINE_AUDIENCE`, and Nuage must list Toile in
+`NUAGE_APPS` so its tokens reach `/api/app/*`.
 
 ## Plans
 
@@ -48,6 +53,9 @@ first snapshot with entitlements, every feature is on and unlimited.
 |---|---|---|
 | Board name | 200 characters, trimmed; blank becomes `Sans titre` | `modules/boards/service.rs` |
 | Request JSON body | 1 MiB | `tronc::json` |
+| Image upload | the plan's `toile.upload_mb`, never over 100 MiB; PNG, JPEG, GIF, WebP only (SVG refused) | `modules/assets/upload.rs` |
+| Link unfurl | `https` only, public addresses only (checked at every DNS answer and redirect), 3 redirects, 1 MiB, 5 s | `modules/cards/guard.rs` |
+| Resolved card | cached 10 minutes per person and URL | `modules/cards/cache.rs` |
 | Board document | see [board-schema.md](board-schema.md) | enforced once rooms ship |
 
 Back to the [documentation index](README.md).

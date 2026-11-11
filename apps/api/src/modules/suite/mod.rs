@@ -1,5 +1,7 @@
 //! The rest of the suite: token exchange to other apps and the plan entitlements.
 
+mod apps;
+mod call;
 mod plans;
 mod router;
 
@@ -7,6 +9,8 @@ use porte::exchange::Exchanger;
 use porte::forfait::Scope;
 use tronc::Result;
 
+pub use apps::{App, Apps};
+pub use call::client;
 pub use plans::{AI_ACCESS, Plans, UPLOAD_MB};
 pub use router::{logout_routes, routes};
 
@@ -20,6 +24,12 @@ pub struct Suite {
     pub exchanger: Option<Exchanger>,
     /// The plan values from the directory snapshot.
     pub plans: Plans,
+    /// The suite apps Toile calls.
+    pub apps: Apps,
+    /// The client those calls go through.
+    pub http: reqwest::Client,
+    /// Resolved link cards and the unfurl client.
+    pub cards: crate::modules::cards::Cards,
 }
 
 impl Suite {

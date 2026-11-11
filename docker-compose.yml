@@ -64,6 +64,16 @@ services:
       OIDC_CLI_AUDIENCE: ${OIDC_CLI_AUDIENCE:-}
       MCP_RESOURCE: ${MCP_RESOURCE:-}
       MCP_STATE_KEY: ${MCP_STATE_KEY:-}
+      NUAGE_URL: ${NUAGE_URL:-https://nuage.facile.studio}
+      NUAGE_CLIENT_ID: ${NUAGE_CLIENT_ID:-}
+      OPUS_URL: ${OPUS_URL:-https://opus.facile.studio}
+      OPUS_CLIENT_ID: ${OPUS_CLIENT_ID:-}
+      DOCS_URL: ${DOCS_URL:-https://docs.facile.studio}
+      DOCS_CLIENT_ID: ${DOCS_CLIENT_ID:-}
+      FEUILLES_URL: ${FEUILLES_URL:-https://feuilles.facile.studio}
+      FEUILLES_CLIENT_ID: ${FEUILLES_CLIENT_ID:-}
+      AGENDA_URL: ${AGENDA_URL:-https://agenda.facile.studio}
+      AGENDA_CLIENT_ID: ${AGENDA_CLIENT_ID:-}
     healthcheck:
       test: ["CMD", "/api", "healthcheck"]
       interval: 10s

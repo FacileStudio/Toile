@@ -13,6 +13,8 @@ pub struct Config {
     pub mcp_resource: String,
     /// `MCP_STATE_KEY`: the HMAC key of the MCP confirmation flow.
     pub mcp_state_key: String,
+    /// `<APP>_URL` and `<APP>_CLIENT_ID` of every suite app Toile calls.
+    pub apps: crate::modules::suite::Apps,
 }
 
 impl Config {
@@ -31,6 +33,7 @@ impl Config {
             token_key: text("PORTE_TOKEN_KEY"),
             mcp_resource: text("MCP_RESOURCE"),
             mcp_state_key: text("MCP_STATE_KEY"),
+            apps: crate::modules::suite::Apps::from_vars(vars),
             core,
         };
         config.check()?;
@@ -71,6 +74,16 @@ mod tests {
     fn mcp_needs_a_state_key() {
         let error = Config::from_vars(&vars(&[("MCP_RESOURCE", "https://toile.test/mcp")])).unwrap_err();
         assert!(error.0.contains("MCP_STATE_KEY"), "{error}");
+    }
+
+    #[test]
+    fn suite_apps_default_to_their_facile_host_and_stay_off_without_a_client_id() {
+        let config =
+            Config::from_vars(&vars(&[("NUAGE_CLIENT_ID", "nuage-id"), ("OPUS_URL", "https://o.test/")])).unwrap();
+        assert_eq!(config.apps.nuage.url, "https://nuage.facile.studio");
+        assert!(config.apps.nuage.enabled() && !config.apps.docs.enabled());
+        assert_eq!(config.apps.opus.url, "https://o.test");
+        assert_eq!(config.apps.nuage.target(true).scopes, ["nuage.read", "nuage.write"]);
     }
 
     #[test]
