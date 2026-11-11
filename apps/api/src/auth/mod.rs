@@ -24,6 +24,7 @@ pub use spaces::SpacesApply;
 pub use store::SpaceStore;
 
 use crate::env::Config;
+use crate::modules::rooms::Hub;
 
 /// Every auth kit the app builds once at boot.
 #[derive(Clone)]
@@ -42,7 +43,7 @@ type BootError = Box<dyn std::error::Error + Send + Sync>;
 
 impl Kits {
     /// Builds the kits. A wrong issuer fails here, so the boot fails.
-    pub async fn new(cfg: &Config, pool: &PgPool) -> Result<Kits, BootError> {
+    pub async fn new(cfg: &Config, pool: &PgPool, hub: &Hub) -> Result<Kits, BootError> {
         let store = pg::Store::new(pool.clone()).with_token_sealer(pg::TokenSealer::parse(&cfg.token_key)?);
         let sessions = Manager::new(&cfg.porte, session::Deps { sessions: store.sessions(), now: None });
         let deps = oidc::Deps {
@@ -57,21 +58,21 @@ impl Kits {
         let oidc = Kit::new(&cfg.porte, deps).await?;
         let mut kits = Kits { sessions, oidc, syncer: None, deletions: None };
         if cfg.porte.enabled() {
-            kits.directory(cfg, pool, store);
+            kits.directory(cfg, pool, hub, store);
         }
         Ok(kits)
     }
 
-    fn directory(&mut self, cfg: &Config, pool: &PgPool, store: pg::Store) {
+    fn directory(&mut self, cfg: &Config, pool: &PgPool, hub: &Hub, store: pg::Store) {
         let client = directory::Client {
             issuer: cfg.porte.issuer.clone(),
             client_id: cfg.porte.client_id.clone(),
             client_secret: cfg.porte.client_secret.clone(),
             http: HttpClient::new(),
         };
-        let apply = Arc::new(SpacesApply::new(pool.clone()));
+        let apply = Arc::new(SpacesApply::new(pool.clone(), hub.clone()));
         self.syncer = Some(Syncer::new(client.clone(), apply, Duration::ZERO));
-        let data = Arc::new(AppData::new(pool.clone()));
+        let data = Arc::new(AppData::new(pool.clone(), hub.clone()));
         let state = Arc::new(DeletionState::new(pool.clone()));
         self.deletions = Some(Deletions::new(client, data, Some(Arc::new(store)), Some(state), Duration::ZERO));
     }

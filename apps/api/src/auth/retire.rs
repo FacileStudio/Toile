@@ -6,8 +6,8 @@ fn failed(error: sqlx::Error) -> DirectoryError {
 }
 
 /// Marks every live space not in `keep` deleted, drops its members and marks its live boards
-/// deleted.
-pub async fn retire(tx: &mut PgConnection, keep: &[String]) -> Result<(), sqlx::Error> {
+/// deleted. Answers the boards it trashed.
+pub async fn retire(tx: &mut PgConnection, keep: &[String]) -> Result<Vec<uuid::Uuid>, sqlx::Error> {
     let gone: Vec<String> = sqlx::query_scalar(
         "UPDATE spaces SET deleted_at = now() WHERE id <> ALL($1) AND deleted_at IS NULL RETURNING id",
     )
@@ -15,11 +15,12 @@ pub async fn retire(tx: &mut PgConnection, keep: &[String]) -> Result<(), sqlx::
     .fetch_all(&mut *tx)
     .await?;
     sqlx::query("DELETE FROM space_members WHERE space_id = ANY($1)").bind(&gone).execute(&mut *tx).await?;
-    sqlx::query("UPDATE boards SET deleted_at = now() WHERE space_id = ANY($1) AND deleted_at IS NULL")
-        .bind(&gone)
-        .execute(&mut *tx)
-        .await
-        .map(|_| ())
+    sqlx::query_scalar(
+        "UPDATE boards SET deleted_at = now() WHERE space_id = ANY($1) AND deleted_at IS NULL RETURNING id",
+    )
+    .bind(&gone)
+    .fetch_all(&mut *tx)
+    .await
 }
 
 /// Refuses an empty snapshot while live spaces exist: a short answer from Registre must never

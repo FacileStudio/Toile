@@ -8,6 +8,7 @@ use serde_json::{Value, json};
 enum Need {
     Viewer,
     Editor,
+    Owner,
 }
 
 struct Case {
@@ -18,17 +19,30 @@ struct Case {
     ok: u16,
 }
 
+fn case(method: &'static str, path: &'static str, body: Option<fn() -> Value>, need: Need, ok: u16) -> Case {
+    Case { method, path, body, need, ok }
+}
+
 fn cases() -> Vec<Case> {
     vec![
-        Case { method: "GET", path: "/api/boards/{id}", body: None, need: Need::Viewer, ok: 200 },
-        Case { method: "GET", path: "/api/boards?space_id={space}", body: None, need: Need::Viewer, ok: 200 },
-        Case {
-            method: "POST",
-            path: "/api/boards",
-            body: Some(|| json!({"name": "Rétro", "space_id": "{space}"})),
-            need: Need::Editor,
-            ok: 201,
-        },
+        case("GET", "/api/boards/{id}", None, Need::Viewer, 200),
+        case("GET", "/api/boards?space_id={space}", None, Need::Viewer, 200),
+        case("GET", "/api/boards?space_id={space}&trash=true", None, Need::Owner, 200),
+        case("POST", "/api/boards", Some(|| json!({"name": "Rétro", "space_id": "{space}"})), Need::Editor, 201),
+        case("PATCH", "/api/boards/{id}", Some(|| json!({"name": "Renamed"})), Need::Editor, 200),
+        case("POST", "/api/boards/{id}/duplicate", None, Need::Editor, 201),
+        case("DELETE", "/api/boards/{id}", None, Need::Owner, 204),
+        case("GET", "/api/boards/{id}/ws", None, Need::Viewer, 400),
+        case("GET", "/api/boards/{id}/shares", None, Need::Owner, 200),
+        case("POST", "/api/boards/{id}/shares", Some(|| json!({"role": "view"})), Need::Owner, 201),
+        case("GET", "/api/boards/{id}/comments", None, Need::Viewer, 200),
+        case(
+            "POST",
+            "/api/boards/{id}/comments",
+            Some(|| json!({"anchor": {"x": 1, "y": 2}, "body": "hi"})),
+            Need::Editor,
+            201,
+        ),
     ]
 }
 
@@ -53,8 +67,8 @@ async fn every_board_route_answers_each_role_as_its_access_allows() {
     let app = common::app(pool).await;
     let roles = fixture::roles(&app).await;
     let people = [
-        (&roles.owner, Some(Need::Editor)),
-        (&roles.admin, Some(Need::Editor)),
+        (&roles.owner, Some(Need::Owner)),
+        (&roles.admin, Some(Need::Owner)),
         (&roles.member, Some(Need::Editor)),
         (&roles.outsider, None),
     ];
@@ -76,7 +90,7 @@ async fn a_personal_board_is_its_owners_alone() {
     let path = format!("/api/boards/{mine}");
     let read = app.call("GET", &path, Some(&roles.member), None).await;
     assert_eq!(read.status, 200);
-    assert_eq!(read.json()["access"], json!("manager"));
+    assert_eq!(read.json()["role"], json!("owner"));
     for who in [&roles.owner, &roles.admin, &roles.outsider] {
         assert_eq!(app.call("GET", &path, Some(who), None).await.status, 404);
         let listed = app.call("GET", "/api/boards", Some(who), None).await.json();
