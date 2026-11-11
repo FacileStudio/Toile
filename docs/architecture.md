@@ -89,4 +89,52 @@ sockets. Space boards stay with the space.
 | `share_links` | `token_hash` (SHA-256 of the token), `role` view, comment or edit, `revoked_at` |
 | `comments` | Threads (`parent_id`), `anchor` jsonb, `body`, the author user or guest name, `resolved_at` |
 
+## Client
+
+The SvelteKit client (`apps/client`) is a static SPA. A board page opens one `BoardSession`
+(`src/lib/board/session.svelte.ts`): a `Y.Doc`, its y-websocket room, an `Editor`, presence and
+the comment threads.
+
+```
+Y.Doc ──observeDeep──▶ Scene (snapshots, z order, spatial grid, arrow bindings)
+  ▲                       │ flush once per animation frame
+  │ LOCAL transactions    ▼
+Editor ◀── Input (pointer, wheel, pinch, keys) ──▶ tool gestures
+  │
+  ├──▶ scene <canvas>    background, dot grid, shapes in the viewport
+  ├──▶ overlay <canvas>  selections (own and peers'), cursors, marquee, guides, drafts
+  └──▶ DOM               selection handles, the text being edited, comment pins, chrome
+```
+
+| Path | Role |
+|---|---|
+| `src/lib/board/schema.ts` | Schema 1 types, limits and allowed keys, mirroring `docs/board-schema.md` |
+| `src/lib/board/doc.ts` | `BoardDoc`: typed reads and writes over the Y.Doc, every write with the `LOCAL` origin |
+| `src/lib/board/fractional.ts` | Fractional `z` keys; ties break by shape id |
+| `src/lib/board/provider.ts` | y-websocket 3 wrapper: `disableBc`, stop on 1008/1009/1011, reconnect otherwise, message 100 refreshes comments |
+| `src/lib/board/undo.ts` | `Y.UndoManager` tracking only `LOCAL`, so undo never reverts a peer |
+| `src/lib/board/presence.ts` | Awareness `user`, `cursor`, `selection`, `viewport`, sent at most once per frame |
+| `src/lib/board/assets.ts` | `uploadImage` and asset URL hooks; until the Nuage track wires them, images say "arrive soon" and no data URL enters the document |
+| `src/lib/canvas/` | Camera, spatial index, hit-testing, renderer, tools, clipboard, z-order, shortcuts |
+| `src/lib/canvas/ui/` | `BoardView` and its parts: toolbar, style bar, handles, text editor, minimap, comments, share dialog |
+
+Conventions the canvas relies on:
+
+- `rot` is radians around the box centre. Line and arrow `points` are `[x, y, ...]` relative to
+  `x`, `y`; a bound end (`from`/`to`) overrides its point and follows the shape, so the stored
+  point is the last known position. Deleting a bound shape freezes the arrow's ends first.
+- Frames sit at the bottom of the z order when created; a shape whose centre lands in a frame
+  gets `parent`, and moving a frame moves its children.
+- Remote updates never paint directly: the scene queues changed ids and applies them in the next
+  animation frame. The renderer culls with the spatial grid and draws a shape smaller than two
+  screen pixels as one rectangle.
+- Keyboard shortcuts come from `src/lib/shortcuts.ts`, the list settings shows too.
+- Viewers and commenters get the select and hand tools (plus comment for commenters); the room
+  refuses their document updates anyway.
+
+`apps/client/e2e/canvas.e2e.ts` drives two members and a guest against the real API;
+`CANVAS_E2E_FAKE=1` runs it against `e2e/fake.ts`, an in-memory y-websocket relay for client-only
+work. `bun e2e/perf.ts 5000` seeds 5,000 shapes into that relay and reports pan and zoom frame
+and paint times.
+
 Back to the [documentation index](README.md).
