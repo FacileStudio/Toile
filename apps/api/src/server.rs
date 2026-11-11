@@ -108,8 +108,12 @@ async fn serve(config: Config, pool: PgPool) -> Result<(), BootError> {
     spawn_loops(&kits, &state, &token);
     let mut http = tronc::http::Config::from_core(&config.core);
     http.security = crate::security::config(http.security, &tronc::spa::dir_from_env());
+    http.cors = crate::security::cors(http.cors);
     let layers = tronc::http::layers(http)?;
-    let app = crate::cors::meetings(crate::router::build_router(state, &kits, mcp)?.layer(layers));
+    let app = crate::router::build_router(state, &kits, mcp)?
+        .layer(axum::middleware::from_fn(crate::socket::ws_bearer))
+        .layer(layers);
+    let app = crate::cors::meetings(app);
     let listener = tokio::net::TcpListener::bind(("0.0.0.0", config.core.port)).await?;
     tracing::info!(port = config.core.port, "toile: listening");
     let server = axum::serve(listener, app.into_make_service_with_connect_info::<SocketAddr>())

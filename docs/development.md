@@ -84,3 +84,82 @@ filet check .
 filet limit to pass.
 
 Back to the [documentation index](README.md).
+
+## Native apps
+
+The desktop app (`apps/desktop`, Tauri 2) and the phone apps (`apps/client/android` and
+`apps/client/ios`, Capacitor 8) wrap the same static client build. In them, `isApp()` in
+`$lib/platform.ts` is true: the client talks to `https://toile.facile.studio` (override with
+`VITE_API_ORIGIN` at build time) through `@facile/client/native`, with a bearer token and no CSRF
+header.
+
+### Sign-in
+
+porte-rs has no mobile flow, so the apps use its CLI flow, which needs no Registre change:
+
+- **Desktop:** the shell opens a one-shot listener on `127.0.0.1` (`login_listen` in
+  `apps/desktop/src/login.rs`), then the system browser at
+  `/api/auth/oidc?flow=cli&port=<port>&cli_state=<state>`. Registre's callback redirects to the
+  listener with the code, the window checks the state and posts the code to
+  `/api/auth/oidc/exchange`.
+- **Phone:** the in-app browser opens the same URL without a port. porte shows a one-time code
+  (valid 60 s); the person pastes it into the app, which redeems it the same way.
+
+The session token lives in the OS keychain on the desktop (`keyring`: Keychain, Credential
+Manager, Secret Service) and in the Android Keystore or iOS Keychain on a phone
+(`capacitor-secure-storage-plugin`), never in `localStorage` or Capacitor Preferences. Android
+backups are off. The board socket carries the token as the `bearer.<token>` subprotocol
+(`socketProtocols()` in `$lib/platform.ts`).
+
+### Desktop
+
+Needs the Tauri Linux libraries (`libwebkit2gtk-4.1-dev`, `libgtk-3-dev`, `librsvg2-dev`,
+`libdbus-1-dev`, `patchelf`).
+
+```sh
+cd apps/desktop
+bun install
+bun run tauri dev      # against the client dev server on :5173
+bun run tauri build    # builds the client, then the installers for this OS
+```
+
+The version is `apps/client/package.json`'s. Every app icon comes from
+`apps/desktop/app-icon.svg` (the Toile mark of `$lib/brand.ts` on the dark tile): from
+`apps/desktop`, run `bunx @tauri-apps/cli icon app-icon.svg -o icons`, copy the `android/`
+mipmaps into `apps/client/android/app/src/main/res` and `ios/AppIcon-512@2x.png` into the iOS
+`AppIcon.appiconset`, then delete the `android/`, `ios/`, `Square*` and `StoreLogo` outputs.
+
+### Android
+
+Needs JDK 21, the Android SDK (`ANDROID_HOME`) and Node 22 or later for the Capacitor CLI.
+
+```sh
+cd apps/client
+bun run build
+bunx cap sync android
+cd android && ./gradlew assembleDebug
+```
+
+The debug APK is `android/app/build/outputs/apk/debug/app-debug.apk`. iOS is committed but built
+only on a Mac: `bunx cap sync ios`, then open `ios/App` in Xcode.
+
+### Release
+
+A `desktop-v<version>` tag, equal to `apps/client/package.json`'s version, runs
+`.github/workflows/release.yml`: macOS dmg (arm64, x64), Linux deb and AppImage, Windows msi and
+the Android APK, published with fixed names so `releases/latest/download/<asset>` never changes.
+`workflow_dispatch` is a dry run without a release.
+
+| Secret or variable | What it does |
+|---|---|
+| `TAURI_SIGNING_PRIVATE_KEY`, `TAURI_SIGNING_PRIVATE_KEY_PASSWORD` (secrets) | Sign the updater artifacts |
+| `TAURI_UPDATER_PUBKEY` (variable) | The matching public key, baked into the app |
+| `ANDROID_KEYSTORE_BASE64`, `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS`, `ANDROID_KEY_PASSWORD` (secrets) | Sign the APK |
+
+Without the Tauri key and variable, the desktop apps build without self-update and the release
+has no `latest.json`. Without the Android secrets the `android` job fails and nothing is
+released, so `releases/latest/download/Toile-android.apk` never breaks. The Android keystore
+(alias `toile`, certificate SHA-256 `CF:C0:32:B9:...:16:D8`) is backed up in tiroir as
+`TOILE_ANDROID_KEYSTORE_B64`, `TOILE_ANDROID_KEYSTORE_PASSWORD` (also the key password) and
+`TOILE_ANDROID_KEY_ALIAS`. Neither key can change once an app ships: installed apps would refuse
+the next update.

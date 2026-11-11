@@ -1,6 +1,7 @@
 import * as decoding from 'lib0/decoding';
 import { WebsocketProvider } from 'y-websocket';
 import type * as Y from 'yjs';
+import { apiOrigin, socketProtocols } from '$lib/platform';
 
 /** What the connection chip shows. */
 export type Connection = 'connecting' | 'live' | 'offline' | 'stopped';
@@ -58,9 +59,11 @@ function commentsHandler(events: RoomEvents) {
 
 /** Opens the room of `target` over y-websocket 3: no BroadcastChannel, stop on 1008/1009/1011, else reconnect. */
 export function openRoom(target: RoomTarget, ydoc: Y.Doc, events: RoomEvents): Room {
-	const [base, name] = roomUrl(target, window.location);
+	const origin = apiOrigin();
+	const [base, name] = roomUrl(target, origin ? new URL(origin) : window.location);
 	const provider = new WebsocketProvider(base, name, ydoc, {
 		disableBc: true,
+		protocols: socketProtocols(),
 		params: 'token' in target ? { name: target.name } : {},
 		shouldReconnect: (event) => stopOf(event.code) === null
 	});

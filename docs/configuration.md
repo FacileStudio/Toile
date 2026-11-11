@@ -11,7 +11,7 @@ porte's configuration. A missing required variable, or an inconsistent pair, exi
 | `APP_ENV` | no | `development` | `development`, `staging` or `production` |
 | `LOG_LEVEL` | no | `info` | `debug`, `info`, `warn`, `error` |
 | `TRUSTED_PROXIES` | prod | none | `private,cloudflare` behind Traefik and Cloudflare |
-| `CORS_ALLOWED_ORIGINS` | no | none | Empty in production: the client is same-origin |
+| `CORS_ALLOWED_ORIGINS` | no | none | Extra origins. The four app origins (`https://localhost`, `capacitor://localhost`, `tauri://localhost`, `http://tauri.localhost`) are always added |
 | `CLIENT_DIR` | no | `./client` | The built SPA. The image sets `/client` |
 | `JOURNAL_URL`, `JOURNAL_TOKEN` | no | none | Ship logs to Journal when both are set |
 | `OIDC_ISSUER` | prod | none | `https://sso.facile.studio`. Turns sign-in, directory sync and deletions on. Production refuses to boot without it |

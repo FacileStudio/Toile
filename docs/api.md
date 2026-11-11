@@ -11,7 +11,12 @@ path.
 
 - Everything below is under `/api` unless it starts with another root.
 - Auth is a porte session: the `session` cookie, with `X-Facile-CSRF: <any>` on every mutation,
-  or `Authorization: Bearer <session token>`.
+  or `Authorization: Bearer <session token>`. The desktop and mobile apps use the bearer, from
+  the origins `https://localhost`, `capacitor://localhost`, `tauri://localhost` and
+  `http://tauri.localhost`, which CORS always allows (without credentials).
+- A WebSocket cannot set headers, so an app opens a socket with the subprotocols `toile` and
+  `bearer.<session token>`. With no cookie and no `Authorization` header, the API lifts the token
+  into `Authorization: Bearer` and answers the 101 with `Sec-WebSocket-Protocol: toile`.
 - Errors are `{"error":{"code","message"}}` with the suite codes (`invalid_argument` 400,
   `unauthenticated` 401, `permission_denied` 403, `not_found` 404, `internal` 500).
 - Request bodies refuse unknown fields.
@@ -99,7 +104,7 @@ refetch the comments.
 | `GET` | `/auth/config` | Whether sign-in is SSO only and OIDC is on |
 | `GET` | `/auth/oidc` | 302 to Registre |
 | `GET` | `/auth/oidc/callback` | Registre's redirect back; sets the session cookie |
-| `POST` | `/auth/oidc/exchange`, `/auth/oidc/device/exchange` | CLI token exchanges |
+| `POST` | `/auth/oidc/exchange`, `/auth/oidc/device/exchange` | CLI and app token exchanges |
 | `POST` | `/auth/sync-profile` | Refreshes the profile from Registre |
 | `POST` | `/auth/backchannel-logout` | Registre's back-channel logout |
 | `POST` | `/auth/logout` | Ends the session |

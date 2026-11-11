@@ -17,6 +17,8 @@
 	import { backend } from '$lib/backend';
 	import { boardIcon, logoIcon } from '$lib/brand';
 	import { reconnect } from '$lib/reconnect.svelte';
+	import NativeGate from '$lib/components/native/NativeGate.svelte';
+	import { isApp } from '$lib/platform';
 	import { session } from '$lib/session.svelte';
 	import { theme } from '$lib/theme';
 
@@ -64,6 +66,8 @@
 	<div class="flex h-dvh w-full items-center justify-center bg-fc-page"><Spinner /></div>
 {:else if fullscreen}
 	{@render children()}
+{:else if !session.user && isApp()}
+	<NativeGate onsignedin={() => session.load()} />
 {:else if !session.user && landing}
 	{@render children()}
 {:else if !session.user}

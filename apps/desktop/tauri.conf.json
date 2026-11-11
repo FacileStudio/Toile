@@ -1,0 +1,48 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "Toile",
+  "mainBinaryName": "toile-desktop",
+  "version": "../client/package.json",
+  "identifier": "studio.facile.toile",
+  "build": {
+    "devUrl": "http://localhost:5173",
+    "frontendDist": "../client/build",
+    "beforeBuildCommand": {
+      "script": "bun install --frozen-lockfile && bun run build",
+      "cwd": "../client"
+    }
+  },
+  "app": {
+    "windows": [
+      {
+        "label": "main",
+        "title": "Toile",
+        "width": 1280,
+        "height": 820,
+        "minWidth": 480,
+        "minHeight": 560,
+        "resizable": true,
+        "center": true
+      }
+    ],
+    "security": {
+      "csp": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self' data: https:; media-src 'self' data: blob: https:; connect-src 'self' ipc: http://ipc.localhost https://toile.facile.studio wss://toile.facile.studio https://api-ardoise.facile.studio https://api.iconify.design https://api.simplesvg.com https://api.unisvg.com",
+      "dangerousDisableAssetCspModification": ["style-src"]
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": ["deb", "appimage", "msi", "dmg", "app"],
+    "category": "Productivity",
+    "shortDescription": "Le tableau blanc infini et collaboratif de Facile",
+    "publisher": "Facile",
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ]
+  }
+}

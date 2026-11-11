@@ -1,0 +1,272 @@
+name: release
+
+on:
+  push:
+    tags:
+      - "desktop-v*"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+env:
+  BUN_VERSION: 1.4.2
+
+jobs:
+  desktop:
+    name: ${{ matrix.name }}
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: macos-arm64
+            runner: macos-latest
+            target: aarch64-apple-darwin
+            bundles: app,dmg
+          - name: macos-x64
+            runner: macos-latest
+            target: x86_64-apple-darwin
+            bundles: app,dmg
+          - name: linux-x64
+            runner: ubuntu-22.04
+            target: x86_64-unknown-linux-gnu
+            bundles: deb,appimage
+          - name: windows-x64
+            runner: windows-latest
+            target: x86_64-pc-windows-msvc
+            bundles: msi
+    defaults:
+      run:
+        shell: bash
+    env:
+      TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+      TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+      UPDATER_PUBKEY: ${{ vars.TAURI_UPDATER_PUBKEY }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Tag and app versions agree
+        if: github.ref_type == 'tag'
+        run: |
+          app=$(node -p "require('./apps/client/package.json').version")
+          echo "app=$app tag=$GITHUB_REF_NAME"
+          test "desktop-v$app" = "$GITHUB_REF_NAME"
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: apps/desktop -> target
+          key: ${{ matrix.target }}
+
+      - name: Install Linux libraries
+        if: runner.os == 'Linux'
+        env:
+          DEBIAN_FRONTEND: noninteractive
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y --no-install-recommends libwebkit2gtk-4.1-dev libgtk-3-dev librsvg2-dev libayatana-appindicator3-dev libxdo-dev libdbus-1-dev patchelf libssl-dev
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: ${{ env.BUN_VERSION }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+
+      - name: Build the client
+        working-directory: apps/client
+        run: bun install --frozen-lockfile && bun run build
+
+      - name: Test
+        working-directory: apps/desktop
+        run: cargo test --locked
+
+      - name: Updater key
+        id: updater
+        run: |
+          if [ -n "$TAURI_SIGNING_PRIVATE_KEY" ] && [ -n "$UPDATER_PUBKEY" ]; then
+            node -e '
+            const endpoint = "https://github.com/FacileStudio/Toile/releases/latest/download/latest.json";
+            const config = {
+              bundle: { createUpdaterArtifacts: true },
+              plugins: { updater: { pubkey: process.env.UPDATER_PUBKEY, endpoints: [endpoint] } }
+            };
+            require("fs").writeFileSync("apps/desktop/updater.json", JSON.stringify(config));
+            '
+            echo "args=--config updater.json" >> "$GITHUB_OUTPUT"
+          else
+            echo "::warning::TAURI_SIGNING_PRIVATE_KEY or the TAURI_UPDATER_PUBKEY variable is missing: building without self-update"
+            echo "args=" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Build the app
+        working-directory: apps/desktop
+        run: |
+          bun install --frozen-lockfile
+          bun run tauri build --target ${{ matrix.target }} --bundles ${{ matrix.bundles }} ${{ steps.updater.outputs.args }}
+
+      - name: Name the installers
+        run: |
+          bundle="apps/desktop/target/${{ matrix.target }}/release/bundle"
+          mkdir -p out
+          copy() { cp $1 "out/$2"; for sig in $1.sig; do [ -f "$sig" ] && cp "$sig" "out/$2.sig"; done; return 0; }
+          case "${{ matrix.name }}" in
+            macos-*)
+              arch="${{ matrix.name }}"; arch="${arch#macos-}"
+              copy "$bundle/dmg/*.dmg" "Toile-macos-$arch.dmg"
+              for tar in "$bundle"/macos/*.app.tar.gz; do [ -f "$tar" ] && copy "$tar" "Toile-macos-$arch.app.tar.gz"; done ;;
+            linux-x64)
+              copy "$bundle/deb/*.deb" Toile-linux-x64.deb
+              copy "$bundle/appimage/*.AppImage" Toile-linux-x64.AppImage ;;
+            windows-x64)
+              copy "$bundle/msi/*.msi" Toile-windows-x64.msi ;;
+          esac
+          ls -l out
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: desktop-${{ matrix.name }}
+          path: out/*
+          retention-days: 7
+
+  android:
+    name: android
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    env:
+      ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+      ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+      ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+      KEYSTORE_B64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - uses: android-actions/setup-android@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: ${{ env.BUN_VERSION }}
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: Decode the keystore
+        run: |
+          missing=0
+          for v in KEYSTORE_B64 ANDROID_KEYSTORE_PASSWORD ANDROID_KEY_ALIAS ANDROID_KEY_PASSWORD; do
+            if [ -z "${!v}" ]; then
+              echo "::error::the signing secret behind $v is empty: no APK, no release"
+              missing=1
+            fi
+          done
+          [ "$missing" = 0 ] || exit 1
+          umask 077
+          printf '%s' "$KEYSTORE_B64" | base64 -d > "$RUNNER_TEMP/toile.keystore"
+          test -s "$RUNNER_TEMP/toile.keystore"
+          echo "ANDROID_KEYSTORE_PATH=$RUNNER_TEMP/toile.keystore" >> "$GITHUB_ENV"
+
+      - name: Compute the version
+        run: |
+          version=$(node -p "require('./apps/client/package.json').version")
+          core="${version%%[-+]*}"
+          IFS=. read -r major minor patch <<< "$core"
+          code=$((major * 1000000 + minor * 1000 + patch))
+          echo "TOILE_VERSION_NAME=$version" >> "$GITHUB_ENV"
+          echo "TOILE_VERSION_CODE=$code" >> "$GITHUB_ENV"
+          echo "version $version, code $code"
+
+      - name: Build the web app
+        working-directory: apps/client
+        run: |
+          bun install --frozen-lockfile
+          bun run test
+          bun run build
+          bunx cap sync android
+
+      - name: Build the APK
+        working-directory: apps/client/android
+        run: ./gradlew assembleRelease --no-daemon
+
+      - name: Verify and name the APK
+        run: |
+          apk=apps/client/android/app/build/outputs/apk/release/app-release.apk
+          test -f "$apk"
+          apksigner="$(find "$ANDROID_HOME"/build-tools -maxdepth 2 -name apksigner | sort -V | tail -n1)"
+          "$apksigner" verify --print-certs "$apk"
+          mkdir -p out
+          cp "$apk" out/Toile-android.apk
+          (cd out && sha256sum Toile-android.apk > Toile-android.apk.sha256)
+          cat out/Toile-android.apk.sha256
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: android
+          path: out/*
+          retention-days: 7
+
+      - name: Remove the keystore
+        if: always()
+        run: rm -f "$RUNNER_TEMP/toile.keystore"
+
+  publish:
+    name: publish the release
+    needs: [desktop, android]
+    if: github.ref_type == 'tag'
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: ${{ env.BUN_VERSION }}
+
+      - uses: actions/download-artifact@v4
+        with:
+          path: out
+          merge-multiple: true
+
+      - name: Test the manifest builder
+        run: bun test apps/desktop/scripts
+
+      - name: Build latest.json when the installers are signed
+        run: |
+          if ls out/*.sig >/dev/null 2>&1; then
+            bun run apps/desktop/scripts/latest-json.ts --tag "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" \
+              --dir out --changelog CHANGELOG.md --out out/latest.json
+            cat out/latest.json
+          else
+            echo "::warning::no updater signatures: the release has no latest.json, installed apps will not self-update"
+          fi
+
+      - name: Create the release
+        run: |
+          cd out
+          test -f Toile-android.apk
+          sha256sum Toile-*.dmg Toile-*.deb Toile-*.AppImage Toile-*.msi > desktop-checksums.txt
+          cat desktop-checksums.txt
+          extra=""
+          [ -f latest.json ] && extra="latest.json"
+          gh release create "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" \
+            --title "Toile apps ${GITHUB_REF_NAME#desktop-v}" \
+            --notes "Desktop and Android apps for Toile. The macOS build is not notarized: right-click the app and choose Open the first time." \
+            --latest \
+            Toile-* desktop-checksums.txt $extra

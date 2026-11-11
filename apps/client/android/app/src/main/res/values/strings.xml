@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Toile</string>
+    <string name="title_activity_main">Toile</string>
+    <string name="package_name">studio.facile.toile</string>
+    <string name="custom_url_scheme">studio.facile.toile</string>
+</resources>

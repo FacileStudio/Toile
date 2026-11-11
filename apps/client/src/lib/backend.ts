@@ -1,12 +1,17 @@
 import { createApi, type CallOptions } from '@facile/client';
+import { createNativeApi } from '@facile/client/native';
+import { APP_API_ORIGIN, apiOrigin, clearToken, getToken, isApp } from './platform';
 import { isReconnect, reconnect } from './reconnect.svelte';
 import type { Board, Entitlements, Space } from './types';
 
-const kernel = createApi();
+const kernel = isApp()
+	? createNativeApi({ origin: apiOrigin() || APP_API_ORIGIN, token: getToken, onUnauthorized: () => clearToken() })
+	: createApi();
 
 /**
- * The API kernel: same origin, cookies, the CSRF header on mutations, the suite envelope thrown
- * typed. A 412 from a token exchange also asks the person to sign in again.
+ * The API kernel: on the web same origin, cookies and the CSRF header on mutations; in the
+ * installed apps production with the bearer from the secure store, forgotten on a 401. The suite
+ * envelope is thrown typed. A 412 from a token exchange also asks the person to sign in again.
  */
 export async function api<T>(path: string, init?: RequestInit, options?: CallOptions): Promise<T> {
 	try {
