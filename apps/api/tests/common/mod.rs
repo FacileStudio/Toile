@@ -5,6 +5,7 @@ pub mod directory;
 pub mod fakes;
 pub mod fixture;
 pub mod http;
+pub mod mcp;
 pub mod registre;
 pub mod server;
 pub mod upload;
@@ -63,8 +64,10 @@ pub async fn app_with(pool: PgPool, apps: api::modules::suite::Apps) -> App {
         hub,
         socket_recheck: std::time::Duration::from_millis(200),
         suite: kits.suite.clone(),
+        confirmations: None,
+        sealer: None,
     };
-    let router = api::router::build_router(state.clone(), &kits).unwrap();
+    let router = api::router::build_router(state.clone(), &kits, None).unwrap();
     App { router, state, kits, pool, registre }
 }
 

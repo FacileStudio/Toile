@@ -56,6 +56,10 @@ const ROUTES: &[Row] = &[
     ("POST", "/cards/resolve", "cards", "Resolves a link into a live card for the caller", "200"),
     ("POST", "/boards/{id}/shapes/{shape}/task", "tasks", "Turns a sticky into an Opus task and adds its card", "201"),
     ("GET", "/me/entitlements", "suite", "The plan values of the personal scope or of a space", "200"),
+    ("POST", "/boards/meeting", "meetings", "The board and edit link of an Echo room, made on first call", "200"),
+    ("GET", "/mcp/actions", "mcp", "The caller's agent actions awaiting confirmation", "200"),
+    ("POST", "/mcp/actions/{id}/confirm", "mcp", "Confirms an agent action and runs it", "200"),
+    ("POST", "/mcp/actions/{id}/dismiss", "mcp", "Refuses an agent action", "204"),
 ];
 
 fn method(name: &str) -> HttpMethod {

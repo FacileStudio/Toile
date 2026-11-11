@@ -2,4 +2,4 @@
 
 mod router;
 
-pub use router::routes;
+pub use router::{Space, mine, routes};

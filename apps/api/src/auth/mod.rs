@@ -14,8 +14,8 @@ use porte::directory::{self, Deletions, Syncer};
 use porte::exchange::{self, Exchanger};
 use porte::http_client::HttpClient;
 use porte::oidc::{self, Kit};
-use porte::pg;
 use porte::session::{self, Manager};
+use porte::{mcpauth, pg};
 use sqlx::PgPool;
 
 pub use deletions::{AppData, DeletionState};
@@ -41,6 +41,8 @@ pub struct Kits {
     pub deletions: Option<Deletions>,
     /// Token exchange and plans.
     pub suite: Suite,
+    /// The MCP token verifier, when `MCP_RESOURCE` is set.
+    pub mcp: Option<Arc<mcpauth::Verifier>>,
 }
 
 type BootError = Box<dyn std::error::Error + Send + Sync>;
@@ -72,9 +74,12 @@ impl Kits {
             http: crate::modules::suite::client(),
             cards: Default::default(),
         };
-        let mut kits = Kits { sessions, oidc, syncer: None, deletions: None, suite };
+        let mut kits = Kits { sessions, oidc, syncer: None, deletions: None, suite, mcp: None };
         if cfg.porte.enabled() {
-            kits.directory(cfg, pool, hub, store);
+            kits.directory(cfg, pool, hub, store.clone());
+        }
+        if !cfg.mcp_resource.is_empty() {
+            kits.mcp = Some(Arc::new(mcp_verifier(cfg, &store, &kits.oidc).await?));
         }
         Ok(kits)
     }
@@ -92,4 +97,18 @@ impl Kits {
         let state = Arc::new(DeletionState::new(pool.clone()));
         self.deletions = Some(Deletions::new(client, data, Some(Arc::new(store)), Some(state), Duration::ZERO));
     }
+}
+
+async fn mcp_verifier(cfg: &Config, store: &pg::Store, oidc: &Kit) -> Result<mcpauth::Verifier, BootError> {
+    let config = mcpauth::Config {
+        issuer: cfg.porte.issuer.clone(),
+        resource: cfg.mcp_resource.clone(),
+        scope_prefix: "toile".to_owned(),
+        audience: cfg.porte.client_id.clone(),
+        identities: store.identities(),
+        provision: true,
+        accounts: Some(oidc.clone()),
+        http: HttpClient::new(),
+    };
+    Ok(mcpauth::Verifier::new(config).await?)
 }
