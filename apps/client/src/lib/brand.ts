@@ -1,27 +1,17 @@
 import { registerIcons } from '@facile/muse';
 
-/** The brand mark of Toile: a sticky note peeling over another, the one bold-duotone glyph in the rail. */
-export const logoIcon = 'toile:logo';
+/** The brand mark of Toile, the Solar tablet glyph from the suite catalog. */
+export const logoIcon = 'solar:tablet-bold-duotone';
 
 /** A board, in lists and empty states. */
 export const boardIcon = 'toile:board';
 
-const back =
-	'M2 6.5A4.5 4.5 0 0 1 6.5 2h7A4.5 4.5 0 0 1 18 6.5V10h-5.5A2.5 2.5 0 0 0 10 12.5V18H6.5A4.5 4.5 0 0 1 2 13.5Z';
-const front = 'M12 14a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v2.2h-2.8a2.6 2.6 0 0 0-2.6 2.6V22H14a2 2 0 0 1-2-2Z';
-const fold = 'M22 17.4 17.4 22v-2.9a1.7 1.7 0 0 1 1.7-1.7Z';
-const lines = 'M6 6.5h6M6 10h2.5';
 const ink = 'M6 17.5c2-2.5 3.5-1 5-.5s2.5-1 3.5-3 2.5-2.5 4.5-1';
 const stroke = 'fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"';
 
 registerIcons({
 	[logoIcon]: {
-		body: [
-			`<path fill="currentColor" opacity=".5" d="${back}"/>`,
-			`<path fill="currentColor" d="${front}"/>`,
-			`<path fill="currentColor" opacity=".5" d="${fold}"/>`,
-			`<path ${stroke} stroke-width="1.6" d="${lines}"/>`
-		].join(''),
+		body: '<path fill="currentColor" d="M3.17157 18.8284C4.34315 20 6.22876 20 10 20L14 20C17.7712 20 19.6569 20 20.8284 18.8284C22 17.6569 22 15.7712 22 12C22 8.22876 22 6.34314 20.8284 5.17157C19.6569 4 17.7712 4 14 4H10C6.22876 4 4.34315 4 3.17157 5.17157C2 6.34315 2 8.22876 2 12C2 15.7712 2 17.6569 3.17157 18.8284Z" opacity=".5"/><path fill="currentColor" d="M9 16.25C8.58579 16.25 8.25 16.5858 8.25 17C8.25 17.4142 8.58579 17.75 9 17.75H15C15.4142 17.75 15.75 17.4142 15.75 17C15.75 16.5858 15.4142 16.25 15 16.25H9Z"/>',
 		width: 24,
 		height: 24
 	},

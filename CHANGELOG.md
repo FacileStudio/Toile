@@ -4,6 +4,14 @@ All notable changes to Toile. Versions follow SemVer.
 
 ## [Unreleased]
 
+### Changed
+
+- The Toile logo is the suite catalog's mark (`solar:tablet-bold-duotone`) in the rail, the
+  mobile header and the landing page. The custom `toile:logo` glyph is gone
+- Favicons, touch and manifest icons, the link preview image (`og-image.png`) and the head
+  metadata come from the muse v0.19.0 brand generator and match the suite catalog. `og.png`,
+  `og.svg`, `icon.svg` and `scripts/icons.sh` are gone
+
 ### Added
 
 - The repository, bootstrapped from Docs: the gate (`scripts/check.sh`), filet, lefthook, CI,
