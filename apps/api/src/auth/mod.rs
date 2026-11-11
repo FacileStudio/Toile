@@ -62,18 +62,7 @@ impl Kits {
             now: None,
         };
         let oidc = Kit::new(&cfg.porte, deps).await?;
-        let exchanger = match cfg.porte.enabled() {
-            true => Some(Exchanger::new(exchange::Config::from_porte(&cfg.porte, store.identities()))?),
-            false => None,
-        };
-        let plans = Plans::new(pool.clone(), &cfg.porte.issuer);
-        let suite = Suite {
-            exchanger,
-            plans,
-            apps: cfg.apps.clone(),
-            http: crate::modules::suite::client(),
-            cards: Default::default(),
-        };
+        let suite = suite(cfg, pool, &store)?;
         let mut kits = Kits { sessions, oidc, syncer: None, deletions: None, suite, mcp: None };
         if cfg.porte.enabled() {
             kits.directory(cfg, pool, hub, store.clone());
@@ -97,6 +86,21 @@ impl Kits {
         let state = Arc::new(DeletionState::new(pool.clone()));
         self.deletions = Some(Deletions::new(client, data, Some(Arc::new(store)), Some(state), Duration::ZERO));
     }
+}
+
+fn suite(cfg: &Config, pool: &PgPool, store: &pg::Store) -> Result<Suite, BootError> {
+    let exchanger = match cfg.porte.enabled() {
+        true => Some(Exchanger::new(exchange::Config::from_porte(&cfg.porte, store.identities()))?),
+        false => None,
+    };
+    let plans = Plans::new(pool.clone(), &cfg.porte.issuer);
+    Ok(Suite {
+        exchanger,
+        plans,
+        apps: cfg.apps.clone(),
+        http: crate::modules::suite::client(),
+        cards: Default::default(),
+    })
 }
 
 async fn mcp_verifier(cfg: &Config, store: &pg::Store, oidc: &Kit) -> Result<mcpauth::Verifier, BootError> {
