@@ -17,7 +17,6 @@ use uuid::Uuid;
 use crate::state::AppState;
 
 pub use delete::KIND;
-pub use shapes::add_to;
 
 /// The porte user id of the caller.
 pub fn user(call: &Call) -> Result<i64, ToolError> {

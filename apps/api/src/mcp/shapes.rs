@@ -1,14 +1,12 @@
-use std::sync::{Arc, Mutex};
-
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use tronc::mcp::{Answer, Call, ToolError};
 
 use super::{board, user};
 use crate::modules::boards::access::{self, Access};
+use crate::scene;
 use crate::scene::change::{self, Change};
 use crate::scene::input::{NewShape, Placed};
-use crate::scene::{self, plan, read, write};
 use crate::state::AppState;
 
 /// `toile_add_shapes`.
@@ -27,21 +25,6 @@ pub struct AddOut {
     pub created: Vec<Placed>,
 }
 
-/// Plans and writes `shapes` into board `id` in one room transaction, so the layout sees the
-/// live board; answers where each landed.
-pub async fn add_to(state: &AppState, id: uuid::Uuid, shapes: Vec<NewShape>) -> tronc::Result<Vec<Placed>> {
-    let out = Arc::new(Mutex::new(Vec::new()));
-    let sink = out.clone();
-    let edit = Box::new(move |txn: &mut yrs::TransactionMut, map: &yrs::MapRef| {
-        let planned = plan::plan(&read::all(txn, map), shapes, scene::fresh_id)?;
-        write::insert(txn, map, &planned);
-        *sink.lock().unwrap_or_else(|p| p.into_inner()) = planned.into_iter().map(|p| p.placed).collect();
-        Ok(())
-    });
-    state.hub.write(state, id, edit).await?;
-    Ok(std::mem::take(&mut *out.lock().unwrap_or_else(|p| p.into_inner())))
-}
-
 /// `toile_add_shapes`: new shapes, placed live.
 pub async fn add(state: AppState, call: Call, input: AddIn) -> Result<Answer<AddOut>, ToolError> {
     let id = board(&input.board_id)?;
@@ -49,7 +32,7 @@ pub async fn add(state: AppState, call: Call, input: AddIn) -> Result<Answer<Add
     if input.shapes.is_empty() {
         return Err(ToolError("give at least one shape".to_owned()));
     }
-    Ok(AddOut { created: add_to(&state, id, input.shapes).await? }.into())
+    Ok(AddOut { created: scene::add(&state, id, input.shapes).await? }.into())
 }
 
 /// `toile_update_shapes`.

@@ -141,6 +141,9 @@ refetch the comments.
 | `POST` | `/share/{token}/assets` | Public: always 403, guests cannot upload |
 | `POST` | `/cards/resolve` | `{"url"}` (http or https, at most 2048 characters): `{"kind", "title", "subtitle"?, "status"?, "icon", "url"}`. See "Live cards" |
 | `POST` | `/boards/{id}/shapes/{shape}/task` | `{"project": <Opus project id>}`: creates an Opus task from sticky `shape` (title = its first line, description = its text) for the caller and writes a `card` shape (`kind: opus`) right of the sticky through the room. 201 `{"task": {"id", "title", "url"}, "card": "<shape id>"}`; needs `editor`. Not a sticky or empty: 400; no such shape or Opus project: 404 |
+| `POST` | `/boards/{id}/ai/summarize` | No body: `{"markdown"}`, Bulle's summary of the board's live text. See "AI" |
+| `POST` | `/boards/{id}/ai/cluster` | `{"shapes": [ids]}` (at most 200): Bulle groups the selected stickies by theme; each group gets a new frame from the selection's top-left and its stickies move inside it, painted above it. `{"frames": [{"frame", "title", "shapes"}]}`. Fewer than two stickies with text: 400 |
+| `POST` | `/boards/{id}/ai/generate` | `{"prompt", "kind": "mindmap|flowchart|stickies"}` (prompt at most 2000 characters): Bulle drafts it and Toile lays it out right of the board's content. `{"created": [{"id", "ref"?, "type", "x", "y", "w", "h"}]}` |
 | `GET` | `/me/entitlements?space_id=` | `{"scope": "personal|space", "entitlements": {"ai.access": bool, "toile.upload_mb": n}, "upgrade_url"}`. No `space_id` is the caller's own plan; a space they are not in is 404. `-1` is unlimited |
 | `POST` | `/boards/meeting` | `{"room", "name"?, "space_id"?}`: the Echo room's board and edit link (see below); 201 when made, 200 after |
 | `GET` | `/mcp/actions` | The caller's agent actions awaiting confirmation, each with `state` (`ready|changed|missing`) |
@@ -161,6 +164,18 @@ it refuses is a host-only `link` card. Cards are cached per person and URL for 1
 
 Public share routes allow 2 requests a second per client IP (burst 30); guest comment posts 1
 every 2 seconds (burst 10); past that, 429.
+
+## AI
+
+The three `/ai/*` routes need `editor` on the board (guests never reach them) and a plan with
+`ai.access`, the board's space plan or the caller's own for a personal board. Without it they
+answer 402 before Bulle is called, with the body muse `planLimitFrom` reads:
+`{"error": {"code": "payment_required", "message", "upgrade_url", "key": "ai.access"}}`. Each call
+goes to Bulle's `POST /api/ai/complete` with a token exchanged for the caller (audience `bulle`,
+`bulle.read bulle.write`); the board text is sent as untrusted `input`, and cluster and generate
+send a JSON Schema so Bulle answers validated JSON. Bulle's own 402 comes back in the same shape,
+its 429 (rate limit or daily cap) as 429, and anything else it fails with as 503. Writes go
+through the room in one transaction, so open clients see them live.
 
 ## Echo meeting boards
 

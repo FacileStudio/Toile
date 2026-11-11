@@ -76,6 +76,6 @@ pub async fn shapes(state: &api::state::AppState, id: &str) -> Vec<String> {
 
 pub async fn sticky(state: &api::state::AppState, id: &str) -> String {
     let new = api::scene::input::NewShape::new(api::scene::input::Kind::Sticky, "doomed");
-    let placed = api::mcp::add_to(state, uuid::Uuid::parse_str(id).unwrap(), vec![new]).await.unwrap();
+    let placed = api::scene::add(state, uuid::Uuid::parse_str(id).unwrap(), vec![new]).await.unwrap();
     placed[0].id.clone()
 }

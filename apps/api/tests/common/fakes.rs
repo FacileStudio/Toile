@@ -104,6 +104,7 @@ pub async fn start() -> (Shared, Apps) {
         docs: app("docs", &urls[2]),
         feuilles: app("feuilles", &urls[3]),
         agenda: app("agenda", &urls[4]),
+        bulle: App::default(),
     };
     (shared, apps)
 }
