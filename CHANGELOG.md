@@ -53,4 +53,10 @@ All notable changes to Toile. Versions follow SemVer.
   its card beside the sticky through the room
 - Client: image paste, drop and picker upload through `$lib/api/assets.ts`, images load from
   the board or share route, and a pasted link's card fills its title and kind from the API
+- MCP at `/mcp` (tronc-rs `mcp`, porte-rs `mcpauth`, free for every account): `toile_list_boards`,
+  `toile_read_board`, `toile_add_shapes` (auto-layout, refs, frames, bound arrows),
+  `toile_update_shapes`, `toile_delete_shapes` (confirmed by the person) and `toile_comment`;
+  writes go through the board's room. Migration `0006_mcp_meetings.sql` adds `mcp_actions`
+- API: `GET /api/mcp/actions` and its confirm and dismiss routes; client: the `/pending` page
+- API: `POST /api/boards/meeting`, one board and edit link per (host, Echo room)
 - API: the CSP allows `connect-src https://api-ardoise.facile.studio` for the plan catalog

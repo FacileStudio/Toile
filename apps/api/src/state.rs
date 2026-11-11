@@ -1,8 +1,10 @@
 use std::sync::Arc;
 use std::time::Duration;
 
+use porte::pg::TokenSealer;
 use porte::session::Manager;
 use sqlx::PgPool;
+use tronc::mcp::Confirmations;
 
 use crate::modules::rooms::Hub;
 use crate::modules::suite::Suite;
@@ -22,4 +24,8 @@ pub struct AppState {
     pub socket_recheck: Duration,
     /// Token exchange and plans.
     pub suite: Suite,
+    /// The MCP confirmation flow, when `/mcp` is on.
+    pub confirmations: Option<Confirmations>,
+    /// Seals the meeting links Toile keeps to answer again; `None` keeps them plain (dev).
+    pub sealer: Option<Arc<TokenSealer>>,
 }

@@ -137,6 +137,10 @@ refetch the comments.
 | `POST` | `/cards/resolve` | `{"url"}` (http or https, at most 2048 characters): `{"kind", "title", "subtitle"?, "status"?, "icon", "url"}`. See "Live cards" |
 | `POST` | `/boards/{id}/shapes/{shape}/task` | `{"project": <Opus project id>}`: creates an Opus task from sticky `shape` (title = its first line, description = its text) for the caller and writes a `card` shape (`kind: opus`) right of the sticky through the room. 201 `{"task": {"id", "title", "url"}, "card": "<shape id>"}`; needs `editor`. Not a sticky or empty: 400; no such shape or Opus project: 404 |
 | `GET` | `/me/entitlements?space_id=` | `{"scope": "personal|space", "entitlements": {"ai.access": bool, "toile.upload_mb": n}, "upgrade_url"}`. No `space_id` is the caller's own plan; a space they are not in is 404. `-1` is unlimited |
+| `POST` | `/boards/meeting` | `{"room", "name"?, "space_id"?}`: the Echo room's board and edit link (see below); 201 when made, 200 after |
+| `GET` | `/mcp/actions` | The caller's agent actions awaiting confirmation, each with `state` (`ready|changed|missing`) |
+| `POST` | `/mcp/actions/{id}/confirm` | Runs the action: `{"status": "done"}`; an agent token (with an actor) gets 403 |
+| `POST` | `/mcp/actions/{id}/dismiss` | Refuses the action, 204 |
 
 ### Live cards
 
@@ -152,5 +156,41 @@ it refuses is a host-only `link` card. Cards are cached per person and URL for 1
 
 Public share routes allow 2 requests a second per client IP (burst 30); guest comment posts 1
 every 2 seconds (burst 10); past that, 429.
+
+## Echo meeting boards
+
+`POST /api/boards/meeting` gives an Echo room its board. Echo calls it as the room's host, with
+that person's bearer token (a Registre token exchanged for Toile, or a Toile session token).
+
+```json
+{"room": "echo room id", "name": "optional, first call only (default Réunion)", "space_id": "optional, first call only"}
+```
+
+It answers `{"board": Board, "edit_link": "/s/<token>", "created": true|false}`. The pair
+(caller, `room`) names one board: later calls answer the same board and the same edit link, while
+both live. If the host trashed the board or revoked the link, the next call makes a new board
+(201). `room` is trimmed, 1 to 200 characters, no control characters. The link is relative to
+`https://toile.facile.studio`: participants open it in a browser, or a client resolves it with
+`GET /api/share/{token}`. Toile keeps the link sealed with `PORTE_TOKEN_KEY` to answer it again.
+
+## MCP
+
+`/mcp` (outside `/api`) is the remote MCP server: Streamable HTTP, stateless (spec
+2026-07-28), behind Registre tokens bound to `https://toile.facile.studio/mcp`, scopes
+`toile.read` and `toile.write`. It is free for every account. A first call creates the local
+account. Metadata: `/.well-known/oauth-protected-resource/mcp`.
+
+| Tool | Scope | What it does |
+|---|---|---|
+| `toile_list_boards` | read | `{space_id?}`: the boards of one scope, or personal plus every space; and the caller's spaces |
+| `toile_read_board` | read | `{board_id}`: every shape as one line (`type id at x,y wxh color: "text"`), frames followed by their children, then `outside frames:`; arrows name the shapes they join. Plus the board, SVG export and thumbnail URLs |
+| `toile_add_shapes` | write | `{board_id, shapes}`: sticky, text, rect, ellipse, diamond, frame, arrow, line. Each takes an optional `ref`, `text`, `x`, `y`, `w`, `h`, `color`, `frame`, and for arrows `from`/`to` (an id or a `ref`). Shapes without `x`/`y` go inside their frame, or in rows to the right of the content; a new frame sizes to its new children. At most 500 per call |
+| `toile_update_shapes` | write | `{board_id, shapes: [{id, text?, x?, y?, w?, h?, color?, frame?}]}`, all or none; moving a frame moves its contents; `frame: ""` takes a shape out of its frame |
+| `toile_delete_shapes` | write | `{board_id, ids}`; a frame takes its contents. Confirmed by the person first: an elicitation when the client can ask, otherwise `pending_confirmation` with a `confirm_url` to `/pending?action=<id>` |
+| `toile_comment` | write | `{board_id, body, shape_id? \| x?, y? \| reply_to?}`, signed by the caller |
+
+Every write runs in the board's room (`Hub::write`): open clients see it live and schema 1 checks
+it like any client update. Access is the caller's own: viewers read, commenters comment, editors
+and owners change shapes.
 
 Back to the [documentation index](README.md).

@@ -20,7 +20,7 @@ porte's configuration. A missing required variable, or an inconsistent pair, exi
 | `OIDC_SUCCESS_URL` | with issuer | none | `https://toile.facile.studio/` |
 | `OIDC_CLI_AUDIENCE` | no | none | Mounts `POST /api/auth/oidc/device/exchange` for that CLI client |
 | `PORTE_TOKEN_KEY` | prod | none | Seals stored OIDC tokens. Production refuses to boot without it |
-| `MCP_RESOURCE` | no | none | `https://toile.facile.studio/mcp`. Read and checked now; `/mcp` itself ships with track T5 |
+| `MCP_RESOURCE` | no | none | `https://toile.facile.studio/mcp`. Turns on `/mcp` |
 | `MCP_STATE_KEY` | with MCP | none | HMAC key of the MCP confirmation flow; boot fails without it when `MCP_RESOURCE` is set |
 | `NUAGE_URL`, `OPUS_URL`, `DOCS_URL`, `FEUILLES_URL`, `AGENDA_URL` | no | `https://<app>.facile.studio` | Public origin of each suite app Toile calls; links to it become live cards |
 | `NUAGE_CLIENT_ID` | for uploads | none | Nuage's Registre client id, the audience of upload tokens. Without it uploads answer 503 |

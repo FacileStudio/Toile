@@ -30,6 +30,8 @@ async fn erase(tx: &mut PgConnection, users: &[i64], subject: &str) -> Result<Ve
             .bind(users)
             .fetch_all(&mut *tx)
             .await?;
+    let names: Vec<String> = users.iter().map(i64::to_string).collect();
+    sqlx::query("DELETE FROM mcp_actions WHERE user_id = ANY($1)").bind(&names).execute(&mut *tx).await?;
     sqlx::query("DELETE FROM space_members WHERE subject = $1").bind(subject).execute(&mut *tx).await?;
     sqlx::query("DELETE FROM porte_users WHERE id = ANY($1)").bind(users).execute(&mut *tx).await?;
     Ok(boards)

@@ -5,6 +5,7 @@ use std::process::ExitCode;
 use std::sync::Arc;
 use std::time::Duration;
 
+use porte::pg::TokenSealer;
 use sqlx::PgPool;
 use sqlx::postgres::PgPoolOptions;
 use tokio_util::sync::CancellationToken;
@@ -55,7 +56,16 @@ pub fn state(config: &Config, pool: PgPool, kits: &Kits, hub: Hub) -> AppState {
         hub,
         socket_recheck: crate::modules::rooms::SOCKET_RECHECK,
         suite: kits.suite.clone(),
+        confirmations: None,
+        sealer: TokenSealer::parse(&config.token_key).ok().flatten().map(Arc::new),
     }
+}
+
+fn mcp_options(config: &Config, kits: &Kits, state: &mut AppState) -> Result<Option<tronc::mcp::Options>, BootError> {
+    let Some(verifier) = kits.mcp.clone() else { return Ok(None) };
+    let resource = config.mcp_resource.clone();
+    state.confirmations = Some(crate::mcp::confirmations(state, &resource, config.mcp_state_key.as_bytes())?);
+    Ok(Some(tronc::mcp::Options::new("toile", resource, config.porte.issuer.clone(), verifier)))
 }
 
 fn spawn_loops(kits: &Kits, state: &AppState, token: &CancellationToken) {
@@ -92,12 +102,13 @@ async fn serve(config: Config, pool: PgPool) -> Result<(), BootError> {
     let kits = Kits::new(&config, &pool, &hub).await?;
     kits.suite.plans.restore().await?;
     let token = CancellationToken::new();
-    let state = state(&config, pool, &kits, hub.clone());
+    let mut state = state(&config, pool, &kits, hub.clone());
+    let mcp = mcp_options(&config, &kits, &mut state)?;
     spawn_loops(&kits, &state, &token);
     let mut http = tronc::http::Config::from_core(&config.core);
     http.security = crate::security::config(http.security, &tronc::spa::dir_from_env());
     let layers = tronc::http::layers(http)?;
-    let app = crate::router::build_router(state, &kits)?.layer(layers);
+    let app = crate::router::build_router(state, &kits, mcp)?.layer(layers);
     let listener = tokio::net::TcpListener::bind(("0.0.0.0", config.core.port)).await?;
     tracing::info!(port = config.core.port, "toile: listening");
     let server = axum::serve(listener, app.into_make_service_with_connect_info::<SocketAddr>())
