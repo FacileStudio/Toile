@@ -39,7 +39,7 @@ async fn a_space_removed_by_the_directory_closes_its_sockets_and_refuses_reconne
     let url = ws(&app.serve().await, &id);
     let mut peer = Peer::new();
     peer.connect(&url, Some(&roles.member.token)).await;
-    let apply = SpacesApply::new(pool, app.state.hub.clone());
+    let apply = SpacesApply::new(pool, app.state.hub.clone(), app.state.suite.plans.clone());
     let other = porte::directory::Space { id: "elsewhere".into(), ..Default::default() };
     let snapshot = common::directory::snapshot(common::directory::base(), vec![other]);
     assert!(apply.apply_snapshot(&snapshot).await.unwrap());
@@ -61,7 +61,12 @@ async fn a_member_dropped_from_a_space_is_evicted_while_others_stay() {
     kept.connect(&url, Some(&roles.owner.token)).await;
     let space = common::directory::space(&roles.space, &[(&roles.owner.subject, "owner")]);
     let snapshot = common::directory::snapshot(common::directory::base(), vec![space]);
-    assert!(SpacesApply::new(pool, app.state.hub.clone()).apply_snapshot(&snapshot).await.unwrap());
+    assert!(
+        SpacesApply::new(pool, app.state.hub.clone(), app.state.suite.plans.clone())
+            .apply_snapshot(&snapshot)
+            .await
+            .unwrap()
+    );
     dropped.pump(QUIET).await;
     kept.pump(Duration::from_millis(200)).await;
     assert_eq!((dropped.closed, kept.closed), (Some(1008), None));

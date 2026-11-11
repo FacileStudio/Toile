@@ -27,6 +27,21 @@ porte's configuration. A missing required variable, or an inconsistent pair, exi
 
 `SSO_ONLY` is always true: the local password routes are never registered.
 
+Token exchange to other suite apps reuses `OIDC_ISSUER`, `OIDC_CLIENT_ID` and
+`OIDC_CLIENT_SECRET` and the refresh token stored at sign-in (sealed by `PORTE_TOKEN_KEY`). It
+needs Registre's seed to grant Toile `offline_access` and a `token_exchange` entry per audience.
+
+## Plans
+
+The directory snapshot carries the plan values; the last one applied is saved in the
+`entitlement_state` row and restored at boot, so a restart never fails open again. Until the
+first snapshot with entitlements, every feature is on and unlimited.
+
+| Feature | Kind | Free plan | What it gates |
+|---|---|---|---|
+| `ai.access` | bool | `false` | AI features through Bulle |
+| `toile.upload_mb` | limit | `10` | The largest image one upload may be, in MB |
+
 ## Fixed limits
 
 | Limit | Value | Where |

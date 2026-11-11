@@ -21,3 +21,10 @@ export type Board = {
 	thumbnail_url: string | null;
 	deleted_at?: string;
 };
+
+/** `GET /api/me/entitlements`: the plan values of the personal scope or of one space. */
+export type Entitlements = {
+	scope: 'personal' | 'space';
+	entitlements: { 'ai.access': boolean; 'toile.upload_mb': number };
+	upgrade_url: string;
+};

@@ -54,6 +54,7 @@ pub fn state(config: &Config, pool: PgPool, kits: &Kits, hub: Hub) -> AppState {
         issuer: Arc::from(config.porte.issuer.as_str()),
         hub,
         socket_recheck: crate::modules::rooms::SOCKET_RECHECK,
+        suite: kits.suite.clone(),
     }
 }
 
@@ -89,6 +90,7 @@ async fn serve(config: Config, pool: PgPool) -> Result<(), BootError> {
     tronc::migrate::run(&pool, &crate::MIGRATOR).await?;
     let hub = Hub::default();
     let kits = Kits::new(&config, &pool, &hub).await?;
+    kits.suite.plans.restore().await?;
     let token = CancellationToken::new();
     let state = state(&config, pool, &kits, hub.clone());
     spawn_loops(&kits, &state, &token);

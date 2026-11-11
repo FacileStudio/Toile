@@ -7,7 +7,7 @@ How to run the API locally, test it, and pass the gate before a commit.
 - Rust 1.98.1 (`apps/api/rust-toolchain.toml`) with `rustfmt` and `clippy`
 - Docker, for Postgres 16, and `pg_isready` (psql 16 or later)
 - bun 1.4 for the client, `filet` 0.19 or later, `mise` and `lefthook`
-- Network access to GitHub: `tronc-rs` (`v0.3.0`) and `porte-rs` (`v0.5.2`) come from their
+- Network access to GitHub: `tronc-rs` (`v0.4.0`) and `porte-rs` (`v0.6.1`) come from their
   public repos by tag
 
 On the shared build host, export `CARGO_TARGET_DIR=/srv/scratch/cache/cargo-target-toile` and

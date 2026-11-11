@@ -4,6 +4,7 @@ vi.mock('$app/environment', () => ({ browser: true }));
 vi.mock('$app/navigation', () => ({ goto: async () => undefined }));
 
 const { backend } = await import('./backend');
+const { reconnect } = await import('./reconnect.svelte');
 
 function stub(response: Response) {
 	const fetch = vi.fn(async () => response);
@@ -39,5 +40,16 @@ describe('backend', () => {
 	it('throws the suite envelope as an ApiError', async () => {
 		stub(Response.json({ error: { code: 'not_found', message: 'space not found' } }, { status: 404 }));
 		await expect(backend.boards('gone')).rejects.toMatchObject({ status: 404, code: 'not_found' });
+	});
+
+	it('asks to sign in again on a 412 from the token exchange, not on other errors', async () => {
+		stub(Response.json({ error: { code: 'not_found', message: 'gone' } }, { status: 404 }));
+		await expect(backend.entitlements(null)).rejects.toMatchObject({ status: 404 });
+		expect(reconnect.needed).toBe(false);
+		const body = { error: { code: 'failed_precondition', message: 'Sign in again.' } };
+		const fetch = stub(Response.json(body, { status: 412 }));
+		await expect(backend.entitlements('s1')).rejects.toMatchObject({ status: 412 });
+		expect(sent(fetch)[0]).toBe('/api/me/entitlements?space_id=s1');
+		expect(reconnect.needed).toBe(true);
 	});
 });

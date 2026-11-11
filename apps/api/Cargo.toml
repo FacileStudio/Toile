@@ -11,8 +11,8 @@ name = "api"
 path = "src/main.rs"
 
 [dependencies]
-tronc = { git = "https://github.com/FacileStudio/tronc-rs", tag = "v0.3.0", features = ["http", "health", "spa", "migrate", "journal", "apiref"] }
-porte = { git = "https://github.com/FacileStudio/porte-rs", tag = "v0.5.2", features = ["pg", "oidc", "directory", "spaces"] }
+tronc = { git = "https://github.com/FacileStudio/tronc-rs", tag = "v0.4.0", features = ["http", "health", "spa", "migrate", "journal", "apiref", "bulle", "mcp"] }
+porte = { git = "https://github.com/FacileStudio/porte-rs", tag = "v0.6.1", features = ["pg", "oidc", "directory", "spaces", "exchange", "forfait"] }
 async-trait = "0.1.92"
 axum = { version = "0.8.9", features = ["ws", "macros"] }
 futures-util = { version = "0.3.34", default-features = false, features = ["std", "sink"] }
@@ -29,9 +29,10 @@ uuid = { version = "1.29.2", features = ["v4", "serde"] }
 yrs = { version = "0.28.1", features = ["sync"] }
 
 [dev-dependencies]
-tronc = { git = "https://github.com/FacileStudio/tronc-rs", tag = "v0.3.0", features = ["testdb"] }
+tronc = { git = "https://github.com/FacileStudio/tronc-rs", tag = "v0.4.0", features = ["testdb"] }
 http-body-util = "0.1.5"
 reqwest = { version = "0.13.5", default-features = false, features = ["rustls", "json"] }
+url = "2.5.8"
 tokio-tungstenite = "0.29.0"
 tower = { version = "0.5.3", features = ["util"] }
 
