@@ -58,5 +58,6 @@ All notable changes to Toile. Versions follow SemVer.
   `toile_update_shapes`, `toile_delete_shapes` (confirmed by the person) and `toile_comment`;
   writes go through the board's room. Migration `0006_mcp_meetings.sql` adds `mcp_actions`
 - API: `GET /api/mcp/actions` and its confirm and dismiss routes; client: the `/pending` page
-- API: `POST /api/boards/meeting`, one board and edit link per (host, Echo room)
+- API: `POST /api/boards/meeting`, one board and edit link per (host, Echo room), with a
+  credentialed CORS rule for `https://echo.facile.studio` on that route only
 - API: the CSP allows `connect-src https://api-ardoise.facile.studio` for the plan catalog

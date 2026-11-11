@@ -58,6 +58,7 @@ pub fn state(config: &Config, pool: PgPool, kits: &Kits, hub: Hub) -> AppState {
         suite: kits.suite.clone(),
         confirmations: None,
         sealer: TokenSealer::parse(&config.token_key).ok().flatten().map(Arc::new),
+        public_url: Arc::from(crate::cors::origin_of(&config.porte.redirect_url)),
     }
 }
 
@@ -108,7 +109,7 @@ async fn serve(config: Config, pool: PgPool) -> Result<(), BootError> {
     let mut http = tronc::http::Config::from_core(&config.core);
     http.security = crate::security::config(http.security, &tronc::spa::dir_from_env());
     let layers = tronc::http::layers(http)?;
-    let app = crate::router::build_router(state, &kits, mcp)?.layer(layers);
+    let app = crate::cors::meetings(crate::router::build_router(state, &kits, mcp)?.layer(layers));
     let listener = tokio::net::TcpListener::bind(("0.0.0.0", config.core.port)).await?;
     tracing::info!(port = config.core.port, "toile: listening");
     let server = axum::serve(listener, app.into_make_service_with_connect_info::<SocketAddr>())

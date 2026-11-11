@@ -28,4 +28,6 @@ pub struct AppState {
     pub confirmations: Option<Confirmations>,
     /// Seals the meeting links Toile keeps to answer again; `None` keeps them plain (dev).
     pub sealer: Option<Arc<TokenSealer>>,
+    /// The public origin, `https://toile.facile.studio`, from `OIDC_REDIRECT_URL`; empty in dev.
+    pub public_url: Arc<str>,
 }
