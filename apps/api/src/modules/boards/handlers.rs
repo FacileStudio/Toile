@@ -9,7 +9,7 @@ use tronc::{Error, Result};
 use super::access::{self, Access};
 use super::types::{Board, CreateRequest, DeleteQuery, NameRequest, ScopeQuery};
 use super::{service, trash};
-use crate::extract::{Params, db, id};
+use crate::extract::{Params, id};
 use crate::state::AppState;
 
 pub async fn list(
@@ -75,12 +75,7 @@ pub async fn restore(State(state): State<AppState>, who: Identity, Path(raw): Pa
 pub async fn thumbnail(State(state): State<AppState>, who: Identity, Path(raw): Path<String>) -> Result<Response> {
     let board = id(&raw)?;
     access::check(&state, who.user_id, board, Access::Viewer).await?;
-    let png: Option<Vec<u8>> = sqlx::query_scalar("SELECT thumbnail FROM boards WHERE id = $1")
-        .bind(board)
-        .fetch_one(&state.pool)
-        .await
-        .map_err(db)?;
-    let png = png.ok_or_else(|| Error::not_found("no thumbnail yet"))?;
+    let png = crate::modules::export::thumbnail::current(&state.pool, board).await?;
     Response::builder()
         .header(http::header::CONTENT_TYPE, "image/png")
         .header(http::header::CACHE_CONTROL, "private, max-age=86400")

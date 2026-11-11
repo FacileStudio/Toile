@@ -1,0 +1,14 @@
+{
+  "nodes": [
+    {"id": "group1", "type": "group", "x": -40, "y": -40, "width": 700, "height": 400, "label": "Sprint"},
+    {"id": "note1", "type": "text", "x": 0, "y": 0, "width": 250, "height": 120, "text": "# Idée\nUne note", "color": "3"},
+    {"id": "link1", "type": "link", "x": 320, "y": 0, "width": 300, "height": 160, "url": "https://jsoncanvas.org"},
+    {"id": "file1", "type": "file", "x": 0, "y": 500, "width": 400, "height": 300, "file": "Notes/plan.md"},
+    {"id": "odd1", "type": "widget", "x": 0, "y": 0, "width": 10, "height": 10}
+  ],
+  "edges": [
+    {"id": "edge1", "fromNode": "note1", "fromSide": "right", "toNode": "link1", "toSide": "left", "label": "voir"},
+    {"id": "edge2", "fromNode": "link1", "fromSide": "bottom", "toNode": "file1", "toSide": "top", "fromEnd": "arrow", "toEnd": "none"},
+    {"id": "edge3", "fromNode": "note1", "toNode": "ghost"}
+  ]
+}

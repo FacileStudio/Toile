@@ -4,7 +4,7 @@ use tronc::health::{self, Check};
 
 use crate::auth::{self, Kits};
 use crate::modules::{
-    ai, assets, board, boards, cards, comments, meetings, pending, rooms, share, spaces, suite, tasks,
+    ai, assets, board, boards, cards, comments, export, import, meetings, pending, rooms, share, spaces, suite, tasks,
 };
 use crate::state::AppState;
 
@@ -26,6 +26,8 @@ fn protected(kits: &Kits) -> Router<AppState> {
         .merge(meetings::routes())
         .merge(ai::routes())
         .merge(pending::routes())
+        .merge(export::routes())
+        .merge(import::routes())
         .route_layer(kits.sessions.require_auth())
 }
 

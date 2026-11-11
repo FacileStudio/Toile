@@ -56,7 +56,7 @@ impl Room {
     async fn leave(&mut self, conn: u64) {
         self.drop_conn(conn, None);
         if self.conns.is_empty() {
-            self.snapshot().await;
+            self.snapshot(true).await;
         }
     }
 

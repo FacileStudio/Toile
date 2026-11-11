@@ -105,7 +105,7 @@ impl Room {
     async fn tick(&mut self) -> bool {
         let now = Instant::now();
         if self.snapshot_due(now) {
-            self.snapshot().await;
+            self.snapshot(true).await;
         } else if self.flush_at.is_some_and(|at| at <= now) {
             self.flush().await;
         }

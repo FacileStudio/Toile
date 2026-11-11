@@ -121,7 +121,7 @@ refetch the comments.
 | `DELETE` | `/boards/{id}` | Moves to the trash (204), needs `owner`; open sockets close with 1008. `?permanent=true` deletes a trashed board for good |
 | `POST` | `/boards/{id}/duplicate` | Optional `{"name"}` (default `<name> (copie)`): copies the live content into a new board of the same scope, 201; needs `editor` in the scope |
 | `POST` | `/boards/{id}/restore` | Takes a trashed board back, needs `owner`; trashed boards are purged after 30 days |
-| `GET` | `/boards/{id}/thumbnail.png` | The stored thumbnail (`image/png`), 404 until one exists |
+| `GET` | `/boards/{id}/thumbnail.png` | The board's thumbnail (`image/png`), longest side 480 px, rendered from the stored state when missing or stale |
 | `GET` | `/boards/{id}/ws` | The y-websocket socket (see above) |
 | `GET` | `/board-schema` | `{"schema": 1, "types", "limits"}`, no auth |
 | `GET` | `/boards/{id}/shares` | Live links, needs `owner` |
@@ -162,8 +162,55 @@ Graph tags (`og:title` or `<title>`, `og:description` as `subtitle`) under the S
 only, public addresses only at every DNS answer and redirect, 3 redirects, 1 MiB, 5 s; anything
 it refuses is a host-only `link` card. Cards are cached per person and URL for 10 minutes.
 
+| `GET` | `/boards/{id}/export.svg?frame=` | The board as a standalone SVG download |
+| `GET` | `/boards/{id}/export.png?frame=` | The board as PNG at 2x, longest side capped at 4096 px |
+| `GET` | `/boards/{id}/export.pdf?frame=` | The board as a one-page PDF, one board unit per point, longest side capped at 14,400 pt |
+| `GET` | `/boards/{id}/export.canvas?frame=` | The board as [JSON Canvas 1.0](https://jsoncanvas.org/spec/1.0/); `X-Toile-Skipped` counts the shapes with no equivalent |
+| `POST` | `/boards/import` | Multipart upload, 201 with the new `Board` plus `skipped` |
 Public share routes allow 2 requests a second per client IP (burst 30); guest comment posts 1
 every 2 seconds (burst 10); past that, 429.
+
+## Export
+
+Every export needs `viewer` access; a board the caller cannot see is 404. Exports read the
+live room state. The thumbnail is drawn by the same writer from the stored snapshot, after each
+room snapshot and on request when it is missing or older than the snapshot. `?frame=<shape id>`
+exports that frame and what it holds; a frame that does not exist is 404.
+
+- One SVG writer (`modules/export/svg.rs`) draws schema 1 for every format. Shapes stack by
+  their `z` fractional index, ties broken by id. A frame clips its children and shows its name
+  above itself. Ink is the filled perfect-freehand outline of its `[x, y, pressure]` points. An
+  arrow end bound to a shape sits at `anchor` of the target's box, turned with the target.
+- The SVG embeds no font: text names muse's font stacks. PNG and PDF render text in DejaVu Sans
+  (`apps/api/fonts`, Bitstream Vera licence, see `fonts/LICENSE`) since the image has no system
+  fonts.
+- Images link to `/api/boards/{id}/assets/<asset id>`. PNG and PDF never fetch them and draw only the
+  placeholder behind them.
+- Rotation `rot` is in radians, around the shape's centre. Text colour is `style.stroke`.
+- JSON Canvas: text shapes become `text` nodes, cards `link` nodes (`file` nodes when their
+  `kind` is `file`), images `file` nodes, frames `group` nodes, and arrows or lines bound at
+  both ends `edge`s. Ink and unbound connectors are skipped.
+
+## Import
+
+`POST /boards/import` takes `multipart/form-data`:
+
+| Field | Required | Meaning |
+|---|---|---|
+| `file` | yes | A `.canvas` (JSON Canvas 1.0) or `.excalidraw` file, at most 5 MiB (413 above) |
+| `name` | no | The board name; defaults to the file name without its extension |
+| `space_id` | no | The scope, as in `POST /boards`; needs `editor` there |
+
+The answer is the `Board` with `skipped`: how many source elements had no schema-1 equivalent.
+The shapes are checked with the room's schema-1 validator before the board is created (a file
+that breaks it is 400), then written through the new board's room.
+
+- JSON Canvas: `text` nodes become rectangles holding the text, `file` and `link` nodes cards,
+  `group` nodes frames holding every node inside their box, edges arrows bound to their nodes'
+  sides. Edge labels and unknown node types are skipped.
+- Excalidraw: rectangles, ellipses, diamonds, free text, text bound to a shape (as that shape's
+  text), arrows with their bindings and heads, lines, freedraw (as ink, pressures kept) and
+  frames (`frameId` becomes `parent`). Images, embeds and arrow labels are skipped.
 
 ## AI
 
