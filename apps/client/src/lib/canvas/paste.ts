@@ -1,3 +1,4 @@
+import { resolveCard } from '$lib/api/cards';
 import { deleteSelection, createShape } from './actions';
 import type { Point } from './camera';
 import { insertShapes, parseClip, serialize } from './clipboard';
@@ -26,6 +27,11 @@ async function addImage(editor: Editor, file: File, at: Point): Promise<void> {
 	if (id) editor.select([id]);
 }
 
+async function fillCard(editor: Editor, id: string, url: string): Promise<void> {
+	const card = await resolveCard(url).catch(() => null);
+	if (card && editor.scene.shapes.has(id)) editor.doc.update(id, { title: card.title, kind: card.kind });
+}
+
 function addText(editor: Editor, text: string, at: Point): void {
 	const trimmed = text.trim();
 	if (!trimmed) return;
@@ -33,6 +39,7 @@ function addText(editor: Editor, text: string, at: Point): void {
 	if (/^https?:\/\/\S+$/.test(trimmed)) {
 		const title = new URL(trimmed).hostname;
 		id = createShape(editor, 'card', { x: at.x - 160, y: at.y - 40, w: 320, h: 80, url: trimmed, title, kind: 'link' });
+		if (id) void fillCard(editor, id, trimmed);
 	} else {
 		id = createShape(editor, 'text', { x: at.x - 160, y: at.y - 16, w: 320, h: 32 }, trimmed);
 	}
