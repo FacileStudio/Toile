@@ -66,6 +66,7 @@ pub async fn app_with(pool: PgPool, apps: api::modules::suite::Apps) -> App {
         suite: kits.suite.clone(),
         confirmations: None,
         sealer: None,
+        public_url: Arc::from("https://toile.test"),
     };
     let router = api::router::build_router(state.clone(), &kits, None).unwrap();
     App { router, state, kits, pool, registre }

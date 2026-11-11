@@ -159,19 +159,24 @@ every 2 seconds (burst 10); past that, 429.
 
 ## Echo meeting boards
 
-`POST /api/boards/meeting` gives an Echo room its board. Echo calls it as the room's host, with
-that person's bearer token (a Registre token exchanged for Toile, or a Toile session token).
+`POST /api/boards/meeting` gives an Echo room its board. Echo's page calls it with the person's
+Toile cookie (`credentials: 'include'`, `X-Facile-CSRF: 1`); a bearer token works too.
 
 ```json
-{"room": "echo room id", "name": "optional, first call only (default Réunion)", "space_id": "optional, first call only"}
+{"room": "<echo room slug>", "name": "optional, first call only (default Réunion)", "space_id": "optional, first call only"}
 ```
 
-It answers `{"board": Board, "edit_link": "/s/<token>", "created": true|false}`. The pair
-(caller, `room`) names one board: later calls answer the same board and the same edit link, while
-both live. If the host trashed the board or revoked the link, the next call makes a new board
-(201). `room` is trimmed, 1 to 200 characters, no control characters. The link is relative to
-`https://toile.facile.studio`: participants open it in a browser, or a client resolves it with
-`GET /api/share/{token}`. Toile keeps the link sealed with `PORTE_TOKEN_KEY` to answer it again.
+It answers `{"board": Board, "share": {"id", "url": "https://toile.facile.studio/s/<token>", "role": "edit"}}`:
+201 when this call made the board, 200 after. The pair (caller, `room`) names one board: later
+calls answer the same board and the same link while both live. If the host trashed the board or
+revoked the link, the next call makes a new board (201). Share tokens are stored hashed, so Toile
+keeps the meeting link's token sealed with `PORTE_TOKEN_KEY` (`board_meetings.token`) to answer
+it again. `room` is trimmed, 1 to 200 characters, no control characters. Signed out is 401.
+
+CORS covers this route alone: origin `https://echo.facile.studio`, credentials, methods `POST,
+OPTIONS`, headers `content-type, x-facile-csrf` (`apps/api/src/cors.rs`, `MEETING_ORIGINS`). It
+wraps the app outside tronc's layers, so tronc's own CORS list does not affect it. The `share.url`
+origin comes from `OIDC_REDIRECT_URL`.
 
 ## MCP
 

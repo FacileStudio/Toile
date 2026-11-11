@@ -23,17 +23,28 @@ pub struct MeetingRequest {
     pub space_id: Option<String>,
 }
 
-/// The meeting board and the edit link participants open.
+/// The edit link participants open.
+#[derive(Debug, Serialize)]
+pub struct MeetingShare {
+    pub id: Uuid,
+    /// `<origin>/s/<token>`, the same on every call while it lives.
+    pub url: String,
+    pub role: Role,
+}
+
+/// The meeting board and its edit link.
 #[derive(Debug, Serialize)]
 pub struct Meeting {
     pub board: Board,
-    /// `/s/<token>`: an `edit` share link, the same on every call while it lives.
-    pub edit_link: String,
-    /// True when this call made the board.
+    pub share: MeetingShare,
+    /// True when this call made the board (answered as 201, not serialized).
+    #[serde(skip)]
     pub created: bool,
 }
 
-const LIVE: &str = "SELECT m.board_id, m.token FROM board_meetings m \
+type Row = (Uuid, Uuid, String);
+
+const LIVE: &str = "SELECT m.board_id, m.share_id, m.token FROM board_meetings m \
     JOIN boards b ON b.id = m.board_id AND b.deleted_at IS NULL \
     JOIN share_links s ON s.id = m.share_id AND s.revoked_at IS NULL \
     WHERE m.owner_user_id = $1 AND m.room = $2";
@@ -70,16 +81,17 @@ fn open_token(state: &AppState, stored: &str) -> Result<String> {
     }
 }
 
-async fn live(state: &AppState, user: i64, room: &str) -> Result<Option<(Uuid, String)>> {
+async fn live(state: &AppState, user: i64, room: &str) -> Result<Option<Row>> {
     sqlx::query_as(LIVE).bind(user).bind(room).fetch_optional(&state.pool).await.map_err(db)
 }
 
-async fn answer(state: &AppState, user: i64, (id, stored): (Uuid, String), created: bool) -> Result<Meeting> {
-    let board = boards::read(state, user, id).await?;
-    Ok(Meeting { board, edit_link: format!("/s/{}", open_token(state, &stored)?), created })
+async fn answer(state: &AppState, user: i64, (board, share, stored): Row, created: bool) -> Result<Meeting> {
+    let board = boards::read(state, user, board).await?;
+    let url = format!("{}/s/{}", state.public_url, open_token(state, &stored)?);
+    Ok(Meeting { board, share: MeetingShare { id: share, url, role: Role::Edit }, created })
 }
 
-async fn make(state: &AppState, user: i64, room: &str, request: MeetingRequest) -> Result<Option<(Uuid, String)>> {
+async fn make(state: &AppState, user: i64, room: &str, request: MeetingRequest) -> Result<Option<Row>> {
     let name = request.name.unwrap_or_else(|| "Réunion".to_owned());
     let board = boards::create(state, user, CreateRequest { name, space_id: request.space_id }).await?;
     let link = share::create(state, user, board.id, Role::Edit).await?;
@@ -97,7 +109,7 @@ async fn make(state: &AppState, user: i64, room: &str, request: MeetingRequest) 
         sqlx::query("DELETE FROM boards WHERE id = $1").bind(board.id).execute(&state.pool).await.map_err(db)?;
         return Ok(None);
     }
-    Ok(Some((board.id, stored)))
+    Ok(Some((board.id, link.id, stored)))
 }
 
 /// The meeting board of `room` for `user`: the live one, or a new board and edit link. A
