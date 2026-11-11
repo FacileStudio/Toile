@@ -90,7 +90,8 @@ async fn a_stored_thumbnail_is_served_to_viewers_with_a_versioned_url() {
     let roles = fixture::roles(&app).await;
     let id = fixture::id(&fixture::board(&app, &roles.member, Some(&roles.space), "Pic").await);
     let path = format!("/api/boards/{id}/thumbnail.png");
-    assert_eq!(app.call("GET", &path, Some(&roles.member), None).await.status, 404);
+    let rendered = app.call("GET", &path, Some(&roles.member), None).await;
+    assert!(rendered.status == 200 && rendered.bytes.starts_with(b"\x89PNG\r\n"), "{}", rendered.status);
     sqlx::query("UPDATE boards SET thumbnail = $2, thumbnail_at = now() WHERE id = $1::uuid")
         .bind(&id)
         .bind(b"\x89PNG".to_vec())

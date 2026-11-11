@@ -69,6 +69,11 @@ const ROUTES: &[Row] = &[
     ("GET", "/mcp/actions", "mcp", "The caller's agent actions awaiting confirmation", "200"),
     ("POST", "/mcp/actions/{id}/confirm", "mcp", "Confirms an agent action and runs it", "200"),
     ("POST", "/mcp/actions/{id}/dismiss", "mcp", "Refuses an agent action", "204"),
+    ("GET", "/boards/{id}/export.svg", "export", "The board as SVG (?frame=)", "200"),
+    ("GET", "/boards/{id}/export.png", "export", "The board as PNG (?frame=)", "200"),
+    ("GET", "/boards/{id}/export.pdf", "export", "The board as a one-page PDF (?frame=)", "200"),
+    ("GET", "/boards/{id}/export.canvas", "export", "The board as JSON Canvas 1.0 (?frame=)", "200"),
+    ("POST", "/boards/import", "export", "Creates a board from a .canvas or .excalidraw file", "201"),
 ];
 
 fn method(name: &str) -> HttpMethod {

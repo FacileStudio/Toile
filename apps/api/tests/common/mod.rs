@@ -8,6 +8,7 @@ pub mod http;
 pub mod mcp;
 pub mod registre;
 pub mod server;
+pub mod shapes;
 pub mod upload;
 pub mod ysync;
 

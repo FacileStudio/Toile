@@ -87,14 +87,18 @@ impl Room {
         }
     }
 
-    /// Writes a snapshot of the whole board and drops the pending updates it covers.
-    pub(super) async fn snapshot(&mut self) {
+    /// Writes a snapshot of the whole board and drops the pending updates it covers; with
+    /// `thumbnail`, then redraws the board's thumbnail in the background.
+    pub(super) async fn snapshot(&mut self, thumbnail: bool) {
         if self.since.is_none() && self.core.log.is_empty() {
             return;
         }
         let state = self.core.state();
         let outcome = store(&self.state.pool, self.id, &state).await;
         if self.stored(outcome, "snapshot") {
+            if thumbnail {
+                crate::modules::export::thumbnail::spawn_refresh(self.state.pool.clone(), self.id, state.clone());
+            }
             self.core.compacted(state);
             (self.flushed, self.flush_at, self.since) = (0, None, None);
         }

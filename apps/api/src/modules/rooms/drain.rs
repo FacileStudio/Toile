@@ -68,7 +68,7 @@ impl Hub {
 impl Room {
     /// Snapshots, then closes every member with `code` and unloads.
     pub(super) async fn stop(&mut self, code: u16, reason: &str) {
-        self.snapshot().await;
+        self.snapshot(false).await;
         self.end(code, reason);
     }
 

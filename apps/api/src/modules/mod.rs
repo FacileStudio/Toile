@@ -6,6 +6,8 @@ pub mod board;
 pub mod boards;
 pub mod cards;
 pub mod comments;
+pub mod export;
+pub mod import;
 pub mod meetings;
 pub mod pending;
 pub mod rooms;
