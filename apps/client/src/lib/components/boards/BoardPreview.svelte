@@ -1,6 +1,4 @@
 <script lang="ts">
-	import { USER_COLORS } from '@facile/muse';
-
 	let { seed, thumbnail }: { seed: string; thumbnail: string | null } = $props();
 
 	let broken = $state(false);
@@ -20,7 +18,7 @@
 		const next = sequence(seed);
 		const count = 3 + Math.floor(next() * 3);
 		return Array.from({ length: count }, (_, i) => ({
-			color: USER_COLORS[Math.floor(next() * USER_COLORS.length)],
+			opacity: 0.7 + next() * 0.25,
 			left: 6 + (i * 68) / count + next() * 6,
 			top: 10 + next() * 42,
 			tilt: (next() - 0.5) * 10,
@@ -42,10 +40,10 @@
 		<div class="preview-dots absolute inset-0"></div>
 		{#each notes as note, i (i)}
 			<span
-				class="preview-note absolute aspect-square w-[22%] rounded-fc-xs shadow-sm"
+				class="preview-note absolute aspect-square w-[22%] rounded-fc-xs bg-fc-component border border-fc-border/60 shadow-xs"
 				style:left="{note.left}%"
 				style:top="{note.top}%"
-				style:background-color={note.color}
+				style:opacity={note.opacity}
 				style:--tilt="{note.tilt}deg"
 				style:--drift="{note.drift}px"
 				style:--i={i}

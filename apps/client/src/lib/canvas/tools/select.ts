@@ -80,6 +80,23 @@ export class SelectTool implements Tool {
 
 	hover(sample: PointerSample): void {
 		const hit = topHit(this.editor.scene, sample.world, 4 / this.editor.camera.z);
+		let actionHover = false;
+		if (hit && hit.type === 'card' && hit.url) {
+			const topH = hit.image ? Math.min(hit.h * 0.6, 120) : 0;
+			const isYoutubePlay =
+				hit.kind === 'youtube' &&
+				Math.hypot(sample.world.x - (hit.x + hit.w / 2), sample.world.y - (hit.y + topH / 2)) <= 28;
+			const pad = 12;
+			const arrowX = hit.x + hit.w - pad - 12;
+			const arrowY = hit.y + hit.h - pad - 16;
+			const isLinkArrow =
+				sample.world.x >= arrowX - 10 &&
+				sample.world.x <= hit.x + hit.w &&
+				sample.world.y >= arrowY - 10 &&
+				sample.world.y <= hit.y + hit.h;
+			actionHover = isYoutubePlay || isLinkArrow;
+		}
+		this.cursor = actionHover ? 'pointer' : 'default';
 		if ((hit?.id ?? null) === this.editor.overlay.hover) return;
 		this.editor.overlay.hover = hit?.id ?? null;
 		this.editor.invalidateOverlay();
@@ -108,6 +125,7 @@ export class SelectTool implements Tool {
 		this.pressed = null;
 		this.marquee = false;
 		this.gesture = null;
+		this.cursor = 'default';
 		this.editor.overlay.marquee = null;
 		this.editor.invalidateOverlay();
 	}

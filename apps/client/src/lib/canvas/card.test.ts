@@ -202,4 +202,56 @@ describe('card shape and tools', () => {
 		expect(open).toHaveBeenCalledWith('https://example.com/site', '_blank', 'noopener');
 		expect(select).toHaveBeenCalledWith([id]);
 	});
+
+	it('changes cursor to pointer when hovering over external link icon or youtube play button', () => {
+		const doc = new BoardDoc();
+		const scene = new Scene(doc, () => undefined);
+		doc.create('card', {
+			x: 100,
+			y: 100,
+			w: 320,
+			h: 100,
+			z: 'V',
+			kind: 'link',
+			url: 'https://example.com/site'
+		});
+		scene.flush();
+		const editor = {
+			editable: true,
+			camera: { x: 0, y: 0, z: 1 },
+			scene,
+			selection: [],
+			select: vi.fn(),
+			editing: null,
+			finishEditing: vi.fn(),
+			overlay: { hover: null },
+			invalidateOverlay: vi.fn()
+		};
+		const tool = new SelectTool(editor as unknown as Editor);
+		expect(tool.cursor).toBe('default');
+		tool.hover?.({
+			world: { x: 398, y: 174 },
+			screen: { x: 398, y: 174 },
+			pressure: 0,
+			pointerType: 'mouse',
+			shift: false,
+			alt: false,
+			meta: false,
+			detail: 0,
+			coalesced: []
+		});
+		expect(tool.cursor).toBe('pointer');
+		tool.hover?.({
+			world: { x: 120, y: 120 },
+			screen: { x: 120, y: 120 },
+			pressure: 0,
+			pointerType: 'mouse',
+			shift: false,
+			alt: false,
+			meta: false,
+			detail: 0,
+			coalesced: []
+		});
+		expect(tool.cursor).toBe('default');
+	});
 });

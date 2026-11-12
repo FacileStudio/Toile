@@ -27,7 +27,7 @@
 		<Tooltip text="{tool.label} ({tool.key})">
 			<button
 				type="button"
-				class="toile-pop toile-press flex size-11 shrink-0 items-center justify-center rounded-fc-pill focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-fc-ring {editor.tool ===
+				class="toile-pop toile-press flex size-11 shrink-0 items-center justify-center rounded-fc-pill cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-fc-ring {editor.tool ===
 				tool.name
 					? 'bg-fc-accent text-fc-accent-fg'
 					: 'text-fc-fg hover:bg-fc-surface'}"
@@ -44,7 +44,7 @@
 		<Tooltip text="Image (I)">
 			<button
 				type="button"
-				class="toile-pop toile-press flex size-11 shrink-0 items-center justify-center rounded-fc-pill text-fc-fg hover:bg-fc-surface focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-fc-ring"
+				class="toile-pop toile-press flex size-11 shrink-0 items-center justify-center rounded-fc-pill cursor-pointer text-fc-fg hover:bg-fc-surface focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-fc-ring"
 				style:--i={shown.length}
 				aria-label="Image"
 				onclick={onimage}

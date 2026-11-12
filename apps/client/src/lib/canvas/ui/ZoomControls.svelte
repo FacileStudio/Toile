@@ -7,7 +7,7 @@
 	let { editor }: { editor: Editor } = $props();
 
 	const button =
-		'toile-press flex size-11 shrink-0 items-center justify-center rounded-fc-pill text-fc-fg hover:bg-fc-surface disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-fc-ring';
+		'toile-press flex size-11 shrink-0 items-center justify-center rounded-fc-pill text-fc-fg hover:bg-fc-surface disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-fc-ring cursor-pointer disabled:cursor-not-allowed';
 	const percent = $derived(Math.round(editor.camera.z * 100));
 </script>
 
@@ -34,7 +34,7 @@
 	</button>
 	<button
 		type="button"
-		class="h-11 min-w-14 rounded-fc-pill px-2 text-fc-sm font-medium text-fc-fg tabular-nums hover:bg-fc-surface focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-fc-ring"
+		class="h-11 min-w-14 rounded-fc-pill px-2 text-fc-sm font-medium text-fc-fg tabular-nums hover:bg-fc-surface focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-fc-ring cursor-pointer"
 		aria-label="Zoom {percent} %, revenir à 100 %"
 		onclick={() => zoomReset(editor)}
 	>

@@ -139,8 +139,7 @@
 		></button>
 		<button
 			type="button"
-			class="pointer-events-auto absolute -bottom-1.5 left-2 h-3 touch-none"
-			style:right={single?.type === 'card' ? '36px' : '8px'}
+			class="pointer-events-auto absolute -bottom-1.5 left-2 right-2 h-3 touch-none"
 			style:cursor={handleCursor('s', frame.rot)}
 			aria-label="Redimensionner ({LABEL.s})"
 			onpointerdown={(e) => resize('s', e)}
@@ -210,18 +209,7 @@
 					<span class="sr-only">Lire la vidéo</span>
 				</button>
 			{/if}
-			<button
-				type="button"
-				class="pointer-events-auto absolute bottom-1.5 right-1.5 flex size-7 items-center justify-center rounded-fc-xs text-fc-fg-muted hover:text-fc-fg hover:bg-fc-surface/80 transition-colors cursor-pointer z-10"
-				aria-label="Ouvrir le lien"
-				title="Ouvrir le lien"
-				onclick={(e) => {
-					e.stopPropagation();
-					window.open(single.url, '_blank', 'noopener');
-				}}
-			>
-				<Icon icon={icons.external} size={16} />
-			</button>
+
 			<div
 				class="pointer-events-auto absolute -top-12 left-1/2 flex -translate-x-1/2 items-center gap-1.5 rounded-fc-pill bg-fc-component p-1 shadow-lg z-20"
 				data-board-ui

@@ -29,7 +29,7 @@
 
 	const run = (command: Command) => runCommand(editor, command, ui);
 	const button =
-		'toile-press flex size-11 shrink-0 items-center justify-center rounded-fc-pill text-fc-fg hover:bg-fc-surface focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-fc-ring';
+		'toile-press flex size-11 shrink-0 items-center justify-center rounded-fc-pill text-fc-fg hover:bg-fc-surface focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-fc-ring cursor-pointer disabled:cursor-not-allowed';
 </script>
 
 {#if visible}
