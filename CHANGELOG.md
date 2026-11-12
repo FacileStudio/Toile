@@ -4,6 +4,12 @@ All notable changes to Toile. Versions follow SemVer.
 
 ## [Unreleased]
 
+## [0.4.1] - 2026-11-12
+
+### Added
+
+- Rename a board directly from the card action menu and right-click context menu in `/boards`
+
 ## [0.4.0] - 2026-11-12
 
 ### Added
