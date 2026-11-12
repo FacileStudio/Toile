@@ -4,6 +4,8 @@ All notable changes to Toile. Versions follow SemVer.
 
 ## [Unreleased]
 
+## [0.1.0] - 2026-11-12
+
 ### Changed
 
 - The Toile logo is the suite catalog's mark (`solar:tablet-bold-duotone`) in the rail, the
