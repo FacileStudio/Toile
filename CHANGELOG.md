@@ -4,6 +4,23 @@ All notable changes to Toile. Versions follow SemVer.
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-11-12
+
+### Added
+
+- Inline editable board title in the top chrome: click to edit or rename on blur and Enter
+- Three-dots action trigger menu for board cards in `/boards` using `toolIcons.dots`
+- Right-click context menu for board cards with quick actions (open, duplicate, delete)
+
+### Changed
+
+- Wheel panning and zooming batched with `requestAnimationFrame` for stutter-free scrolling
+- Cached canvas bounding rectangle eliminating layout thrashing on pointer samples and wheel events
+- Hardware-accelerated pattern grid rendering replacing repeated path drawing
+- Native `ctx.bezierCurveTo` for curved connectors instead of sampled polylines
+- Uniform grid spatial index using 32-bit integer hash keys without string allocations
+- Debounced minimap redraws reducing canvas work during fast camera moves
+
 ## [0.3.0] - 2026-11-12
 
 ### Added
