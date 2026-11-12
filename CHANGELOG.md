@@ -4,6 +4,22 @@ All notable changes to Toile. Versions follow SemVer.
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-11-12
+
+### Added
+
+- Connectors bound to a shape draw as curves that leave each shape out of the side they sit on,
+  while drawing and after. Free lines and arrows stay straight
+- Canvas motion: the camera glides on zoom, fit, search and minimap jumps; new shapes pop in,
+  deleted ones fade out; dragged stickies, cards and filled rectangles lift with a shadow.
+  Bursts over 200 shapes, board loads and reduced motion skip it
+- The dock, style bar and zoom controls rise in, tool buttons and swatches pop in staggered
+
+### Changed
+
+- `/boards` is a card grid with a preview per board: its thumbnail, or a sketch seeded by its id
+  until thumbnails are written. The actions menu hides only on devices that can hover
+
 ## [0.1.0] - 2026-11-12
 
 ### Changed
