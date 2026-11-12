@@ -4,6 +4,18 @@ All notable changes to Toile. Versions follow SemVer.
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-11-12
+
+### Added
+
+- Canvas element right-click context menu with smart options: open/copy link for cards, edit text for text/frames, cut, copy, duplicate, delete, layer order, and lock
+- Board right-click context menu to CRUD shapes: paste at clicked world coordinates, quick shape creation (sticky note, text, rectangle, frame), and viewport controls
+- Interactive action buttons and floating quick-action pill on selected link preview cards
+- Dedicated style toolbar actions (open and copy link) replacing color swatches when a card is selected
+- Single-click hit detection on link cards: clicking YouTube play button or footer external link button immediately opens the URL without resize handle interception
+- Aligned card-size quick creation button in the board grid filling empty row slots without sitting alone on a new line
+- Spacious empty space under the boards grid view for comfortable bottom scrolling
+
 ## [0.5.0] - 2026-11-12
 
 ### Added
