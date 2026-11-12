@@ -18,19 +18,20 @@
 </script>
 
 <div
-	class="pointer-events-auto flex max-w-[calc(100vw-1.5rem)] items-center gap-1 overflow-x-auto rounded-fc-pill bg-fc-component p-1.5 shadow-lg"
+	class="toile-rise pointer-events-auto flex max-w-[calc(100vw-1.5rem)] items-center gap-1 overflow-x-auto rounded-fc-pill bg-fc-component p-1.5 shadow-lg"
 	role="toolbar"
 	aria-label="Outils"
 	data-board-ui
 >
-	{#each shown as tool (tool.name)}
+	{#each shown as tool, i (tool.name)}
 		<Tooltip text="{tool.label} ({tool.key})">
 			<button
 				type="button"
-				class="flex size-11 shrink-0 items-center justify-center rounded-fc-pill transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-fc-ring {editor.tool ===
+				class="toile-pop toile-press flex size-11 shrink-0 items-center justify-center rounded-fc-pill focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-fc-ring {editor.tool ===
 				tool.name
 					? 'bg-fc-accent text-fc-accent-fg'
 					: 'text-fc-fg hover:bg-fc-surface'}"
+				style:--i={i}
 				aria-label={tool.label}
 				aria-pressed={editor.tool === tool.name}
 				onclick={() => (editor.tool = tool.name)}
@@ -43,7 +44,8 @@
 		<Tooltip text="Image (I)">
 			<button
 				type="button"
-				class="flex size-11 shrink-0 items-center justify-center rounded-fc-pill text-fc-fg transition-colors hover:bg-fc-surface focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-fc-ring"
+				class="toile-pop toile-press flex size-11 shrink-0 items-center justify-center rounded-fc-pill text-fc-fg hover:bg-fc-surface focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-fc-ring"
+				style:--i={shown.length}
 				aria-label="Image"
 				onclick={onimage}
 			>

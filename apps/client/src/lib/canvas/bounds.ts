@@ -1,5 +1,5 @@
 import { PATH_TYPES, type Shape } from '$lib/board/schema';
-import { anchorPoint } from './anchors';
+import { anchorPoint, curve } from './anchors';
 import type { Box, Point } from './camera';
 import { boxOf, center, rotate, rotatedBox } from './geometry';
 
@@ -32,10 +32,22 @@ export function pathPoints(shape: Shape, lookup: Lookup): Point[] {
 	return points;
 }
 
+/** The world points a line or arrow is drawn along: a curve when it connects shapes, its own points otherwise. */
+export function routePoints(shape: Shape, lookup: Lookup): Point[] {
+	const points = pathPoints(shape, lookup);
+	const from = shape.from && lookup(shape.from.shape);
+	const to = shape.to && lookup(shape.to.shape);
+	if (points.length !== 2 || (!from && !to)) return points;
+	return curve(
+		{ point: points[0], shape: from, anchor: shape.from?.anchor },
+		{ point: points[1], shape: to, anchor: shape.to?.anchor }
+	);
+}
+
 /** The world box a shape covers, padded by its stroke so culling never clips an edge. */
 export function shapeBounds(shape: Shape, lookup: Lookup): Box {
 	const pad = strokeWidth(shape) / 2 + (shape.type === 'arrow' ? 12 : 1);
-	const box = shape.type === 'line' || shape.type === 'arrow' ? boxOf(pathPoints(shape, lookup)) : rotatedBox(shape);
+	const box = shape.type === 'line' || shape.type === 'arrow' ? boxOf(routePoints(shape, lookup)) : rotatedBox(shape);
 	const label = shape.type === 'frame' ? 28 : 0;
 	return { x: box.x - pad, y: box.y - pad - label, w: box.w + pad * 2, h: box.h + pad * 2 + label };
 }

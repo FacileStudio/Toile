@@ -28,12 +28,12 @@
 
 	const run = (command: Command) => runCommand(editor, command, ui);
 	const button =
-		'flex size-11 shrink-0 items-center justify-center rounded-fc-pill text-fc-fg transition-colors hover:bg-fc-surface focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-fc-ring';
+		'toile-press flex size-11 shrink-0 items-center justify-center rounded-fc-pill text-fc-fg hover:bg-fc-surface focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-fc-ring';
 </script>
 
 {#if visible}
 	<div
-		class="pointer-events-auto flex max-w-[calc(100vw-1.5rem)] items-center gap-1 overflow-x-auto rounded-fc-pill bg-fc-component p-1.5 shadow-lg"
+		class="toile-rise pointer-events-auto flex max-w-[calc(100vw-1.5rem)] items-center gap-1 overflow-x-auto rounded-fc-pill bg-fc-component p-1.5 shadow-lg"
 		role="toolbar"
 		aria-label="Style"
 		data-board-ui
@@ -49,13 +49,14 @@
 			>
 				<span class="size-5 rounded-fc-pill bg-fc-fg"></span>
 			</button>
-			{#each FILLS as color (color)}
+			{#each FILLS as color, i (color)}
 				<button
 					type="button"
 					role="radio"
 					aria-checked={current === color}
 					aria-label={USER_COLOR_LABELS[color as UserColor]}
-					class="{button} {current === color ? 'bg-fc-surface' : ''}"
+					class="toile-pop {button} {current === color ? 'bg-fc-surface' : ''}"
+					style:--i={i + 1}
 					onclick={() => paint(editor, color)}
 				>
 					<span class="size-5 rounded-fc-pill" style:background-color={color}></span>

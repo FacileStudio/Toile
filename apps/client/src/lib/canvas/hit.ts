@@ -1,6 +1,6 @@
 import type { Shape } from '$lib/board/schema';
 import { segmentDistance } from './anchors';
-import { localPoints, pathPoints, strokeWidth, type Lookup } from './bounds';
+import { localPoints, routePoints, strokeWidth, type Lookup } from './bounds';
 import type { Box, Point } from './camera';
 import { center, contains, intersects, rotate, rotatedBox } from './geometry';
 import type { Scene } from './scene';
@@ -47,7 +47,7 @@ function frameHit(shape: Shape, local: Point, tolerance: number): boolean {
 /** Whether world point `p` hits `shape`, with `tolerance` world units of slack for thin strokes and edges. */
 export function hitShape(shape: Shape, p: Point, tolerance: number, lookup: Lookup): boolean {
 	if (shape.type === 'line' || shape.type === 'arrow') {
-		return polylineDistance(p, pathPoints(shape, lookup)) <= strokeWidth(shape) / 2 + tolerance;
+		return polylineDistance(p, routePoints(shape, lookup)) <= strokeWidth(shape) / 2 + tolerance;
 	}
 	const local = rotate(p, center(shape), -shape.rot);
 	if (shape.type === 'ink') {

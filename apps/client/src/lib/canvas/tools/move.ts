@@ -6,6 +6,8 @@ import { frameAt } from '../hit';
 import { snapBox } from '../snap';
 import type { PointerSample, Tool } from './tool';
 
+const LIFT_LIMIT = 50;
+
 /** The ids a drag of `ids` moves: the unlocked ones plus every shape inside a moved frame. */
 export function movingIds(editor: Editor, ids: readonly string[]): string[] {
 	const moving = new Set(ids.filter((id) => !editor.scene.get(id)?.locked));
@@ -36,6 +38,7 @@ export class MoveGesture implements Tool {
 		}
 		this.box = union(ids.map((id) => editor.scene.index.box(id)).filter((b): b is Box => !!b));
 		const view = viewport(editor.camera, editor.size.width, editor.size.height);
+		editor.lift(ids.length <= LIFT_LIMIT ? ids : []);
 		this.others = editor.scene
 			.within(view)
 			.filter(
@@ -75,6 +78,7 @@ export class MoveGesture implements Tool {
 	}
 
 	cancel(): void {
+		this.editor.lift([]);
 		this.editor.overlay.guides = { x: [], y: [] };
 		this.editor.invalidateOverlay();
 	}

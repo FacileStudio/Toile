@@ -1,7 +1,7 @@
 import { getStroke } from 'perfect-freehand';
 import type { Shape } from '$lib/board/schema';
 import type { Point } from '../camera';
-import { pathPoints, strokeWidth } from '../bounds';
+import { routePoints, strokeWidth } from '../bounds';
 import type { DrawEnv } from './shapes';
 
 const strokes = new WeakMap<Shape, Path2D>();
@@ -70,5 +70,5 @@ export function drawArrow(ctx: CanvasRenderingContext2D, shape: Shape, env: Draw
 	ctx.strokeStyle = color;
 	ctx.fillStyle = color;
 	const heads = shape.type === 'line' ? 'none' : (shape.head ?? 'end');
-	strokePolyline(ctx, pathPoints(shape, env.lookup), strokeWidth(shape), heads);
+	strokePolyline(ctx, routePoints(shape, env.lookup), strokeWidth(shape), heads);
 }

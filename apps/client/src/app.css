@@ -12,3 +12,56 @@ body {
 * {
 	box-sizing: border-box;
 }
+
+@keyframes toile-rise {
+	from {
+		opacity: 0;
+		translate: 0 16px;
+	}
+}
+
+@keyframes toile-pop {
+	from {
+		opacity: 0;
+		scale: 0.6;
+		translate: 0 8px;
+	}
+}
+
+.toile-rise {
+	animation: toile-rise 0.4s cubic-bezier(0.22, 1, 0.36, 1) backwards;
+}
+
+.toile-pop {
+	animation: toile-pop 0.4s cubic-bezier(0.22, 1, 0.36, 1) backwards;
+	animation-delay: calc(var(--i, 0) * 30ms);
+}
+
+.toile-press {
+	transition:
+		background-color 0.15s ease,
+		color 0.15s ease,
+		scale 0.22s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@media (hover: hover) {
+	.toile-press:not(:disabled):hover {
+		scale: 1.08;
+	}
+}
+
+.toile-press:not(:disabled):active {
+	scale: 0.94;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.toile-rise,
+	.toile-pop {
+		animation: none;
+	}
+
+	.toile-press:not(:disabled):hover,
+	.toile-press:not(:disabled):active {
+		scale: none;
+	}
+}

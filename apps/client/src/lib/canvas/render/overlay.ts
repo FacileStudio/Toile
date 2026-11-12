@@ -1,6 +1,6 @@
 import type { Shape } from '$lib/board/schema';
 import { anchorPoint } from '../anchors';
-import { pathPoints } from '../bounds';
+import { routePoints } from '../bounds';
 import type { Box, Camera, Point } from '../camera';
 import { toScreen } from '../camera';
 import { corners } from '../geometry';
@@ -30,7 +30,7 @@ export type OverlayState = {
 };
 
 function outlineShape(ctx: CanvasRenderingContext2D, shape: Shape, scene: Scene, camera: Camera): void {
-	const points = shape.type === 'line' || shape.type === 'arrow' ? pathPoints(shape, scene.get) : corners(shape);
+	const points = shape.type === 'line' || shape.type === 'arrow' ? routePoints(shape, scene.get) : corners(shape);
 	ctx.beginPath();
 	points.map((p) => toScreen(camera, p)).forEach((p, i) => (i === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y)));
 	if (shape.type !== 'line' && shape.type !== 'arrow') ctx.closePath();

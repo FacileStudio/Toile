@@ -2,6 +2,7 @@ import { PATH_TYPES } from '$lib/board/schema';
 import type { Camera } from '../camera';
 import { viewport } from '../camera';
 import type { Scene } from '../scene';
+import { drawGhosts, drawMoving, type MotionInput } from './motion';
 import type { Palette } from './palette';
 import { drawShape, type DrawEnv } from './shapes';
 
@@ -40,6 +41,7 @@ export type FrameInput = {
 	palette: Palette;
 	editing: string | null;
 	image: DrawEnv['image'];
+	motion: MotionInput;
 };
 
 /**
@@ -67,7 +69,8 @@ export function drawScene(canvas: HTMLCanvasElement, scene: Scene, input: FrameI
 			ctx.fillRect(shape.x, shape.y, Math.max(shape.w, tiny / 2), Math.max(shape.h, tiny / 2));
 			continue;
 		}
-		drawShape(ctx, shape, env);
+		drawMoving(ctx, shape, input.motion, () => drawShape(ctx, shape, env));
 	}
+	drawGhosts(ctx, input.motion, (shape) => drawShape(ctx, shape, env));
 	return visible.length;
 }

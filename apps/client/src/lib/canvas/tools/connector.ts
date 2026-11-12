@@ -1,6 +1,6 @@
 import type { Binding, Shape } from '$lib/board/schema';
 import { createShape } from '../actions';
-import { anchorOf, anchorPoint } from '../anchors';
+import { anchorOf, anchorPoint, curve, type End } from '../anchors';
 import type { Point } from '../camera';
 import type { Editor } from '../editor.svelte';
 import { topHit } from '../hit';
@@ -59,12 +59,22 @@ export class ConnectorTool implements Tool {
 		const color = this.editor.style.stroke ?? this.editor.palette.fg;
 		this.editor.overlay.draft = {
 			kind: 'connector',
-			points: [this.from.point, to.point],
+			points: this.route(this.from, to),
 			color,
 			head: this.type === 'arrow'
 		};
 		this.editor.overlay.target = to.binding ?? null;
 		this.editor.invalidateOverlay();
+	}
+
+	private route(from: { point: Point; binding?: Binding }, to: { point: Point; binding?: Binding }): Point[] {
+		if (!from.binding && !to.binding) return [from.point, to.point];
+		const end = (side: { point: Point; binding?: Binding }): End => ({
+			point: side.point,
+			shape: side.binding && this.editor.scene.get(side.binding.shape),
+			anchor: side.binding?.anchor
+		});
+		return curve(end(from), end(to));
 	}
 
 	hover(sample: PointerSample): void {

@@ -58,8 +58,10 @@
 		const rect = canvas.getBoundingClientRect();
 		const x = world.x + ((event.clientX - rect.left) / W) * world.w;
 		const y = world.y + ((event.clientY - rect.top) / H) * world.h;
-		const z = editor.camera.z;
-		editor.setCamera({ x: editor.size.width / 2 - x * z, y: editor.size.height / 2 - y * z, z });
+		const z = editor.goal.z;
+		const camera = { x: editor.size.width / 2 - x * z, y: editor.size.height / 2 - y * z, z };
+		if (event.type === 'pointerdown') editor.glide(camera);
+		else editor.setCamera(camera);
 	}
 </script>
 

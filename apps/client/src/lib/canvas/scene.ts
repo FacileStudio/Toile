@@ -1,11 +1,24 @@
 import type * as Y from 'yjs';
+import { prefersReducedMotion } from '@facile/muse';
 import { readShape, type BoardDoc } from '$lib/board/doc';
 import { compareZ } from '$lib/board/fractional';
-import type { Shape } from '$lib/board/schema';
+import { PATH_TYPES, type Shape } from '$lib/board/schema';
 import { shapeBounds } from './bounds';
 import type { Box } from './camera';
 import { intersects } from './geometry';
 import { SpatialIndex } from './spatial';
+
+/** How long a new shape pops in, in milliseconds. */
+export const POP_MS = 320;
+
+/** How long a removed shape fades out, in milliseconds. */
+export const FADE_MS = 200;
+
+const MOTION_LIMIT = 200;
+
+const still = () => typeof matchMedia !== 'function' || prefersReducedMotion();
+
+type Motion = { born: string[]; gone: Shape[] };
 
 /**
  * The renderer's read model of the board: plain shape snapshots, their z order, a spatial index and the arrows
@@ -21,7 +34,13 @@ export class Scene {
 	private pending = new Set<string>();
 	private arrows = new Map<string, Set<string>>();
 	private unobserve: () => void;
+	/** Whether changes animate: false until the first sync has landed, so opening a board does not pop it in. */
+	live = false;
 	version = 0;
+	/** When each shape that just appeared was added, for its pop-in. */
+	readonly births = new Map<string, number>();
+	/** Shapes that just disappeared, kept for their fade-out, with when they went. */
+	readonly ghosts = new Map<string, { shape: Shape; at: number }>();
 
 	constructor(
 		readonly doc: BoardDoc,
@@ -83,10 +102,30 @@ export class Scene {
 		const ids = this.pending;
 		this.pending = new Set();
 		const moved = new Set<string>();
-		for (const id of ids) this.apply(id, moved);
+		const motion: Motion = { born: [], gone: [] };
+		for (const id of ids) this.apply(id, moved, motion);
 		for (const id of moved) for (const arrow of this.arrowsOf(id)) this.reindex(arrow);
+		this.animate(motion);
 		this.version += 1;
 		return true;
+	}
+
+	/** Drops finished pop-ins and fade-outs. Returns whether any are still running at `now`. */
+	settle(now: number): boolean {
+		for (const [id, at] of this.births) if (now - at >= POP_MS) this.births.delete(id);
+		for (const [id, ghost] of this.ghosts) if (now - ghost.at >= FADE_MS) this.ghosts.delete(id);
+		return this.births.size > 0 || this.ghosts.size > 0;
+	}
+
+	private animate(motion: Motion): void {
+		if (!this.live || still()) return;
+		const now = performance.now();
+		if (motion.born.length <= MOTION_LIMIT)
+			for (const id of motion.born) {
+				this.ghosts.delete(id);
+				this.births.set(id, now);
+			}
+		if (motion.gone.length <= MOTION_LIMIT) for (const shape of motion.gone) this.ghosts.set(shape.id, { shape, at: now });
 	}
 
 	private queue(events: Y.YEvent<Y.AbstractType<unknown>>[]): void {
@@ -97,11 +136,13 @@ export class Scene {
 		this.onchange();
 	}
 
-	private apply(id: string, moved: Set<string>): void {
+	private apply(id: string, moved: Set<string>, motion: Motion): void {
 		const before = this.shapes.get(id);
 		if (before) this.unbind(before);
 		const map = this.doc.shapes.get(id);
 		const shape = map ? readShape(id, map) : null;
+		if (!before && shape && !PATH_TYPES.has(shape.type)) motion.born.push(id);
+		if (before && !shape && before.type !== 'frame') motion.gone.push(before);
 		if (!shape) {
 			this.shapes.delete(id);
 			this.index.delete(id);

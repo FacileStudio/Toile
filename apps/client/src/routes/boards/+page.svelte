@@ -1,6 +1,21 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
-	import { Button, Card, Icon, ConfirmModal, EmptyState, Field, Input, Menu, icons, toast } from '@facile/muse';
+	import { flip } from 'svelte/animate';
+	import {
+		Button,
+		Card,
+		Icon,
+		ConfirmModal,
+		EmptyState,
+		Field,
+		Input,
+		Menu,
+		Page,
+		PageHeader,
+		icons,
+		toast
+	} from '@facile/muse';
+	import BoardPreview from '$lib/components/boards/BoardPreview.svelte';
 	import { boardApi, type BoardInfo } from '$lib/board/api';
 	import { boardIcon } from '$lib/brand';
 	import { formatDate } from '$lib/format';
@@ -71,13 +86,10 @@
 
 <svelte:head><title>Tableaux · Toile</title></svelte:head>
 
-<div class="mx-auto flex w-full max-w-3xl flex-col gap-6 px-4 py-6 sm:px-6 md:py-10">
-	<header class="flex flex-col gap-1">
-		<h1 class="text-fc-2xl font-semibold text-fc-fg">Tableaux</h1>
-		<p class="text-fc-sm text-fc-fg-muted">{session.space?.name ?? 'Espace personnel'}</p>
-	</header>
+<Page width="xl">
+	<PageHeader title="Tableaux" description={session.space?.name ?? 'Espace personnel'} />
 
-	<form class="flex flex-wrap items-end gap-2" onsubmit={create}>
+	<form class="toile-rise flex max-w-xl flex-wrap items-end gap-2" onsubmit={create}>
 		<Field label="Nom du tableau" class="min-w-0 flex-1">
 			<Input bind:value={name} placeholder="Atelier du lundi" maxlength={200} />
 		</Field>
@@ -87,21 +99,32 @@
 	{#if boards.length === 0 && !loading}
 		<EmptyState icon={boardIcon} title="Aucun tableau" description="Créez un premier tableau pour commencer." />
 	{:else}
-		<ul class="flex flex-col gap-2" aria-label="Tableaux">
-			{#each boards as board (board.id)}
-				<li class="flex items-center gap-2">
-					<Card href="/b/{board.id}" class="flex min-w-0 flex-1 items-center gap-3">
-						<span class="min-w-0 flex-1 truncate text-fc-sm font-medium text-fc-fg">{board.name}</span>
-						<span class="shrink-0 text-fc-xs text-fc-fg-muted">{formatDate(board.updated_at)}</span>
+		<ul class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4" aria-label="Tableaux">
+			{#each boards as board, i (board.id)}
+				<li class="toile-pop group/board relative" style:--i={Math.min(i, 12)} animate:flip={{ duration: 300 }}>
+					<Card
+						href="/b/{board.id}"
+						class="flex h-full flex-col gap-3 p-3 transition-[background-color,translate] duration-300 hover:-translate-y-1 motion-reduce:transition-none"
+					>
+						<BoardPreview seed={board.id} thumbnail={board.thumbnail_url} />
+						<span class="flex min-w-0 flex-col gap-1 px-1 pb-1">
+							<span class="truncate text-fc-sm font-medium text-fc-fg">{board.name}</span>
+							<span class="text-fc-xs text-fc-fg-muted">Modifié le {formatDate(board.updated_at)}</span>
+						</span>
 					</Card>
-					<Menu label="Actions pour {board.name}" items={actions(board)} align="end">
-						{#snippet trigger()}<Icon icon={icons.menu} size={18} />{/snippet}
+					<Menu
+						label="Actions pour {board.name}"
+						items={actions(board)}
+						align="end"
+						class="absolute right-5 top-5 rounded-fc-md shadow-sm transition-opacity focus-within:opacity-100 group-hover/board:opacity-100 motion-reduce:transition-none [@media(hover:hover)_and_(pointer:fine)]:opacity-0"
+					>
+						{#snippet trigger()}<Icon icon={icons.menu} size={20} />{/snippet}
 					</Menu>
 				</li>
 			{/each}
 		</ul>
 	{/if}
-</div>
+</Page>
 
 <ConfirmModal
 	open={!!doomed}

@@ -7,12 +7,12 @@
 	let { editor }: { editor: Editor } = $props();
 
 	const button =
-		'flex size-11 shrink-0 items-center justify-center rounded-fc-pill text-fc-fg transition-colors hover:bg-fc-surface disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-fc-ring';
+		'toile-press flex size-11 shrink-0 items-center justify-center rounded-fc-pill text-fc-fg hover:bg-fc-surface disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-fc-ring';
 	const percent = $derived(Math.round(editor.camera.z * 100));
 </script>
 
 <div
-	class="pointer-events-auto flex items-center gap-0.5 rounded-fc-pill bg-fc-component p-1.5 shadow-lg"
+	class="toile-rise pointer-events-auto flex items-center gap-0.5 rounded-fc-pill bg-fc-component p-1.5 shadow-lg"
 	role="group"
 	aria-label="Affichage"
 	data-board-ui

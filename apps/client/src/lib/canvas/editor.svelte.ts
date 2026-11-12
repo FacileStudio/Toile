@@ -1,4 +1,5 @@
 import type * as Y from 'yjs';
+import { prefersReducedMotion } from '@facile/muse';
 import { BoardDoc } from '$lib/board/doc';
 import type { Presence } from '$lib/board/presence';
 import type { Style } from '$lib/board/schema';
@@ -9,6 +10,8 @@ import { readPalette, type Palette } from './render/palette';
 import { drawScene } from './render/renderer';
 import { Scene } from './scene';
 import type { ToolName } from './tools/tool';
+
+const GLIDE_MS = 460;
 
 /** The style new shapes take: `fill` for stickies, `shapeFill` for boxes, `stroke` for lines, ink and text. */
 export type ToolStyle = Style & { shapeFill?: string };
@@ -48,10 +51,14 @@ export class Editor {
 	};
 	palette: Palette = readPalette();
 	presence: Presence | null = null;
+	/** The shapes a drag is holding up, drawn lifted. */
+	lifted: ReadonlySet<string> = new Set();
 	onusercamera: (() => void) | null = null;
 	private canvas: HTMLCanvasElement | null = null;
 	private overlayCanvas: HTMLCanvasElement | null = null;
 	private frame = 0;
+	private tween = 0;
+	private heading: Camera | null = null;
 	private sceneDirty = true;
 	private overlayDirty = true;
 
@@ -74,6 +81,7 @@ export class Editor {
 	/** Releases the document observers and the pending frame. */
 	destroy(): void {
 		cancelAnimationFrame(this.frame);
+		cancelAnimationFrame(this.tween);
 		this.scene.destroy();
 		this.undo.destroy();
 	}
@@ -105,7 +113,45 @@ export class Editor {
 
 	/** Moves the view, publishes the viewport and repaints. A move not made by follow mode calls `onusercamera`. */
 	setCamera(camera: Camera, following = false): void {
+		this.stopGlide();
 		if (!following) this.onusercamera?.();
+		this.place(camera);
+	}
+
+	/** Where the view is headed: the end of a running glide, or the camera itself. */
+	get goal(): Camera {
+		return this.heading ?? this.camera;
+	}
+
+	/** Eases the view to `target` over 460 ms with an ease-out curve; jumps under reduced motion. */
+	glide(target: Camera): void {
+		if (prefersReducedMotion()) return this.setCamera(target);
+		this.stopGlide();
+		this.onusercamera?.();
+		const start = this.camera;
+		const began = performance.now();
+		this.heading = target;
+		const step = (now: number) => {
+			const t = Math.min(1, (now - began) / GLIDE_MS);
+			const k = 1 - (1 - t) ** 3;
+			this.place({
+				x: start.x + (target.x - start.x) * k,
+				y: start.y + (target.y - start.y) * k,
+				z: start.z + (target.z - start.z) * k
+			});
+			if (t < 1) this.tween = requestAnimationFrame(step);
+			else this.stopGlide();
+		};
+		this.tween = requestAnimationFrame(step);
+	}
+
+	private stopGlide(): void {
+		cancelAnimationFrame(this.tween);
+		this.tween = 0;
+		this.heading = null;
+	}
+
+	private place(camera: Camera): void {
 		this.camera = camera;
 		this.presence?.set('viewport', viewport(camera, this.size.width, this.size.height));
 		this.invalidate();
@@ -140,7 +186,15 @@ export class Editor {
 		this.frame = 0;
 		this.sync();
 		const started = performance.now();
-		const input = { camera: this.camera, palette: this.palette, editing: this.editing, image: this.host.imageSource };
+		const now = performance.now();
+		const motion = { now, births: this.scene.births, ghosts: this.scene.ghosts, lifted: this.lifted };
+		const input = {
+			camera: this.camera,
+			palette: this.palette,
+			editing: this.editing,
+			image: this.host.imageSource,
+			motion
+		};
 		if (this.sceneDirty && this.canvas) drawScene(this.canvas, this.scene, input);
 		if ((this.sceneDirty || this.overlayDirty) && this.overlayCanvas) {
 			drawOverlay(this.overlayCanvas, this.scene, this.overlay, this.camera, this.palette);
@@ -151,6 +205,13 @@ export class Editor {
 		}
 		this.sceneDirty = false;
 		this.overlayDirty = false;
+		if (this.scene.settle(now)) this.invalidate();
+	}
+
+	/** Holds `ids` up while a drag moves them, or sets them down with an empty list. */
+	lift(ids: readonly string[]): void {
+		this.lifted = new Set(ids);
+		this.invalidate();
 	}
 
 	private schedule(): void {

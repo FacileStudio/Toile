@@ -122,6 +122,8 @@ export class BoardSession {
 
 	private onsynced(): void {
 		this.synced = true;
+		this.editor.sync();
+		this.editor.scene.live = true;
 		this.editor.editable = canEdit(this.role) && !this.stop;
 		if (this.editor.editable) this.editor.doc.ensureMeta();
 	}
