@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { Icon, Tooltip, USER_COLOR_LABELS, icons, type UserColor } from '@facile/muse';
+	import { Icon, Tooltip, USER_COLOR_LABELS, icons, toast, type UserColor } from '@facile/muse';
 	import type { Editor } from '../editor.svelte';
 	import { paint } from '../actions';
 	import { runCommand, type CommandUi } from '../commands';
@@ -15,6 +15,7 @@
 		void editor.version;
 		return editor.selection.map((id) => editor.scene.get(id)).filter((s) => !!s);
 	});
+	const isCard = $derived(shapes.length === 1 && shapes[0].type === 'card');
 	const drawing = $derived(['sticky', 'rect', 'ellipse', 'diamond', 'text', 'arrow', 'pen'].includes(editor.tool));
 	const inky = $derived(
 		editor.tool === 'pen' || shapes.some((s) => s.type === 'ink' || s.type === 'arrow' || s.type === 'line')
@@ -38,31 +39,61 @@
 		aria-label="Style"
 		data-board-ui
 	>
-		<div class="flex items-center" role="radiogroup" aria-label="Couleur">
-			<button
-				type="button"
-				role="radio"
-				aria-checked={!current}
-				aria-label="Couleur par défaut"
-				class="{button} {!current ? 'bg-fc-surface' : ''}"
-				onclick={() => paint(editor, undefined)}
-			>
-				<span class="size-5 rounded-fc-pill bg-fc-fg"></span>
-			</button>
-			{#each FILLS as color, i (color)}
+		{#if isCard}
+			{#if shapes[0].url}
+				<Tooltip text="Ouvrir le lien">
+					<button
+						type="button"
+						class={button}
+						aria-label="Ouvrir le lien"
+						onclick={() => shapes[0].url && window.open(shapes[0].url, '_blank', 'noopener')}
+					>
+						<Icon icon={icons.external} size={20} />
+					</button>
+				</Tooltip>
+				<Tooltip text="Copier le lien">
+					<button
+						type="button"
+						class={button}
+						aria-label="Copier le lien"
+						onclick={() => {
+							if (shapes[0].url) {
+								void navigator.clipboard.writeText(shapes[0].url);
+								toast.success('Lien copié');
+							}
+						}}
+					>
+						<Icon icon={icons.copy} size={20} />
+					</button>
+				</Tooltip>
+			{/if}
+		{:else}
+			<div class="flex items-center" role="radiogroup" aria-label="Couleur">
 				<button
 					type="button"
 					role="radio"
-					aria-checked={current === color}
-					aria-label={USER_COLOR_LABELS[color as UserColor]}
-					class="toile-pop {button} {current === color ? 'bg-fc-surface' : ''}"
-					style:--i={i + 1}
-					onclick={() => paint(editor, color)}
+					aria-checked={!current}
+					aria-label="Couleur par défaut"
+					class="{button} {!current ? 'bg-fc-surface' : ''}"
+					onclick={() => paint(editor, undefined)}
 				>
-					<span class="size-5 rounded-fc-pill" style:background-color={color}></span>
+					<span class="size-5 rounded-fc-pill bg-fc-fg"></span>
 				</button>
-			{/each}
-		</div>
+				{#each FILLS as color, i (color)}
+					<button
+						type="button"
+						role="radio"
+						aria-checked={current === color}
+						aria-label={USER_COLOR_LABELS[color as UserColor]}
+						class="toile-pop {button} {current === color ? 'bg-fc-surface' : ''}"
+						style:--i={i + 1}
+						onclick={() => paint(editor, color)}
+					>
+						<span class="size-5 rounded-fc-pill" style:background-color={color}></span>
+					</button>
+				{/each}
+			</div>
+		{/if}
 		{#if inky}
 			<div class="flex items-center" role="radiogroup" aria-label="Épaisseur">
 				{#each WIDTHS as size (size)}

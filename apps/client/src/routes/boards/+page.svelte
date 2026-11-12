@@ -32,6 +32,8 @@
 	let renaming = $state<BoardInfo | null>(null);
 	let renameTitle = $state('');
 	let contextMenu = $state<{ x: number; y: number; board: BoardInfo } | null>(null);
+	let gridEl = $state<HTMLElement | null>(null);
+	let cols = $state(1);
 
 	const failed = (error: unknown, fallback: string) => toast.danger(error instanceof Error ? error.message : fallback);
 
@@ -50,23 +52,34 @@
 		void load(session.spaceId);
 	});
 
-	async function create(event: SubmitEvent) {
-		event.preventDefault();
+	$effect(() => {
+		if (!gridEl) return;
+		const update = () => {
+			const style = window.getComputedStyle(gridEl!).getPropertyValue('grid-template-columns');
+			cols = style ? style.split(' ').filter(Boolean).length : 1;
+		};
+		update();
+		const ro = new ResizeObserver(update);
+		ro.observe(gridEl);
+		return () => ro.disconnect();
+	});
+
+	const showAddCard = $derived(cols > 1 && (boards.length % cols !== 0));
+
+	async function create(event?: SubmitEvent, customTitle?: string) {
+		event?.preventDefault();
 		busy = true;
 		try {
-			const board = await boardApi.create(name.trim() || 'Sans titre', session.spaceId);
+			const title = customTitle ?? (name.trim() || 'Sans titre');
+			const board = await boardApi.create(title, session.spaceId);
 			boards = [board, ...boards];
 			name = '';
+			if (customTitle) await goto(`/b/${board.id}`);
 		} catch (error) {
 			failed(error, 'Création impossible');
 		} finally {
 			busy = false;
 		}
-	}
-
-	function startRename(board: BoardInfo) {
-		renaming = board;
-		renameTitle = board.name;
 	}
 
 	async function saveRename(event: SubmitEvent) {
@@ -103,7 +116,14 @@
 
 	const actions = (board: BoardInfo) => [
 		{ label: 'Ouvrir', icon: icons.external, onselect: () => goto(`/b/${board.id}`) },
-		{ label: 'Renommer', icon: icons.edit, onselect: () => startRename(board) },
+		{
+			label: 'Renommer',
+			icon: icons.edit,
+			onselect: () => {
+				renaming = board;
+				renameTitle = board.name;
+			}
+		},
 		{ label: 'Dupliquer', icon: icons.copy, onselect: () => duplicate(board) },
 		...(board.role === 'owner'
 			? [{ label: 'Supprimer', icon: icons.remove, tone: 'danger' as const, onselect: () => (doomed = board) }]
@@ -113,7 +133,7 @@
 
 <svelte:head><title>Tableaux · Toile</title></svelte:head>
 
-<Page width="xl">
+<Page width="xl" class="pb-24 md:pb-32">
 	<PageHeader title="Tableaux" description={session.space?.name ?? 'Espace personnel'} />
 
 	<form class="toile-rise flex max-w-xl flex-wrap items-end gap-2" onsubmit={create}>
@@ -126,7 +146,11 @@
 	{#if boards.length === 0 && !loading}
 		<EmptyState icon={boardIcon} title="Aucun tableau" description="Créez un premier tableau pour commencer." />
 	{:else}
-		<ul class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4" aria-label="Tableaux">
+		<ul
+			bind:this={gridEl}
+			class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
+			aria-label="Tableaux"
+		>
 			{#each boards as board, i (board.id)}
 				<li
 					class="toile-pop group/board relative"
@@ -157,6 +181,27 @@
 					</Menu>
 				</li>
 			{/each}
+			{#if showAddCard}
+				<li class="h-full">
+					<button
+						type="button"
+						onclick={() => void create(undefined, 'Sans titre')}
+						disabled={busy}
+						class="toile-pop group flex h-full min-h-[220px] w-full flex-col items-center justify-center gap-3 rounded-fc-lg bg-fc-surface/50 p-4 text-center transition-[background-color,translate] duration-300 hover:-translate-y-1 hover:bg-fc-surface focus-visible:ring-2 focus-visible:ring-fc-accent motion-reduce:transition-none"
+						aria-label="Nouveau tableau"
+					>
+						<span
+							class="flex size-10 items-center justify-center rounded-full bg-fc-component text-fc-fg-muted transition-colors group-hover:bg-fc-page group-hover:text-fc-fg"
+						>
+							<Icon icon={icons.plus} size={20} />
+						</span>
+						<span class="flex flex-col gap-0.5">
+							<span class="text-fc-sm font-medium text-fc-fg">Nouveau tableau</span>
+							<span class="text-fc-xs text-fc-fg-muted">Créer un tableau</span>
+						</span>
+					</button>
+				</li>
+			{/if}
 		</ul>
 	{/if}
 </Page>

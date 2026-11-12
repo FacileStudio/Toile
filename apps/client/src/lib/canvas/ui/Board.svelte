@@ -1,11 +1,14 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import ContextMenu, { type ContextMenuItem } from '$lib/components/ContextMenu.svelte';
 	import type { Editor } from '../editor.svelte';
 	import { Input, isTyping } from '../input';
 	import { commandFor } from '../shortcuts';
 	import { runCommand, type CommandUi } from '../commands';
 	import { pasteInto, copyOut } from '../paste';
 	import { watchTheme } from '../render/palette';
+	import { topHit } from '../hit';
+	import { canvasMenuItems, elementMenuItems } from '../contextmenu';
 	import SelectionHandles from './SelectionHandles.svelte';
 	import TextEditor from './TextEditor.svelte';
 
@@ -15,6 +18,7 @@
 	let scene: HTMLCanvasElement;
 	let overlay: HTMLCanvasElement;
 	let cursor = $state('default');
+	let contextMenu = $state<{ x: number; y: number; items: ContextMenuItem[] } | null>(null);
 
 	onMount(() => {
 		const control = new Input(editor, host);
@@ -63,6 +67,23 @@
 			editor.world({ x: event.clientX - rect.left, y: event.clientY - rect.top })
 		);
 	}
+
+	function handleContextMenu(event: MouseEvent) {
+		event.preventDefault();
+		if (editor.editing) editor.finishEditing();
+		const rect = host.getBoundingClientRect();
+		const world = editor.world({ x: event.clientX - rect.left, y: event.clientY - rect.top });
+		const hit = topHit(editor.scene, world, 4 / editor.camera.z);
+
+		if (hit) {
+			if (!editor.selection.includes(hit.id)) editor.select([hit.id]);
+			contextMenu = { x: event.clientX, y: event.clientY, items: elementMenuItems(editor, ui, hit) };
+			return;
+		}
+
+		editor.select([]);
+		contextMenu = { x: event.clientX, y: event.clientY, items: canvasMenuItems(editor, ui, world) };
+	}
 </script>
 
 <svelte:window onkeydown={keydown} oncopy={(e) => clip(e, false)} oncut={(e) => clip(e, true)} onpaste={paste} />
@@ -78,6 +99,7 @@
 	onscroll={() => host.scrollTo(0, 0)}
 	ondragover={(e) => e.preventDefault()}
 	ondrop={drop}
+	oncontextmenu={handleContextMenu}
 >
 	<canvas bind:this={scene} class="absolute inset-0 h-full w-full" data-testid="board-canvas"></canvas>
 	<canvas bind:this={overlay} class="pointer-events-none absolute inset-0 h-full w-full"></canvas>
@@ -85,4 +107,7 @@
 		<SelectionHandles {editor} {input} />
 	{/if}
 	<TextEditor {editor} />
+	{#if contextMenu}
+		<ContextMenu x={contextMenu.x} y={contextMenu.y} items={contextMenu.items} onclose={() => (contextMenu = null)} />
+	{/if}
 </div>

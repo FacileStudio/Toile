@@ -1,7 +1,8 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { BoardDoc } from '$lib/board/doc';
 import { imageLoader } from '$lib/board/assets';
-import { openShape } from './tools/select';
+import { openShape, SelectTool } from './tools/select';
+import { Scene } from './scene';
 import { pasteInto } from './paste';
 import type { Editor } from './editor.svelte';
 import type { Shape } from '$lib/board/schema';
@@ -113,5 +114,92 @@ describe('card shape and tools', () => {
 		expect(shapes[0].title).toBe('YouTube Video');
 		expect(shapes[0].w).toBe(320);
 		expect(shapes[0].h).toBe(200);
+	});
+
+	it('opens card url directly when clicking play button or external link icon', () => {
+		const open = vi.fn();
+		vi.stubGlobal('open', open);
+		const doc = new BoardDoc();
+		const scene = new Scene(doc, () => undefined);
+		const id = doc.create('card', {
+			x: 100,
+			y: 100,
+			w: 320,
+			h: 200,
+			z: 'V',
+			kind: 'youtube',
+			url: 'https://www.youtube.com/watch?v=123',
+			image: 'https://example.com/thumb.jpg'
+		});
+		scene.flush();
+		const select = vi.fn();
+		const editor = {
+			editable: true,
+			camera: { x: 0, y: 0, z: 1 },
+			scene,
+			selection: [],
+			select,
+			editing: null,
+			finishEditing: vi.fn(),
+			overlay: { hover: null },
+			invalidateOverlay: vi.fn()
+		};
+		const tool = new SelectTool(editor as unknown as Editor);
+		tool.down({
+			world: { x: 260, y: 160 },
+			screen: { x: 260, y: 160 },
+			pressure: 1,
+			pointerType: 'mouse',
+			shift: false,
+			alt: false,
+			meta: false,
+			detail: 1,
+			coalesced: []
+		});
+		expect(open).toHaveBeenCalledWith('https://www.youtube.com/watch?v=123', '_blank', 'noopener');
+		expect(select).toHaveBeenCalledWith([id]);
+	});
+
+	it('opens card url directly when clicking external link icon', () => {
+		const open = vi.fn();
+		vi.stubGlobal('open', open);
+		const doc = new BoardDoc();
+		const scene = new Scene(doc, () => undefined);
+		const id = doc.create('card', {
+			x: 100,
+			y: 100,
+			w: 320,
+			h: 100,
+			z: 'V',
+			kind: 'link',
+			url: 'https://example.com/site'
+		});
+		scene.flush();
+		const select = vi.fn();
+		const editor = {
+			editable: true,
+			camera: { x: 0, y: 0, z: 1 },
+			scene,
+			selection: [],
+			select,
+			editing: null,
+			finishEditing: vi.fn(),
+			overlay: { hover: null },
+			invalidateOverlay: vi.fn()
+		};
+		const tool = new SelectTool(editor as unknown as Editor);
+		tool.down({
+			world: { x: 398, y: 174 },
+			screen: { x: 398, y: 174 },
+			pressure: 1,
+			pointerType: 'mouse',
+			shift: false,
+			alt: false,
+			meta: false,
+			detail: 1,
+			coalesced: []
+		});
+		expect(open).toHaveBeenCalledWith('https://example.com/site', '_blank', 'noopener');
+		expect(select).toHaveBeenCalledWith([id]);
 	});
 });

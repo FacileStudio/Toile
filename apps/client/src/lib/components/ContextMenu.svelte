@@ -2,8 +2,11 @@
 	export type ContextMenuItem = {
 		label: string;
 		icon?: string;
+		shortcut?: string;
 		tone?: 'default' | 'danger';
-		onselect: () => void;
+		separator?: boolean;
+		disabled?: boolean;
+		onselect?: () => void;
 		href?: string;
 	};
 </script>
@@ -65,8 +68,9 @@
 	}
 
 	function run(item: ContextMenuItem) {
+		if (item.disabled || item.separator) return;
 		onclose();
-		item.onselect();
+		item.onselect?.();
 	}
 </script>
 
@@ -74,15 +78,17 @@
 	bind:this={el}
 	role="menu"
 	tabindex="-1"
-	class="fixed z-50 min-w-44 rounded-fc-md bg-fc-component p-1 shadow-lg {pos ? '' : 'invisible'}"
+	class="fixed z-50 min-w-48 rounded-fc-md bg-fc-component p-1 shadow-lg {pos ? '' : 'invisible'}"
 	style:left="{pos?.left ?? 0}px"
 	style:top="{pos?.top ?? 0}px"
 	onclick={(e) => e.stopPropagation()}
 	oncontextmenu={(e) => e.preventDefault()}
 	onkeydown={keydown}
 >
-	{#each items as item (item.label)}
-		{#if item.href}
+	{#each items as item, i (item.label + i)}
+		{#if item.separator}
+			<div class="my-1 h-px bg-fc-surface" role="separator"></div>
+		{:else if item.href}
 			<a
 				href={item.href}
 				role="menuitem"
@@ -91,16 +97,19 @@
 			>
 				{#if item.icon}<Icon icon={item.icon} size={16} />{/if}
 				<span class="truncate">{item.label}</span>
+				{#if item.shortcut}<span class="ml-auto pl-4 text-fc-xs text-fc-fg-muted">{item.shortcut}</span>{/if}
 			</a>
 		{:else}
 			<button
 				type="button"
 				role="menuitem"
+				disabled={item.disabled}
 				onclick={() => run(item)}
-				class="flex min-h-9 w-full items-center gap-2 rounded-fc-sm px-2.5 py-1.5 text-left text-fc-sm transition-colors hover:bg-fc-surface focus-visible:outline-2 focus-visible:outline-fc-ring {item.tone === 'danger' ? 'text-fc-danger' : 'text-fc-fg'}"
+				class="flex min-h-9 w-full items-center gap-2 rounded-fc-sm px-2.5 py-1.5 text-left text-fc-sm transition-colors hover:bg-fc-surface focus-visible:outline-2 focus-visible:outline-fc-ring disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent {item.tone === 'danger' ? 'text-fc-danger' : 'text-fc-fg'}"
 			>
 				{#if item.icon}<Icon icon={item.icon} size={16} />{/if}
 				<span class="truncate">{item.label}</span>
+				{#if item.shortcut}<span class="ml-auto pl-4 text-fc-xs text-fc-fg-muted">{item.shortcut}</span>{/if}
 			</button>
 		{/if}
 	{/each}

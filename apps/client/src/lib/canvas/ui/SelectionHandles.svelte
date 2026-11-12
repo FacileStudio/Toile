@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { Icon, icons, toast } from '@facile/muse';
 	import type { Editor } from '../editor.svelte';
 	import type { Input } from '../input';
 	import { anchorPoint } from '../anchors';
@@ -138,7 +139,8 @@
 		></button>
 		<button
 			type="button"
-			class="pointer-events-auto absolute -bottom-1.5 left-2 right-2 h-3 touch-none"
+			class="pointer-events-auto absolute -bottom-1.5 left-2 h-3 touch-none"
+			style:right={single?.type === 'card' ? '36px' : '8px'}
 			style:cursor={handleCursor('s', frame.rot)}
 			aria-label="Redimensionner ({LABEL.s})"
 			onpointerdown={(e) => resize('s', e)}
@@ -189,9 +191,74 @@
 				</button>
 			{/each}
 		{/if}
+		{#if single?.type === 'card' && single.url}
+			{@const topH = (single.image ? Math.min(single.h * 0.6, 120) : 0) * editor.camera.z}
+			{#if single.kind === 'youtube'}
+				<button
+					type="button"
+					class="pointer-events-auto absolute left-1/2 flex -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-fc-pill transition-transform hover:scale-110 active:scale-95 cursor-pointer z-10"
+					style:top="{topH / 2}px"
+					style:width="{Math.min(48, topH * 0.6)}px"
+					style:height="{Math.min(48, topH * 0.6)}px"
+					aria-label="Lire la vidéo"
+					title="Ouvrir sur YouTube"
+					onclick={(e) => {
+						e.stopPropagation();
+						window.open(single.url, '_blank', 'noopener');
+					}}
+				>
+					<span class="sr-only">Lire la vidéo</span>
+				</button>
+			{/if}
+			<button
+				type="button"
+				class="pointer-events-auto absolute bottom-1.5 right-1.5 flex size-7 items-center justify-center rounded-fc-xs text-fc-fg-muted hover:text-fc-fg hover:bg-fc-surface/80 transition-colors cursor-pointer z-10"
+				aria-label="Ouvrir le lien"
+				title="Ouvrir le lien"
+				onclick={(e) => {
+					e.stopPropagation();
+					window.open(single.url, '_blank', 'noopener');
+				}}
+			>
+				<Icon icon={icons.external} size={16} />
+			</button>
+			<div
+				class="pointer-events-auto absolute -top-12 left-1/2 flex -translate-x-1/2 items-center gap-1.5 rounded-fc-pill bg-fc-component p-1 shadow-lg z-20"
+				data-board-ui
+			>
+				<button
+					type="button"
+					class="flex items-center gap-1.5 rounded-fc-pill bg-fc-surface px-2.5 py-1 text-fc-xs font-medium text-fc-fg hover:bg-fc-page transition-colors cursor-pointer"
+					onclick={(e) => {
+						e.stopPropagation();
+						window.open(single.url, '_blank', 'noopener');
+					}}
+					title="Ouvrir le lien dans un nouvel onglet"
+				>
+					<Icon icon={icons.external} size={14} />
+					<span>Ouvrir</span>
+				</button>
+				<button
+					type="button"
+					class="flex items-center gap-1 rounded-fc-pill px-2 py-1 text-fc-xs font-medium text-fc-fg hover:bg-fc-surface transition-colors cursor-pointer"
+					onclick={(e) => {
+						e.stopPropagation();
+						if (single.url) {
+							void navigator.clipboard.writeText(single.url);
+							toast.success('Lien copié');
+						}
+					}}
+					title="Copier l'adresse du lien"
+				>
+					<Icon icon={icons.copy} size={14} />
+					<span>Copier</span>
+				</button>
+			</div>
+		{/if}
 		<button
 			type="button"
-			class="handle pointer-events-auto absolute -top-9 left-1/2 flex -translate-x-1/2 -translate-y-1/2 touch-none items-center justify-center"
+			class="handle pointer-events-auto absolute left-1/2 flex -translate-x-1/2 -translate-y-1/2 touch-none items-center justify-center"
+			style:top={single?.type === 'card' && single?.url ? '-68px' : '-36px'}
 			style:cursor="grab"
 			aria-label="Faire pivoter"
 			onpointerdown={spin}

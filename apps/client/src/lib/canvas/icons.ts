@@ -33,9 +33,17 @@ export const toolIcons = {
   redo: "toile:redo",
   ai: "toile:ai",
   dots: "toile:dots",
+  cut: "toile:cut",
+  paste: "toile:paste",
 } as const;
 
 registerIcons({
+  [toolIcons.cut]: line(
+    '<circle cx="6" cy="18" r="3"/><circle cx="6" cy="6" r="3"/><path d="M8.2 8.2L20 20M8.2 15.8L20 4"/>',
+  ),
+  [toolIcons.paste]: line(
+    '<rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/>',
+  ),
   [toolIcons.dots]: {
     width: 24,
     height: 24,
