@@ -14,11 +14,19 @@ const SNAPS: [number, number][] = [
 	[0.5, 0.5]
 ];
 
-/** The anchor of `p` on `shape`, snapped to an edge midpoint or the centre when within 12% of one. */
+/** The anchor of `p` on `shape`, snapped to the nearest cardinal anchor when within 35% of one. */
 export function snapAnchor(shape: Shape, p: Point): [number, number] {
 	const anchor = anchorOf(shape, p);
-	for (const snap of SNAPS) if (Math.hypot(snap[0] - anchor[0], snap[1] - anchor[1]) < 0.12) return snap;
-	return anchor;
+	let best = anchor;
+	let min = Infinity;
+	for (const snap of SNAPS) {
+		const d = Math.hypot(snap[0] - anchor[0], snap[1] - anchor[1]);
+		if (d < min) {
+			min = d;
+			best = snap;
+		}
+	}
+	return min < 0.35 ? best : anchor;
 }
 
 /** The point and binding an arrow end takes at world point `p`: the anchor of the shape under it, if any. */
@@ -42,15 +50,18 @@ export class ConnectorTool implements Tool {
 
 	constructor(
 		private editor: Editor,
-		private type: 'arrow' | 'line' = 'arrow'
-	) {}
+		private type: 'arrow' | 'line' = 'arrow',
+		initialFrom?: { point: Point; binding?: Binding }
+	) {
+		if (initialFrom) this.from = initialFrom;
+	}
 
 	private bindAt(p: Point, skip?: string): { point: Point; binding?: Binding } {
 		return bindPoint(this.editor, p, skip);
 	}
 
 	down(sample: PointerSample): void {
-		this.from = this.bindAt(sample.world);
+		if (!this.from) this.from = this.bindAt(sample.world);
 	}
 
 	move(sample: PointerSample): void {

@@ -68,15 +68,7 @@
 	}
 
 	function finish() {
-		const id = editor.editing;
-		if (!id) return;
-		editor.editing = null;
-		editor.undo.stopCapturing();
-		const current = editor.scene.get(id);
-		if (current?.type === 'text' && !editor.doc.text(id)?.toString().trim()) {
-			editor.doc.remove([id]);
-		}
-		editor.invalidate();
+		editor.finishEditing();
 	}
 
 	function keydown(event: KeyboardEvent) {

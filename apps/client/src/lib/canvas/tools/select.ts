@@ -32,6 +32,7 @@ export class SelectTool implements Tool {
 
 	down(sample: PointerSample): void {
 		const editor = this.editor;
+		if (editor.editing && sample.detail < 2) editor.finishEditing();
 		const hit = topHit(editor.scene, sample.world, 4 / editor.camera.z);
 		this.start = sample.world;
 		this.pressed = sample;

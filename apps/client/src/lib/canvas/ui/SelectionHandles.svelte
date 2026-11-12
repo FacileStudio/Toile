@@ -1,10 +1,12 @@
 <script lang="ts">
 	import type { Editor } from '../editor.svelte';
 	import type { Input } from '../input';
+	import { anchorPoint } from '../anchors';
 	import { toScreen } from '../camera';
 	import { rotatedBox, union } from '../geometry';
-	import { HANDLES, type Handle } from '../transform';
+	import { CORNERS, type Handle } from '../transform';
 	import { ResizeGesture, RotateGesture } from '../tools/handles';
+	import { ConnectorTool } from '../tools/connector';
 	import { EndpointGesture } from '../tools/endpoint';
 	import { pathPoints } from '../bounds';
 
@@ -39,6 +41,11 @@
 		return { x: at.x, y: at.y, w: box.w * c.z, h: box.h * c.z, rot: single?.rot ?? 0, locked };
 	});
 
+	const single = $derived.by(() => {
+		void editor.version;
+		return editor.selection.length === 1 ? editor.scene.get(editor.selection[0]) : null;
+	});
+
 	const POS: Record<Handle, [number, number]> = {
 		nw: [0, 0],
 		n: [0.5, 0],
@@ -48,16 +55,6 @@
 		s: [0.5, 1],
 		sw: [0, 1],
 		w: [0, 0.5]
-	};
-	const CURSOR: Record<Handle, string> = {
-		nw: 'nwse-resize',
-		se: 'nwse-resize',
-		ne: 'nesw-resize',
-		sw: 'nesw-resize',
-		n: 'ns-resize',
-		s: 'ns-resize',
-		e: 'ew-resize',
-		w: 'ew-resize'
 	};
 	const LABEL: Record<Handle, string> = {
 		nw: 'haut gauche',
@@ -69,6 +66,35 @@
 		sw: 'bas gauche',
 		w: 'gauche'
 	};
+
+	function handleCursor(handle: Handle, rot = 0): string {
+		const base: Record<Handle, number> = {
+			n: 0,
+			ne: 45,
+			e: 90,
+			se: 135,
+			s: 180,
+			sw: 225,
+			w: 270,
+			nw: 315
+		};
+		const deg = (((base[handle] + (rot * 180) / Math.PI) % 360) + 360) % 360;
+		if (deg >= 22.5 && deg < 67.5) return 'nesw-resize';
+		if (deg >= 67.5 && deg < 112.5) return 'ew-resize';
+		if (deg >= 112.5 && deg < 157.5) return 'nwse-resize';
+		if (deg >= 157.5 && deg < 202.5) return 'ns-resize';
+		if (deg >= 202.5 && deg < 247.5) return 'nesw-resize';
+		if (deg >= 247.5 && deg < 292.5) return 'ew-resize';
+		if (deg >= 292.5 && deg < 337.5) return 'nwse-resize';
+		return 'ns-resize';
+	}
+
+	const OUTWARD: { id: string; label: string; left: string; top: string; anchor: [number, number] }[] = [
+		{ id: 'n', label: 'Connecter (haut)', left: '50%', top: '-14px', anchor: [0.5, 0] },
+		{ id: 'e', label: 'Connecter (droite)', left: 'calc(100% + 14px)', top: '50%', anchor: [1, 0.5] },
+		{ id: 's', label: 'Connecter (bas)', left: '50%', top: 'calc(100% + 14px)', anchor: [0.5, 1] },
+		{ id: 'w', label: 'Connecter (gauche)', left: '-14px', top: '50%', anchor: [0, 0.5] }
+	];
 
 	function point(event: PointerEvent) {
 		const rect = (event.currentTarget as HTMLElement).closest('[role="application"]')?.getBoundingClientRect();
@@ -85,7 +111,14 @@
 		input.startGesture(new RotateGesture(editor, point(event)), event);
 	}
 
-	const small = $derived(frame ? Math.min(frame.w, frame.h) < 28 : false);
+	function connect(anchor: [number, number], event: PointerEvent) {
+		const shape = editor.selection.length === 1 ? editor.scene.get(editor.selection[0]) : null;
+		if (!shape) return;
+		event.stopPropagation();
+		const p = anchorPoint(shape, anchor);
+		const tool = new ConnectorTool(editor, 'arrow', { point: p, binding: { shape: shape.id, anchor } });
+		input.startGesture(tool, event);
+	}
 </script>
 
 {#if frame && editor.editable && !frame.locked}
@@ -96,21 +129,66 @@
 		style:transform="translate({frame.x}px, {frame.y}px) rotate({frame.rot}rad)"
 		data-board-ui
 	>
-		{#each HANDLES as handle (handle)}
-			{#if !small || handle.length === 2}
+		<button
+			type="button"
+			class="pointer-events-auto absolute -top-1.5 left-2 right-2 h-3 touch-none"
+			style:cursor={handleCursor('n', frame.rot)}
+			aria-label="Redimensionner ({LABEL.n})"
+			onpointerdown={(e) => resize('n', e)}
+		></button>
+		<button
+			type="button"
+			class="pointer-events-auto absolute -bottom-1.5 left-2 right-2 h-3 touch-none"
+			style:cursor={handleCursor('s', frame.rot)}
+			aria-label="Redimensionner ({LABEL.s})"
+			onpointerdown={(e) => resize('s', e)}
+		></button>
+		<button
+			type="button"
+			class="pointer-events-auto absolute top-2 bottom-2 -left-1.5 w-3 touch-none"
+			style:cursor={handleCursor('w', frame.rot)}
+			aria-label="Redimensionner ({LABEL.w})"
+			onpointerdown={(e) => resize('w', e)}
+		></button>
+		<button
+			type="button"
+			class="pointer-events-auto absolute top-2 bottom-2 -right-1.5 w-3 touch-none"
+			style:cursor={handleCursor('e', frame.rot)}
+			aria-label="Redimensionner ({LABEL.e})"
+			onpointerdown={(e) => resize('e', e)}
+		></button>
+		{#each CORNERS as handle (handle)}
+			<button
+				type="button"
+				class="handle pointer-events-auto absolute flex -translate-x-1/2 -translate-y-1/2 touch-none items-center justify-center"
+				style:left="{POS[handle][0] * 100}%"
+				style:top="{POS[handle][1] * 100}%"
+				style:cursor={handleCursor(handle, frame.rot)}
+				aria-label="Redimensionner ({LABEL[handle]})"
+				onpointerdown={(e) => resize(handle, e)}
+			>
+				<span class="size-2.5 rounded-fc-xs bg-fc-page shadow-sm outline-2 outline-fc-info"></span>
+			</button>
+		{/each}
+		{#if single && !frame.locked}
+			{#each OUTWARD as c (c.id)}
 				<button
 					type="button"
-					class="handle pointer-events-auto absolute flex -translate-x-1/2 -translate-y-1/2 touch-none items-center justify-center"
-					style:left="{POS[handle][0] * 100}%"
-					style:top="{POS[handle][1] * 100}%"
-					style:cursor={CURSOR[handle]}
-					aria-label="Redimensionner ({LABEL[handle]})"
-					onpointerdown={(e) => resize(handle, e)}
+					class="handle pointer-events-auto absolute flex -translate-x-1/2 -translate-y-1/2 touch-none items-center justify-center group"
+					style:left={c.left}
+					style:top={c.top}
+					style:cursor="crosshair"
+					aria-label={c.label}
+					onpointerdown={(e) => connect(c.anchor, e)}
 				>
-					<span class="size-2.5 rounded-fc-xs bg-fc-page shadow-sm outline-2 outline-fc-info"></span>
+					<span
+						class="size-3.5 rounded-fc-pill bg-fc-page shadow-sm outline-2 outline-fc-info flex items-center justify-center group-hover:scale-125 group-hover:bg-fc-info transition-all"
+					>
+						<span class="size-1 rounded-fc-pill bg-fc-info group-hover:bg-fc-page"></span>
+					</span>
 				</button>
-			{/if}
-		{/each}
+			{/each}
+		{/if}
 		<button
 			type="button"
 			class="handle pointer-events-auto absolute -top-9 left-1/2 flex -translate-x-1/2 -translate-y-1/2 touch-none items-center justify-center"

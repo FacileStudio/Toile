@@ -170,6 +170,19 @@ export class Editor {
 		this.invalidateOverlay();
 	}
 
+	/** Commits or removes any shape currently being edited. */
+	finishEditing(): void {
+		const id = this.editing;
+		if (!id) return;
+		this.editing = null;
+		this.undo.stopCapturing();
+		const current = this.scene.get(id);
+		if (current?.type === 'text' && !this.doc.text(id)?.toString().trim()) {
+			this.doc.remove([id]);
+		}
+		this.invalidate();
+	}
+
 	/** Applies queued document changes to the read model now, instead of at the next frame. */
 	sync(): void {
 		if (!this.scene.flush()) return;

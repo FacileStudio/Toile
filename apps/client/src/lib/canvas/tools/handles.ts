@@ -50,7 +50,7 @@ export class ResizeGesture implements Tool {
 			{ x: 0, y: 0 },
 			-shape.rot
 		);
-		const keep = sample.shift || shape.type === 'image';
+		const keep = sample.shift || shape.type === 'image' || shape.type === 'sticky';
 		const to = resizeBox(shape, this.handle, local.x, local.y, keep);
 		const before = rotate(fixedPoint(shape, this.handle), center(shape), shape.rot);
 		const after = rotate(fixedPoint(to, this.handle), center(to), shape.rot);

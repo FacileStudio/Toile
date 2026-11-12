@@ -101,7 +101,13 @@ export class Input {
 	}
 
 	private down(event: PointerEvent): void {
-		if (event.target instanceof HTMLElement && event.target.closest('[data-board-ui]')) return;
+		const target = event.target as Element | null;
+		const inText = target instanceof HTMLElement && (target.tagName === 'TEXTAREA' || target.tagName === 'INPUT');
+		if (this.editor.editing && !inText) {
+			this.editor.finishEditing();
+			if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
+		}
+		if (target?.closest?.('[data-board-ui]')) return;
 		if (event.pointerType === 'pen') this.penSeen = true;
 		this.pointers.set(event.pointerId, this.screen(event));
 		if (this.pointers.size === 2 && event.pointerType === 'touch') return this.startPinch();

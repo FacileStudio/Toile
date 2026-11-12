@@ -4,6 +4,20 @@ All notable changes to Toile. Versions follow SemVer.
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-11-12
+
+### Added
+
+- Miro-style whiteboard resizing: selection borders can now be dragged to resize along a single axis, while corners resize proportionally
+- Outward connection handles: 4 circular connector points positioned outside the selection frame on each side to quickly connect shapes
+- Automatic cursor rotation matching the shape's orientation for corner and edge resize handles
+- Target snap radius increased to 35% with automatic cardinal anchor alignment for clean connector curves
+
+### Fixed
+
+- Clicking outside an active text element or sticky note immediately commits and exits input editing mode
+- Sticky notes keep square aspect ratio when resized from corners
+
 ## [0.2.1] - 2026-11-12
 
 ### Fixed

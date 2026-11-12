@@ -7,6 +7,12 @@ export type Handle = 'n' | 's' | 'e' | 'w' | 'ne' | 'nw' | 'se' | 'sw';
 /** Every resize handle, corners first. */
 export const HANDLES: Handle[] = ['nw', 'ne', 'se', 'sw', 'n', 'e', 's', 'w'];
 
+/** The four corner resize handles. */
+export const CORNERS: Handle[] = ['nw', 'ne', 'se', 'sw'];
+
+/** The four edge resize handles. */
+export const EDGES: Handle[] = ['n', 'e', 's', 'w'];
+
 const MIN = 8;
 
 /**
