@@ -4,6 +4,15 @@ All notable changes to Toile. Versions follow SemVer.
 
 ## [Unreleased]
 
+## [0.6.1] - 2026-11-12
+
+### Fixed
+
+- Explicit pointer cursor style on clickable cards, buttons, toolbars, zoom controls, and the new board grid action
+- Remove duplicate external link icon button on selected cards and restore south resize handle width
+- Add hover status and pointer cursor on canvas link action icons and YouTube play button
+- Muted tone for animated preview stickies on board grid cards
+
 ## [0.6.0] - 2026-11-12
 
 ### Added
