@@ -10,6 +10,7 @@
 		Field,
 		Input,
 		Menu,
+		Modal,
 		Page,
 		PageHeader,
 		icons,
@@ -28,6 +29,8 @@
 	let name = $state('');
 	let busy = $state(false);
 	let doomed = $state<BoardInfo | null>(null);
+	let renaming = $state<BoardInfo | null>(null);
+	let renameTitle = $state('');
 	let contextMenu = $state<{ x: number; y: number; board: BoardInfo } | null>(null);
 
 	const failed = (error: unknown, fallback: string) => toast.danger(error instanceof Error ? error.message : fallback);
@@ -61,6 +64,26 @@
 		}
 	}
 
+	function startRename(board: BoardInfo) {
+		renaming = board;
+		renameTitle = board.name;
+	}
+
+	async function saveRename(event: SubmitEvent) {
+		event.preventDefault();
+		const board = renaming;
+		const trimmed = renameTitle.trim();
+		if (!board || !trimmed) return;
+		try {
+			const updated = await boardApi.rename(board.id, trimmed);
+			boards = boards.map((b) => (b.id === board.id ? { ...b, name: updated.name } : b));
+			renaming = null;
+			toast.success('Tableau renommé.');
+		} catch (error) {
+			failed(error, 'Renommage impossible');
+		}
+	}
+
 	async function duplicate(board: BoardInfo) {
 		try {
 			boards = [await boardApi.duplicate(board.id), ...boards];
@@ -80,6 +103,7 @@
 
 	const actions = (board: BoardInfo) => [
 		{ label: 'Ouvrir', icon: icons.external, onselect: () => goto(`/b/${board.id}`) },
+		{ label: 'Renommer', icon: icons.edit, onselect: () => startRename(board) },
 		{ label: 'Dupliquer', icon: icons.copy, onselect: () => duplicate(board) },
 		...(board.role === 'owner'
 			? [{ label: 'Supprimer', icon: icons.remove, tone: 'danger' as const, onselect: () => (doomed = board) }]
@@ -147,6 +171,22 @@
 	onConfirm={remove}
 	onCancel={() => (doomed = null)}
 />
+
+{#if renaming}
+	<Modal open={!!renaming} title="Renommer le tableau" onClose={() => (renaming = null)}>
+		<form id="rename-board" class="flex flex-col gap-4" onsubmit={saveRename}>
+			<Field label="Nom du tableau" helper="1 à 200 caractères">
+				{#snippet children({ id, describedBy })}
+					<Input {id} aria-describedby={describedBy} bind:value={renameTitle} maxlength={200} autocomplete="off" />
+				{/snippet}
+			</Field>
+		</form>
+		{#snippet footer()}
+			<Button variant="ghost" onclick={() => (renaming = null)}>Annuler</Button>
+			<Button type="submit" form="rename-board" disabled={!renameTitle.trim()}>Enregistrer</Button>
+		{/snippet}
+	</Modal>
+{/if}
 
 {#if contextMenu}
 	<ContextMenu
