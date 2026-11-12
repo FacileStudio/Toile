@@ -32,9 +32,15 @@ export const toolIcons = {
   undo: "toile:undo",
   redo: "toile:redo",
   ai: "toile:ai",
+  dots: "toile:dots",
 } as const;
 
 registerIcons({
+  [toolIcons.dots]: {
+    width: 24,
+    height: 24,
+    body: '<g fill="currentColor"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></g>',
+  },
   [toolIcons.ai]: line(
     '<path d="M10 4.5l1.6 4.4 4.4 1.6-4.4 1.6L10 16.5l-1.6-4.4L4 10.5l4.4-1.6z"/><path d="M17.5 14l.8 2.2 2.2.8-2.2.8-.8 2.2-.8-2.2-2.2-.8 2.2-.8z"/><path d="M17 3.5v3M15.5 5h3"/>',
   ),

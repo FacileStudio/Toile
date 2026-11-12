@@ -16,7 +16,9 @@
 		toast
 	} from '@facile/muse';
 	import BoardPreview from '$lib/components/boards/BoardPreview.svelte';
+	import ContextMenu from '$lib/components/ContextMenu.svelte';
 	import { boardApi, type BoardInfo } from '$lib/board/api';
+	import { toolIcons } from '$lib/canvas/icons';
 	import { boardIcon } from '$lib/brand';
 	import { formatDate } from '$lib/format';
 	import { session } from '$lib/session.svelte';
@@ -26,6 +28,7 @@
 	let name = $state('');
 	let busy = $state(false);
 	let doomed = $state<BoardInfo | null>(null);
+	let contextMenu = $state<{ x: number; y: number; board: BoardInfo } | null>(null);
 
 	const failed = (error: unknown, fallback: string) => toast.danger(error instanceof Error ? error.message : fallback);
 
@@ -101,7 +104,15 @@
 	{:else}
 		<ul class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4" aria-label="Tableaux">
 			{#each boards as board, i (board.id)}
-				<li class="toile-pop group/board relative" style:--i={Math.min(i, 12)} animate:flip={{ duration: 300 }}>
+				<li
+					class="toile-pop group/board relative"
+					style:--i={Math.min(i, 12)}
+					animate:flip={{ duration: 300 }}
+					oncontextmenu={(e) => {
+						e.preventDefault();
+						contextMenu = { x: e.clientX, y: e.clientY, board };
+					}}
+				>
 					<Card
 						href="/b/{board.id}"
 						class="flex h-full flex-col gap-3 p-3 transition-[background-color,translate] duration-300 hover:-translate-y-1 motion-reduce:transition-none"
@@ -118,7 +129,7 @@
 						align="end"
 						class="absolute right-5 top-5 rounded-fc-md shadow-sm transition-opacity focus-within:opacity-100 group-hover/board:opacity-100 motion-reduce:transition-none [@media(hover:hover)_and_(pointer:fine)]:opacity-0"
 					>
-						{#snippet trigger()}<Icon icon={icons.menu} size={20} />{/snippet}
+						{#snippet trigger()}<Icon icon={toolIcons.dots} size={20} />{/snippet}
 					</Menu>
 				</li>
 			{/each}
@@ -136,3 +147,17 @@
 	onConfirm={remove}
 	onCancel={() => (doomed = null)}
 />
+
+{#if contextMenu}
+	<ContextMenu
+		x={contextMenu.x}
+		y={contextMenu.y}
+		items={actions(contextMenu.board).map((a) => ({
+			label: a.label,
+			icon: a.icon,
+			tone: a.tone,
+			onselect: a.onselect ?? (() => {})
+		}))}
+		onclose={() => (contextMenu = null)}
+	/>
+{/if}

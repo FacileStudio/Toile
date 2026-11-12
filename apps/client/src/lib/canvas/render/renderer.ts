@@ -21,12 +21,42 @@ export function fitCanvas(canvas: HTMLCanvasElement): { width: number; height: n
 	return { width, height, dpr };
 }
 
+let gridTile: HTMLCanvasElement | null = null;
+let gridPattern: CanvasPattern | null = null;
+let gridStep = 0;
+let gridColor = '';
+let gridSize = 0;
+
 function drawGrid(ctx: CanvasRenderingContext2D, camera: Camera, width: number, height: number, color: string): void {
 	let step = GRID * camera.z;
 	while (step < 12) step *= 4;
 	const size = Math.min(2, Math.max(1, camera.z * 1.5));
 	const startX = (((camera.x % step) + step) % step) - size / 2;
 	const startY = (((camera.y % step) + step) % step) - size / 2;
+	const s = Math.round(step);
+	if (typeof document !== 'undefined') {
+		if (!gridPattern || gridStep !== s || gridColor !== color || gridSize !== size) {
+			gridTile ??= document.createElement('canvas');
+			gridTile.width = s;
+			gridTile.height = s;
+			const tctx = gridTile.getContext('2d');
+			if (tctx) {
+				tctx.clearRect(0, 0, s, s);
+				tctx.fillStyle = color;
+				tctx.fillRect(0, 0, size, size);
+				gridPattern = ctx.createPattern(gridTile, 'repeat');
+				gridStep = s;
+				gridColor = color;
+				gridSize = size;
+			}
+		}
+		if (gridPattern && 'setTransform' in gridPattern) {
+			gridPattern.setTransform(new DOMMatrix().translateSelf(startX, startY));
+			ctx.fillStyle = gridPattern;
+			ctx.fillRect(0, 0, width, height);
+			return;
+		}
+	}
 	ctx.fillStyle = color;
 	ctx.beginPath();
 	for (let x = startX; x < width; x += step) {

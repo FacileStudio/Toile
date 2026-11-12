@@ -17,6 +17,10 @@ export class Input {
 	private space = false;
 	private penSeen = false;
 	private teardown: (() => void)[] = [];
+	private hostRect: DOMRect | null = null;
+	private wheelDelta = { x: 0, y: 0 };
+	private wheelZoom: { factor: number; screen: Point } | null = null;
+	private wheelRaf = 0;
 
 	constructor(
 		private editor: Editor,
@@ -74,19 +78,28 @@ export class Input {
 		on(window, 'keydown', (e) => this.key(e, true));
 		on(window, 'keyup', (e) => this.key(e, false));
 		on(window, 'blur', () => (this.space = false));
-		return () => this.teardown.splice(0).forEach((off) => off());
+		on(window, 'resize', () => (this.hostRect = null));
+		on(window, 'scroll', () => (this.hostRect = null), { capture: true, passive: true });
+		return () => {
+			if (this.wheelRaf) cancelAnimationFrame(this.wheelRaf);
+			this.teardown.splice(0).forEach((off) => off());
+		};
+	}
+
+	private rect(): DOMRect {
+		return (this.hostRect ??= this.element.getBoundingClientRect());
 	}
 
 	private screen(event: PointerEvent | WheelEvent): Point {
-		const rect = this.element.getBoundingClientRect();
-		return { x: event.clientX - rect.left, y: event.clientY - rect.top };
+		const r = this.rect();
+		return { x: event.clientX - r.left, y: event.clientY - r.top };
 	}
 
 	private sample(event: PointerEvent): PointerSample {
 		const screen = this.screen(event);
-		const rect = this.element.getBoundingClientRect();
+		const r = this.rect();
 		const coalesced =
-			event.getCoalescedEvents?.().map((e) => ({ x: e.clientX - rect.left, y: e.clientY - rect.top })) ?? [];
+			event.getCoalescedEvents?.().map((e) => ({ x: e.clientX - r.left, y: e.clientY - r.top })) ?? [];
 		return {
 			world: this.editor.world(screen),
 			screen,
@@ -101,6 +114,7 @@ export class Input {
 	}
 
 	private down(event: PointerEvent): void {
+		this.hostRect = this.element.getBoundingClientRect();
 		const target = event.target as Element | null;
 		const inText = target instanceof HTMLElement && (target.tagName === 'TEXTAREA' || target.tagName === 'INPUT');
 		if (this.editor.editing && !inText) {
@@ -164,14 +178,35 @@ export class Input {
 		event.preventDefault();
 		const screen = this.screen(event);
 		if (event.ctrlKey || event.metaKey) {
-			this.editor.setCamera(
-				zoomAt(this.editor.camera, screen, wheelFactor(event.deltaY, event.deltaMode, event.ctrlKey))
-			);
-			return;
+			const factor = wheelFactor(event.deltaY, event.deltaMode, event.ctrlKey);
+			if (this.wheelZoom) {
+				this.wheelZoom.factor *= factor;
+				this.wheelZoom.screen = screen;
+			} else {
+				this.wheelZoom = { factor, screen };
+			}
+		} else {
+			const scale = event.deltaMode === 1 ? 16 : 1;
+			const [dx, dy] = event.shiftKey && !event.deltaX ? [event.deltaY, 0] : [event.deltaX, event.deltaY];
+			this.wheelDelta.x -= dx * scale;
+			this.wheelDelta.y -= dy * scale;
 		}
-		const scale = event.deltaMode === 1 ? 16 : 1;
-		const [dx, dy] = event.shiftKey && !event.deltaX ? [event.deltaY, 0] : [event.deltaX, event.deltaY];
-		this.editor.setCamera(panBy(this.editor.camera, -dx * scale, -dy * scale));
+		if (!this.wheelRaf) this.wheelRaf = requestAnimationFrame(() => this.flushWheel());
+	}
+
+	private flushWheel(): void {
+		this.wheelRaf = 0;
+		let cam = this.editor.camera;
+		if (this.wheelDelta.x || this.wheelDelta.y) {
+			cam = panBy(cam, this.wheelDelta.x, this.wheelDelta.y);
+			this.wheelDelta.x = 0;
+			this.wheelDelta.y = 0;
+		}
+		if (this.wheelZoom) {
+			cam = zoomAt(cam, this.wheelZoom.screen, this.wheelZoom.factor);
+			this.wheelZoom = null;
+		}
+		this.editor.setCamera(cam);
 	}
 
 	private key(event: KeyboardEvent, down: boolean): void {

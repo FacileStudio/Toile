@@ -48,7 +48,8 @@
 		void editor.version;
 		void editor.camera;
 		void editor.size;
-		if (!timer) timer = window.setTimeout(draw, 120);
+		if (timer) window.clearTimeout(timer);
+		timer = window.setTimeout(draw, 160);
 	});
 
 	onDestroy(() => window.clearTimeout(timer));

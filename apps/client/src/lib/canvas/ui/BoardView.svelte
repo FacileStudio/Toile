@@ -1,8 +1,9 @@
 <script lang="ts">
+	import { tick } from 'svelte';
 	import { goto } from '$app/navigation';
 	import { Alert, Icon, IconButton, Spinner, Tooltip, icons, toast, type PlanLimitError } from '@facile/muse';
 	import { aiError, aiPlanLimit, summarizeBoard } from '$lib/api/ai';
-	import { canEdit } from '$lib/board/api';
+	import { boardApi, canEdit } from '$lib/board/api';
 	import { STOP_TEXT, type BoardSession } from '$lib/board/session.svelte';
 	import type { CommandUi } from '../commands';
 	import { toolIcons } from '../icons';
@@ -37,8 +38,33 @@
 	let thinking = $state(false);
 	let limit = $state<PlanLimitError | null>(null);
 	let picker: HTMLInputElement;
+	let editingTitle = $state(false);
+	let currentTitle = $state('');
+	let titleInput = $state<HTMLInputElement>();
 	const aiBoard = $derived('board' in session.target && canEdit(session.role) ? session.target.board : null);
 	let fitted = false;
+
+	$effect(() => { currentTitle = name; });
+
+	async function saveTitle() {
+		if (!editingTitle) return;
+		editingTitle = false;
+		const trimmed = currentTitle.trim();
+		if (!trimmed || trimmed === name || !('board' in session.target)) return;
+		try {
+			await boardApi.rename(session.target.board, trimmed);
+			name = trimmed;
+		} catch {
+			currentTitle = name;
+			toast.danger('Renommage impossible');
+		}
+	}
+
+	function startEditTitle() {
+		if (!canEdit(session.role)) return;
+		editingTitle = true;
+		void tick().then(() => titleInput?.select());
+	}
 
 	const ui: CommandUi = {
 		help: () => (help = true),
@@ -54,9 +80,7 @@
 		if (editor.scene.shapes.size) zoomFit(editor);
 	});
 
-	$effect(() => {
-		if (session.draft) comments = true;
-	});
+	$effect(() => { if (session.draft) comments = true; });
 
 	async function summarize() {
 		if (!aiBoard) return;
@@ -105,7 +129,29 @@
 						<Icon icon={icons.chevronLeft} size={20} />
 					</IconButton>
 				{/if}
-				<h1 class="max-w-[40vw] truncate px-2 text-fc-sm font-semibold text-fc-fg">{name}</h1>
+				{#if editingTitle}
+					<input
+						bind:this={titleInput}
+						bind:value={currentTitle}
+						class="max-w-[40vw] rounded-fc-xs bg-fc-surface px-2 py-0.5 text-fc-sm font-semibold text-fc-fg focus:outline-2 focus:outline-fc-ring"
+						aria-label="Nom du tableau"
+						onblur={saveTitle}
+						onkeydown={(e) => {
+							if (e.key === 'Enter') void saveTitle();
+							else if (e.key === 'Escape') (currentTitle = name), (editingTitle = false);
+						}}
+					/>
+				{:else}
+					<button
+						type="button"
+						class="max-w-[40vw] truncate rounded-fc-xs px-2 py-0.5 text-left text-fc-sm font-semibold text-fc-fg hover:bg-fc-surface/60 focus-visible:outline-2 focus-visible:outline-fc-ring disabled:cursor-default disabled:hover:bg-transparent"
+						disabled={!canEdit(session.role)}
+						title={canEdit(session.role) ? 'Cliquer pour renommer' : name}
+						onclick={startEditTitle}
+					>
+						{name}
+					</button>
+				{/if}
 				<span class="flex items-center gap-1.5 pr-3 text-fc-xs text-fc-fg-muted" aria-live="polite">
 					{#if session.connection === 'connecting'}<Spinner size="sm" />{/if}
 					{STATUS[session.connection]}

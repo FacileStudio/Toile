@@ -80,3 +80,4 @@ async function main(count: number): Promise<void> {
 }
 
 await main(Number(process.argv[2] ?? 5000));
+process.exit(0);

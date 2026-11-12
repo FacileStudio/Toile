@@ -48,14 +48,26 @@ export function exitDirection(end: End, other: Point): Point {
 	return rotate(side, { x: 0, y: 0 }, end.shape.rot);
 }
 
-/** A connector's cubic curve from `a` to `b`, sampled as a polyline; each end leaves perpendicular to its shape. */
-export function curve(a: End, b: End): Point[] {
+/** A cubic Bezier control curve. */
+export type CubicCurve = { a: Point; c1: Point; c2: Point; b: Point };
+
+/** The cubic Bezier control points connecting `a` and `b`. */
+export function cubicCurve(a: End, b: End): CubicCurve {
 	const distance = Math.hypot(b.point.x - a.point.x, b.point.y - a.point.y);
 	const reach = Math.max(distance * 0.45, 32);
 	const da = exitDirection(a, b.point);
 	const db = exitDirection(b, a.point);
-	const c1 = { x: a.point.x + da.x * reach, y: a.point.y + da.y * reach };
-	const c2 = { x: b.point.x + db.x * reach, y: b.point.y + db.y * reach };
+	return {
+		a: a.point,
+		c1: { x: a.point.x + da.x * reach, y: a.point.y + da.y * reach },
+		c2: { x: b.point.x + db.x * reach, y: b.point.y + db.y * reach },
+		b: b.point
+	};
+}
+
+/** A connector's cubic curve from `a` to `b`, sampled as a polyline; each end leaves perpendicular to its shape. */
+export function curve(a: End, b: End): Point[] {
+	const { a: pa, c1, c2, b: pb } = cubicCurve(a, b);
 	const out: Point[] = [];
 	for (let i = 0; i <= CURVE_SAMPLES; i += 1) {
 		const t = i / CURVE_SAMPLES;
@@ -65,8 +77,8 @@ export function curve(a: End, b: End): Point[] {
 		const k2 = 3 * u * t * t;
 		const k3 = t * t * t;
 		out.push({
-			x: k0 * a.point.x + k1 * c1.x + k2 * c2.x + k3 * b.point.x,
-			y: k0 * a.point.y + k1 * c1.y + k2 * c2.y + k3 * b.point.y
+			x: k0 * pa.x + k1 * c1.x + k2 * c2.x + k3 * pb.x,
+			y: k0 * pa.y + k1 * c1.y + k2 * c2.y + k3 * pb.y
 		});
 	}
 	return out;

@@ -1,7 +1,8 @@
 import { getStroke } from 'perfect-freehand';
 import type { Shape } from '$lib/board/schema';
+import { cubicCurve, type CubicCurve } from '../anchors';
 import type { Point } from '../camera';
-import { routePoints, strokeWidth } from '../bounds';
+import { pathPoints, routePoints, strokeWidth } from '../bounds';
 import type { DrawEnv } from './shapes';
 
 const strokes = new WeakMap<Shape, Path2D>();
@@ -64,11 +65,43 @@ export function strokePolyline(
 	if (heads === 'both') head(ctx, points[0], points[1], size);
 }
 
+/** Draws a bezier curve connector with optional heads. */
+export function strokeBezier(
+	ctx: CanvasRenderingContext2D,
+	curve: CubicCurve,
+	width: number,
+	heads: 'none' | 'end' | 'both'
+): void {
+	ctx.lineWidth = width;
+	ctx.lineCap = 'round';
+	ctx.lineJoin = 'round';
+	ctx.beginPath();
+	ctx.moveTo(curve.a.x, curve.a.y);
+	ctx.bezierCurveTo(curve.c1.x, curve.c1.y, curve.c2.x, curve.c2.y, curve.b.x, curve.b.y);
+	ctx.stroke();
+	const size = 8 + width * 2;
+	if (heads !== 'none') head(ctx, curve.b, curve.c2, size);
+	if (heads === 'both') head(ctx, curve.a, curve.c1, size);
+}
+
 /** Draws a line or an arrow, bound ends resolved. */
 export function drawArrow(ctx: CanvasRenderingContext2D, shape: Shape, env: DrawEnv): void {
 	const color = shape.style.stroke ?? env.palette.fg;
 	ctx.strokeStyle = color;
 	ctx.fillStyle = color;
 	const heads = shape.type === 'line' ? 'none' : (shape.head ?? 'end');
+	const from = shape.from && env.lookup(shape.from.shape);
+	const to = shape.to && env.lookup(shape.to.shape);
+	if ((from || to) && shape.points?.length === 4) {
+		const pts = pathPoints(shape, env.lookup);
+		if (pts.length === 2) {
+			const bz = cubicCurve(
+				{ point: pts[0], shape: from, anchor: shape.from?.anchor },
+				{ point: pts[1], shape: to, anchor: shape.to?.anchor }
+			);
+			strokeBezier(ctx, bz, strokeWidth(shape), heads);
+			return;
+		}
+	}
 	strokePolyline(ctx, routePoints(shape, env.lookup), strokeWidth(shape), heads);
 }
