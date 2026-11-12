@@ -4,6 +4,12 @@ All notable changes to Toile. Versions follow SemVer.
 
 ## [Unreleased]
 
+## [0.2.1] - 2026-11-12
+
+### Fixed
+
+- The "Nouveau tableau" button on `/boards` is as tall as the name field beside it
+
 ## [0.2.0] - 2026-11-12
 
 ### Added
