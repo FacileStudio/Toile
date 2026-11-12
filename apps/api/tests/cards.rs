@@ -43,3 +43,51 @@ async fn suite_links_are_read_with_the_viewers_token_and_other_links_stay_bare()
     assert_eq!(resolve(&app, &ada, "not a url").await.0, 400);
     assert_eq!(app.call("POST", "/api/cards/resolve", None, Some(json!({"url": doc}))).await.status, 401);
 }
+
+#[tokio::test]
+async fn youtube_links_are_resolved_with_thumbnails_and_kind() {
+    let Some(pool) = common::pool("toile_cards_yt").await else { return };
+    let app = common::app(pool).await;
+    let ada = app.person("ada").await;
+
+    let (status, card) = resolve(&app, &ada, "https://www.youtube.com/watch?v=dQw4w9WgXcQ").await;
+    assert_eq!(status, 200);
+    assert_eq!(card["kind"], "youtube");
+    assert_eq!(card["icon"], "youtube");
+    assert_eq!(card["site"], "YouTube");
+    assert_eq!(card["image"], "https://img.youtube.com/vi/dQw4w9WgXcQ/hqdefault.jpg");
+    assert_eq!(card["favicon"], "https://www.google.com/s2/favicons?domain=www.youtube.com&sz=64");
+
+    let (_, short) = resolve(&app, &ada, "https://youtu.be/dQw4w9WgXcQ").await;
+    assert_eq!(short["kind"], "youtube");
+    assert_eq!(short["image"], "https://img.youtube.com/vi/dQw4w9WgXcQ/hqdefault.jpg");
+
+    let (_, shorts) = resolve(&app, &ada, "https://www.youtube.com/shorts/dQw4w9WgXcQ").await;
+    assert_eq!(shorts["kind"], "youtube");
+    assert_eq!(shorts["image"], "https://img.youtube.com/vi/dQw4w9WgXcQ/hqdefault.jpg");
+
+    let (_, embed) = resolve(&app, &ada, "https://www.youtube.com/embed/dQw4w9WgXcQ").await;
+    assert_eq!(embed["kind"], "youtube");
+    assert_eq!(embed["image"], "https://img.youtube.com/vi/dQw4w9WgXcQ/hqdefault.jpg");
+}
+
+#[test]
+fn og_metadata_serialization_skips_none_fields() {
+    let url = url::Url::parse("https://example.com/page").unwrap();
+    let bare = api::modules::cards::Card::link(&url);
+    let bare_json = serde_json::to_value(&bare).unwrap();
+    assert_eq!(bare_json["kind"], "link");
+    assert_eq!(bare_json["title"], "example.com");
+    assert!(bare_json.get("image").is_none());
+    assert!(bare_json.get("favicon").is_none());
+    assert!(bare_json.get("site").is_none());
+
+    let mut full = bare;
+    full.image = Some("https://example.com/og.png".to_string());
+    full.favicon = Some("https://example.com/fav.ico".to_string());
+    full.site = Some("Example Site".to_string());
+    let full_json = serde_json::to_value(&full).unwrap();
+    assert_eq!(full_json["image"], "https://example.com/og.png");
+    assert_eq!(full_json["favicon"], "https://example.com/fav.ico");
+    assert_eq!(full_json["site"], "Example Site");
+}

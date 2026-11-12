@@ -2,6 +2,7 @@ import type { Shape } from '$lib/board/schema';
 import type { Lookup } from '../bounds';
 import { strokeWidth } from '../bounds';
 import { FRAME_LABEL } from '../hit';
+import { drawCard } from './cards';
 import { inkOn, STICKY_FILL, type Palette } from './palette';
 import { drawArrow, drawInk } from './paths';
 import { drawText, fontSize } from './text';
@@ -62,24 +63,23 @@ function drawFrame(ctx: CanvasRenderingContext2D, shape: Shape, env: DrawEnv): v
 }
 
 function drawMedia(ctx: CanvasRenderingContext2D, shape: Shape, env: DrawEnv): void {
+	if (shape.type === 'card') return drawCard(ctx, shape, env);
 	const image = shape.asset ? env.image(shape.asset) : null;
+	ctx.save();
 	ctx.beginPath();
 	ctx.roundRect(shape.x, shape.y, shape.w, shape.h, 8);
 	ctx.fillStyle = env.palette.surface;
 	ctx.fill();
-	if (image) ctx.drawImage(image, shape.x, shape.y, shape.w, shape.h);
-	const label = shape.type === 'card' ? shape.title || shape.url || '' : image ? '' : 'Image';
-	if (!label || 14 * env.zoom < 3) return;
-	ctx.save();
 	ctx.clip();
-	ctx.fillStyle = env.palette.fg;
-	ctx.font = `500 14px ${env.palette.font}`;
-	ctx.textAlign = 'left';
-	ctx.textBaseline = 'top';
-	ctx.fillText(label, shape.x + 12, shape.y + 12);
-	if (shape.type === 'card' && shape.url) {
+	if (image) {
+		ctx.imageSmoothingEnabled = true;
+		ctx.drawImage(image, shape.x, shape.y, shape.w, shape.h);
+	} else if (14 * env.zoom >= 3) {
 		ctx.fillStyle = env.palette.muted;
-		ctx.fillText(shape.url, shape.x + 12, shape.y + 34);
+		ctx.font = `500 14px ${env.palette.font}`;
+		ctx.textAlign = 'center';
+		ctx.textBaseline = 'middle';
+		ctx.fillText('Image', shape.x + shape.w / 2, shape.y + shape.h / 2);
 	}
 	ctx.restore();
 }

@@ -29,16 +29,57 @@ async function addImage(editor: Editor, file: File, at: Point): Promise<void> {
 
 async function fillCard(editor: Editor, id: string, url: string): Promise<void> {
 	const card = await resolveCard(url).catch(() => null);
-	if (card && editor.scene.shapes.has(id)) editor.doc.update(id, { title: card.title, kind: card.kind });
+	if (!card) return;
+	const shape = editor.scene.shapes.get(id);
+	if (!shape) return;
+	const h = card.image && shape.h < 180 ? 180 : undefined;
+	const kind = shape.kind === 'youtube' ? 'youtube' : card.kind;
+	editor.doc.update(id, {
+		title: card.title,
+		kind,
+		image: card.image,
+		description: card.subtitle,
+		favicon: card.favicon,
+		site: card.site,
+		...(h !== undefined ? { h } : {})
+	});
+}
+
+function addLink(editor: Editor, trimmed: string, at: Point): string | null {
+	if (/(?:youtube\.com|youtu\.be)/i.test(trimmed)) {
+		return createShape(editor, 'card', {
+			x: at.x - 160,
+			y: at.y - 100,
+			w: 320,
+			h: 200,
+			kind: 'youtube',
+			url: trimmed,
+			title: 'YouTube Video'
+		});
+	}
+	let hostname = trimmed;
+	try {
+		hostname = new URL(trimmed).hostname;
+	} catch {}
+	return createShape(editor, 'card', {
+		x: at.x - 160,
+		y: at.y - 50,
+		w: 320,
+		h: 100,
+		kind: 'link',
+		url: trimmed,
+		title: hostname
+	});
 }
 
 function addText(editor: Editor, text: string, at: Point): void {
 	const trimmed = text.trim();
 	if (!trimmed) return;
-	let id: string | null;
-	if (/^https?:\/\/\S+$/.test(trimmed)) {
-		const title = new URL(trimmed).hostname;
-		id = createShape(editor, 'card', { x: at.x - 160, y: at.y - 40, w: 320, h: 80, url: trimmed, title, kind: 'link' });
+	let id: string | null = null;
+	if (/^https?:\/\/\S+\.(png|jpe?g|gif|webp|svg)(\?\S*)?$/i.test(trimmed)) {
+		id = createShape(editor, 'image', { x: at.x - 160, y: at.y - 120, w: 320, h: 240, asset: trimmed });
+	} else if (/^https?:\/\/\S+$/.test(trimmed)) {
+		id = addLink(editor, trimmed, at);
 		if (id) void fillCard(editor, id, trimmed);
 	} else {
 		id = createShape(editor, 'text', { x: at.x - 160, y: at.y - 16, w: 320, h: 32 }, trimmed);

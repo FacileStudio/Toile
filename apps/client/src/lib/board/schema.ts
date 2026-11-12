@@ -76,6 +76,10 @@ export type Shape = {
 	title?: string;
 	kind?: string;
 	name?: string;
+	image?: string;
+	description?: string;
+	favicon?: string;
+	site?: string;
 };
 
 /** The fields a caller may set on a shape: everything but its id and its text. */
@@ -94,7 +98,7 @@ const EXTRA_KEYS: Record<ShapeType, readonly string[]> = {
 	arrow: ['points', 'from', 'to', 'head'],
 	ink: ['points'],
 	image: ['asset'],
-	card: ['url', 'title', 'kind'],
+	card: ['url', 'title', 'kind', 'image', 'description', 'favicon', 'site'],
 	frame: ['name']
 };
 

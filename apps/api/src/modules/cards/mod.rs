@@ -33,13 +33,32 @@ pub struct Card {
     pub icon: &'static str,
     /// The link itself.
     pub url: String,
+    /// A preview image, when the unfurled page provides one.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub image: Option<String>,
+    /// The site's favicon URL.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub favicon: Option<String>,
+    /// The name of the website or publication.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub site: Option<String>,
 }
 
 impl Card {
     /// A card that only names the host of `url`, under `kind`.
     pub fn host(kind: &'static str, url: &Url) -> Self {
         let title = url.host_str().unwrap_or(url.as_str()).to_owned();
-        Card { kind, title, subtitle: None, status: None, icon: kind, url: url.to_string() }
+        Card {
+            kind,
+            title,
+            subtitle: None,
+            status: None,
+            icon: kind,
+            url: url.to_string(),
+            image: None,
+            favicon: None,
+            site: None,
+        }
     }
 
     /// [`Card::host`] for a link outside the suite.

@@ -35,7 +35,10 @@ export function imageLoader(board: string, onload: () => void): (asset: string) 
 			const image = images.get(asset);
 			return image && image.complete && image.naturalWidth ? image : null;
 		}
-		const url = assetUrl(board, asset);
+		const url =
+			asset.startsWith('http://') || asset.startsWith('https://') || asset.startsWith('data:')
+				? asset
+				: assetUrl(board, asset);
 		if (!url) {
 			images.set(asset, null);
 			return null;
@@ -43,7 +46,8 @@ export function imageLoader(board: string, onload: () => void): (asset: string) 
 		const image = new Image();
 		image.onload = onload;
 		image.src = url;
+		if (image.complete) onload();
 		images.set(asset, image);
-		return null;
+		return image.complete && image.naturalWidth ? image : null;
 	};
 }
