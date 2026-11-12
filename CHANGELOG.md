@@ -4,6 +4,16 @@ All notable changes to Toile. Versions follow SemVer.
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-11-12
+
+### Added
+
+- Rich link preview cards displaying OpenGraph image thumbnails, favicons, site domains, and descriptions
+- Dedicated YouTube link detection and embedding with high-resolution video thumbnails and centered play overlay
+- Pasting direct image URLs (png, jpg, webp, svg, gif) automatically creates image shapes
+- Direct external URL caching in canvas image loader for instant rendering without local asset storage
+- Double-clicking or clicking any card opens the target link in a new browser tab
+
 ## [0.4.1] - 2026-11-12
 
 ### Added
