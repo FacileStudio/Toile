@@ -93,7 +93,7 @@
 		<Field label="Nom du tableau" class="min-w-0 flex-1">
 			<Input bind:value={name} placeholder="Atelier du lundi" maxlength={200} />
 		</Field>
-		<Button type="submit" icon={icons.plus} disabled={busy}>Nouveau tableau</Button>
+		<Button type="submit" size="lg" icon={icons.plus} disabled={busy}>Nouveau tableau</Button>
 	</form>
 
 	{#if boards.length === 0 && !loading}
