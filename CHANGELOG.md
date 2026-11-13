@@ -4,6 +4,23 @@ All notable changes to Toile. Versions follow SemVer.
 
 ## [Unreleased]
 
+## [0.10.0] - 2026-11-13
+
+### Added
+
+- MCP: `toile_create_board`, `toile_update_board` (rename, move to a space or `personal`), `toile_trash_board`, `toile_restore_board`, `toile_list_comments` (paged, open, resolved or all) and `toile_resolve_comment`
+- MCP: `toile_list_boards` pages with `limit` and `cursor`
+- Embed mode: `/b/<id>?embed=1` shows only the canvas, presence and an "Ouvrir dans Toile" link; Docs (`https://docs.facile.studio`) may frame Toile
+
+### Changed
+
+- MCP: `toile_update_shapes` is annotated destructive and idempotent; every tool description says when to call it
+- Presence uses muse `Presence` and the connection state muse `ConnectionHint` (muse v0.20.0); the "En ligne" label is gone and nothing shows while the board is live
+
+### Fixed
+
+- Renaming a board keeps the title box the same size and place, growing only with the text
+
 ## [0.9.0] - 2026-11-13
 
 ### Added
