@@ -13,7 +13,7 @@
         "@facile/blob": "github:FacileStudio/blob#v0.2.2",
         "@facile/client": "github:FacileStudio/facile-client#v0.2.0",
         "@facile/mise-en-scene": "github:FacileStudio/mise-en-scene#v0.1.1",
-        "@facile/muse": "github:FacileStudio/muse#v0.18.1",
+        "@facile/muse": "github:FacileStudio/muse#v0.20.0",
         "@tauri-apps/api": "2.12.4",
         "@tauri-apps/plugin-opener": "2.7.3",
         "capacitor-secure-storage-plugin": "0.13.0",
@@ -68,7 +68,7 @@
 
     "@facile/mise-en-scene": ["@facile/mise-en-scene@github:FacileStudio/mise-en-scene#8f20520", { "peerDependencies": { "svelte": "^5.29.0" } }, "FacileStudio-mise-en-scene-8f20520", "sha512-/y1jzWj1e0Ya+TrS2bLRhLp+jMU7oEIu+XLWIiMJ6UAe/rSEO44psYVf77Qb3AtMCfF8o07kGQJLPJ40vFeeDQ=="],
 
-    "@facile/muse": ["@facile/muse@github:FacileStudio/muse#e9e97cc", { "dependencies": { "gsap": "^3.13.0", "tailwind-merge": "^3.5.0" }, "peerDependencies": { "svelte": "^5.0.0", "tailwindcss": "^4.0.0" } }, "FacileStudio-muse-e9e97cc", "sha512-JLNrk+FljhDUT6VuMbBrVT9QekoNw6DlEeXvsNSh1hP/d/dK/aEwrcntMuBXczSy4ftejzCAPTEPCb//T4akZA=="],
+    "@facile/muse": ["@facile/muse@github:FacileStudio/muse#2c4f4ed", { "dependencies": { "gsap": "^3.13.0", "tailwind-merge": "^3.5.0" }, "peerDependencies": { "svelte": "^5.0.0", "tailwindcss": "^4.0.0" } }, "FacileStudio-muse-2c4f4ed", "sha512-iKayffvkHD92ltN0h4hAFvIiWz8+DGfKH7nJ/4zAsEywsS9HRLA3XYtgcjlsOT6ClIztB64T8caPKhUw2TVLSw=="],
 
     "@ionic/cli-framework-output": ["@ionic/cli-framework-output@2.2.8", "", { "dependencies": { "@ionic/utils-terminal": "2.3.5", "debug": "^4.0.0", "tslib": "^2.0.1" } }, "sha512-TshtaFQsovB4NWRBydbNFawql6yul7d5bMiW1WYYf17hd99V6xdDdk3vtF51bw6sLkxON3bDQpWsnUc9/hVo3g=="],
 

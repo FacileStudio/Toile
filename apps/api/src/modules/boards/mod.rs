@@ -2,6 +2,7 @@
 
 pub mod access;
 mod handlers;
+pub mod relocate;
 mod router;
 pub mod service;
 mod thumbnail;

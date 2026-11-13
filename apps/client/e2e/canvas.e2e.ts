@@ -98,7 +98,8 @@ test('two members edit one board and see each other live', async () => {
 	await alice.keyboard.press('Escape');
 	await alice.getByRole('textbox', { name: 'Rechercher' }).waitFor({ state: 'hidden' });
 	await find(alice, 'Idée d’Alice');
-	expect(await alice.getByText('En ligne').count()).toBe(1);
+	expect(await alice.locator('[data-testid=board][data-connection=live]').count()).toBe(1);
+	expect(await alice.getByText('En ligne').count()).toBe(0);
 }, 90_000);
 
 test('a guest with a view link sees the board but cannot edit it', async () => {
@@ -108,7 +109,7 @@ test('a guest with a view link sees the board but cannot edit it', async () => {
 	await guest.getByRole('button', { name: 'Ouvrir le tableau' }).click();
 	const board = guest.locator('[data-testid=board]');
 	await board.waitFor({ timeout: 20_000 });
-	await guest.getByText('En ligne').waitFor({ timeout: 20_000 });
+	await guest.locator('[data-testid=board][data-connection=live]').waitFor({ timeout: 20_000 });
 	expect(await board.getAttribute('data-editable')).toBe('false');
 	expect(await board.getAttribute('data-role')).toBe('viewer');
 	expect(await guest.getByRole('button', { name: 'Post-it', exact: true }).count()).toBe(0);
@@ -138,7 +139,8 @@ test('a pasted youtube link becomes a card that plays in place and the server ke
 	expect(await player.getAttribute('src')).toBe('https://www.youtube-nocookie.com/embed/PAy5EBTnV6Q?autoplay=1&rel=0');
 	expect(await player.getAttribute('referrerpolicy')).toBe('strict-origin-when-cross-origin');
 	await alice.waitForTimeout(1_500);
-	expect(await alice.getByText('En ligne').count()).toBe(1);
+	expect(await alice.locator('[data-testid=board][data-connection=live]').count()).toBe(1);
+	expect(await alice.getByText('En ligne').count()).toBe(0);
 	expect(await alice.locator('[data-testid=board][data-editable=true]').count()).toBe(1);
 }, 60_000);
 
@@ -195,4 +197,33 @@ test('grouped tools pick in one click and open their menu on the second', async 
 	await page.keyboard.press('d');
 	expect(await shapes.getAttribute('aria-label')).toBe('Formes : Losange');
 	expect(await shapes.getAttribute('aria-pressed')).toBe('true');
+}, 60_000);
+
+test('renaming a board keeps the title box exactly where and as big as it was', async () => {
+	const page = await open('alice', `/b/${setup.board}`);
+	await page.locator('[data-testid=board][data-editable=true]').waitFor({ timeout: 20_000 });
+	const title = page.getByTestId('board-title');
+	const before = await title.boundingBox();
+	await page.getByRole('button', { name: /^Renommer le tableau/ }).click();
+	const field = page.getByRole('textbox', { name: 'Nom du tableau' });
+	expect(await title.boundingBox()).toEqual(before);
+	await field.press('End');
+	await field.pressSequentially(' bis');
+	expect((await title.boundingBox())!.width).toBeGreaterThan(before!.width);
+	await field.press('Escape');
+	expect(await title.boundingBox()).toEqual(before);
+}, 60_000);
+
+test('embed mode keeps only the canvas, presence and a link out, and docs may frame it', async () => {
+	const page = await open('alice', `/b/${setup.board}?embed=1`);
+	await page.locator('[data-testid=board][data-editable=true]').waitFor({ timeout: 20_000 });
+	const out = page.getByRole('link', { name: 'Ouvrir dans Toile' });
+	expect([await out.getAttribute('href'), await out.getAttribute('target')]).toEqual([`/b/${setup.board}`, '_blank']);
+	expect(await page.getByRole('button', { name: /Retour aux tableaux|Partager/ }).count()).toBe(0);
+	await addSticky(page, 'Depuis Docs', { x: 500, y: 400 });
+	await find(page, 'Depuis Docs');
+	if (process.env.CANVAS_E2E_FAKE) return;
+	const headers = (await fetch(`${setup.base}/b/${setup.board}?embed=1`)).headers;
+	expect(headers.get('content-security-policy') ?? '').toContain("frame-ancestors 'self' https://docs.facile.studio");
+	expect(headers.get('x-frame-options')).toBeNull();
 }, 60_000);

@@ -1,9 +1,13 @@
-//! `/mcp`: six curated tools over the boards, `toile_delete_shapes` behind a confirmation.
+//! `/mcp`: curated tools over boards, shapes and comments, `toile_delete_shapes` behind a
+//! confirmation.
 //! Free for every account: no plan gate.
 
 mod boards;
+mod catalog;
 mod comment;
+mod comments;
 mod delete;
+mod manage;
 mod shapes;
 mod tools;
 
@@ -11,7 +15,9 @@ use std::collections::HashMap;
 use std::sync::Arc;
 
 use axum::Router;
-use tronc::mcp::{Call, ConfirmConfig, Confirmations, Options, PostgresPending, ToolError};
+use tronc::mcp::{
+    Call, ConfirmConfig, Confirmations, Options, PostgresPending, ToolError, decode_cursor, encode_cursor,
+};
 use uuid::Uuid;
 
 use crate::state::AppState;
@@ -26,6 +32,24 @@ pub fn user(call: &Call) -> Result<i64, ToolError> {
 /// A board id from a tool argument; anything else names no board.
 pub fn board(raw: &str) -> Result<Uuid, ToolError> {
     Uuid::parse_str(raw.trim()).map_err(|_| ToolError(format!("{raw:?} is not a board id; call toile_list_boards")))
+}
+
+/// The most items a list answers when the call names no `limit`.
+pub const PAGE: usize = 50;
+/// The most items a list answers in one call.
+pub const MAX_PAGE: usize = 200;
+
+/// One page of `items` from the opaque `cursor` a previous page gave, at most `limit` long, and
+/// the cursor of the next page when more remain.
+pub fn page<T>(
+    items: Vec<T>,
+    cursor: Option<&str>,
+    limit: Option<usize>,
+) -> Result<(Vec<T>, Option<String>), ToolError> {
+    let start: usize = cursor.map(decode_cursor).transpose()?.flatten().unwrap_or(0);
+    let limit = limit.unwrap_or(PAGE).clamp(1, MAX_PAGE);
+    let next = (items.len() > start + limit).then(|| encode_cursor(&(start + limit)));
+    Ok((items.into_iter().skip(start).take(limit).collect(), next))
 }
 
 /// The origin of `resource`, `https://toile.facile.studio` for `https://toile.facile.studio/mcp`.
@@ -58,7 +82,8 @@ pub fn mount(
     options.version = crate::version::VERSION.to_owned();
     options.instructions = "Toile holds whiteboards: stickies, text, boxes, arrows and frames on an infinite canvas, \
         a list per space. Call toile_list_boards for ids, then toile_read_board before you change a board: it lists \
-        every shape with its id, grouped by frame. Writes show up live for everyone on the board."
+        every shape with its id, grouped by frame. Writes show up live for everyone on the board. \
+        toile_list_comments shows the open threads to answer with toile_comment or close with toile_resolve_comment."
         .to_owned();
     options.tools = tools::all(state, &confirmations, &origin);
     tronc::mcp::mount(router, options)
@@ -70,5 +95,14 @@ mod tests {
     fn the_origin_drops_the_mcp_path_and_board_ids_must_be_uuids() {
         assert_eq!(super::origin("https://toile.facile.studio/mcp"), "https://toile.facile.studio");
         assert!(super::board("nope").unwrap_err().0.contains("toile_list_boards"));
+    }
+
+    #[test]
+    fn pages_follow_their_cursor_and_the_last_one_has_none() {
+        let (first, next) = super::page((0..5).collect(), None, Some(2)).unwrap();
+        let (second, next) = super::page((0..5).collect(), next.as_deref(), Some(2)).unwrap();
+        let (last, next) = super::page((0..5).collect(), next.as_deref(), Some(2)).unwrap();
+        assert_eq!((first, second, last, next), (vec![0, 1], vec![2, 3], vec![4], None));
+        assert!(super::page(vec![1], Some("x"), None).unwrap_err().0.contains("cursor"));
     }
 }

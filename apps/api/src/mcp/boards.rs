@@ -2,7 +2,7 @@ use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use tronc::mcp::{Answer, Call, RESULT_BUDGET, ToolError, clip};
 
-use super::{board, user};
+use super::{board, page, user};
 use crate::modules::boards::service;
 use crate::modules::boards::types::Board;
 use crate::modules::spaces;
@@ -14,6 +14,10 @@ use crate::state::AppState;
 pub struct ListIn {
     /// One space's boards only. Absent: your personal boards and every space's.
     pub space_id: Option<String>,
+    /// The most boards to answer, 50 by default, 200 at most.
+    pub limit: Option<usize>,
+    /// The `next_cursor` of the previous page.
+    pub cursor: Option<String>,
 }
 
 /// One board.
@@ -26,6 +30,8 @@ pub struct Listed {
     /// owner, editor, commenter or viewer.
     pub role: String,
     pub updated_at: String,
+    /// True for a board in the trash: `toile_restore_board` brings it back within 30 days.
+    pub trashed: bool,
     pub url: String,
 }
 
@@ -41,9 +47,12 @@ pub struct SpaceOut {
 pub struct ListOut {
     pub boards: Vec<Listed>,
     pub spaces: Vec<SpaceOut>,
+    /// Pass it as `cursor` for the next boards; absent on the last page.
+    pub next_cursor: Option<String>,
 }
 
-fn listed(board: Board, origin: &str) -> Listed {
+/// `board` as the tools answer it, with its link under `origin`.
+pub fn listed(board: Board, origin: &str) -> Listed {
     let updated_at = board.updated_at.format(&time::format_description::well_known::Rfc3339).unwrap_or_default();
     Listed {
         url: format!("{origin}/b/{}", board.id),
@@ -51,6 +60,7 @@ fn listed(board: Board, origin: &str) -> Listed {
         name: board.name,
         space_id: board.space_id,
         role: board.role.to_owned(),
+        trashed: board.deleted_at.is_some(),
         updated_at,
     }
 }
@@ -68,8 +78,9 @@ pub async fn list(state: AppState, origin: String, call: Call, input: ListIn) ->
         boards
             .extend(service::list(&state, me, scope.as_deref(), false).await?.into_iter().map(|b| listed(b, &origin)));
     }
+    let (boards, next_cursor) = page(boards, input.cursor.as_deref(), input.limit)?;
     let spaces = spaces.into_iter().map(|s| SpaceOut { id: s.id, name: s.name }).collect();
-    Ok(ListOut { boards, spaces }.into())
+    Ok(ListOut { boards, spaces, next_cursor }.into())
 }
 
 /// `toile_read_board`.
