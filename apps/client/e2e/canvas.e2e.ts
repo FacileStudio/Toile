@@ -196,3 +196,18 @@ test('grouped tools pick in one click and open their menu on the second', async 
 	expect(await shapes.getAttribute('aria-label')).toBe('Formes : Losange');
 	expect(await shapes.getAttribute('aria-pressed')).toBe('true');
 }, 60_000);
+
+test('renaming a board keeps the title box exactly where and as big as it was', async () => {
+	const page = await open('alice', `/b/${setup.board}`);
+	await page.locator('[data-testid=board][data-editable=true]').waitFor({ timeout: 20_000 });
+	const title = page.getByTestId('board-title');
+	const before = await title.boundingBox();
+	await page.getByRole('button', { name: /^Renommer le tableau/ }).click();
+	const field = page.getByRole('textbox', { name: 'Nom du tableau' });
+	expect(await title.boundingBox()).toEqual(before);
+	await field.press('End');
+	await field.pressSequentially(' bis');
+	expect((await title.boundingBox())!.width).toBeGreaterThan(before!.width);
+	await field.press('Escape');
+	expect(await title.boundingBox()).toEqual(before);
+}, 60_000);
