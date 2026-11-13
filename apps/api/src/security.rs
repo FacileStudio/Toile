@@ -13,6 +13,10 @@ pub const PLAYER: &str = "https://www.youtube-nocookie.com";
 /// The origin of the suite plan catalog.
 pub const CATALOG: &str = "https://api-ardoise.facile.studio";
 
+/// The origin of the Vision analytics tracker `app.html` loads on the production host. Its
+/// pixels are https images, which tronc's default `img-src` already allows.
+pub const ANALYTICS: &str = "https://vision.facile.studio";
+
 /// The pages that may frame a board in embed mode (`/b/<id>?embed=1`): Toile itself and Docs.
 pub const FRAMERS: [&str; 2] = ["'self'", "https://docs.facile.studio"];
 
@@ -20,11 +24,12 @@ pub const FRAMERS: [&str; 2] = ["'self'", "https://docs.facile.studio"];
 pub const DEV_FRAMER: &str = "http://localhost:*";
 
 /// The CSP sources Toile's client needs on top of tronc's policy: the inline scripts
-/// adapter-static writes, hashed from the build the binary serves, the suite plan catalog
-/// muse's `PricingPlans` fetches, the YouTube player link cards embed, and the [`FRAMERS`] (plus
-/// [`DEV_FRAMER`] outside production). Opening `frame-ancestors` drops `X-Frame-Options`.
+/// adapter-static writes, hashed from the build the binary serves, the Vision tracker, the suite
+/// plan catalog muse's `PricingPlans` fetches, the YouTube player link cards embed, and the
+/// [`FRAMERS`] (plus [`DEV_FRAMER`] outside production). Opening `frame-ancestors` drops
+/// `X-Frame-Options`.
 pub fn sources(client_dir: &Path, production: bool) -> Sources {
-    let mut scripts = Vec::new();
+    let mut scripts = vec![ANALYTICS.to_owned()];
     if tronc::spa::available(client_dir) {
         match tronc::spa::inline_script_hashes(client_dir) {
             Ok(hashes) => scripts.extend(hashes),
@@ -72,6 +77,12 @@ mod tests {
         assert_eq!(sources.get("frame-ancestors"), Some(&framers));
         let dev = super::sources(Path::new("/nonexistent"), false);
         assert!(dev["frame-ancestors"].contains(&DEV_FRAMER.to_owned()));
+    }
+
+    #[test]
+    fn the_policy_loads_the_vision_tracker() {
+        let sources = sources(Path::new("/nonexistent"), true);
+        assert_eq!(sources.get("script-src"), Some(&vec![ANALYTICS.to_owned()]));
     }
 
     #[test]
