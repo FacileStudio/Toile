@@ -1,6 +1,6 @@
 import type { Shape } from '$lib/board/schema';
-import type { Point } from './camera';
-import { center, rotate } from './geometry';
+import type { Box, Point } from './camera';
+import { boxOf, center, rotate, rotatedBox } from './geometry';
 
 /** Distance from `p` to segment `a`-`b`. */
 export function segmentDistance(p: Point, a: Point, b: Point): number {
@@ -28,7 +28,9 @@ export function anchorOf(shape: Pick<Shape, 'x' | 'y' | 'w' | 'h' | 'rot'>, p: P
 /** One end of a connector: its world point and, when bound, the shape and anchor it sits on. */
 export type End = { point: Point; shape?: Pick<Shape, 'x' | 'y' | 'w' | 'h' | 'rot'>; anchor?: [number, number] };
 
-const CURVE_SAMPLES = 64;
+const STUB = 16;
+const BEND = 24;
+const BLOCKED = 1e6;
 
 function axis(dx: number, dy: number): Point {
 	if (Math.abs(dx) >= Math.abs(dy)) return { x: Math.sign(dx) || 1, y: 0 };
@@ -48,38 +50,52 @@ export function exitDirection(end: End, other: Point): Point {
 	return rotate(side, { x: 0, y: 0 }, end.shape.rot);
 }
 
-/** A cubic Bezier control curve. */
-export type CubicCurve = { a: Point; c1: Point; c2: Point; b: Point };
-
-/** The cubic Bezier control points connecting `a` and `b`. */
-export function cubicCurve(a: End, b: End): CubicCurve {
-	const distance = Math.hypot(b.point.x - a.point.x, b.point.y - a.point.y);
-	const reach = Math.max(distance * 0.45, 32);
-	const da = exitDirection(a, b.point);
-	const db = exitDirection(b, a.point);
-	return {
-		a: a.point,
-		c1: { x: a.point.x + da.x * reach, y: a.point.y + da.y * reach },
-		c2: { x: b.point.x + db.x * reach, y: b.point.y + db.y * reach },
-		b: b.point
-	};
-}
-
-/** A connector's cubic curve from `a` to `b`, sampled as a polyline; each end leaves perpendicular to its shape. */
-export function curve(a: End, b: End): Point[] {
-	const { a: pa, c1, c2, b: pb } = cubicCurve(a, b);
-	const out: Point[] = [];
-	for (let i = 0; i <= CURVE_SAMPLES; i += 1) {
-		const t = i / CURVE_SAMPLES;
-		const u = 1 - t;
-		const k0 = u * u * u;
-		const k1 = 3 * u * u * t;
-		const k2 = 3 * u * t * t;
-		const k3 = t * t * t;
-		out.push({
-			x: k0 * pa.x + k1 * c1.x + k2 * c2.x + k3 * pb.x,
-			y: k0 * pa.y + k1 * c1.y + k2 * c2.y + k3 * pb.y
-		});
+function simplify(points: Point[]): Point[] {
+	const out: Point[] = [points[0]];
+	for (const p of points.slice(1)) {
+		const last = out[out.length - 1];
+		if (Math.abs(last.x - p.x) < 1e-6 && Math.abs(last.y - p.y) < 1e-6) continue;
+		const prev = out[out.length - 2] ?? last;
+		const [ux, uy, vx, vy] = [last.x - prev.x, last.y - prev.y, p.x - last.x, p.y - last.y];
+		if (Math.abs(ux * vy - uy * vx) < 1e-6 && ux * vx + uy * vy > 0) out.pop();
+		out.push(p);
 	}
 	return out;
+}
+
+function cost(route: Point[], boxes: (Box | undefined)[]): number {
+	let total = (route.length - 2) * BEND;
+	for (let i = 1; i < route.length; i += 1) {
+		const [p, q, before = p] = [route[i - 1], route[i], route[i - 2]];
+		total += Math.abs(q.x - p.x) + Math.abs(q.y - p.y);
+		if ((q.x - p.x) * (p.x - before.x) + (q.y - p.y) * (p.y - before.y) < 0) total += BLOCKED;
+		const own = i === 1 ? boxes[0] : i === route.length - 1 ? boxes[1] : undefined;
+		const span = boxOf([p, q]);
+		for (const b of boxes) {
+			if (!b || b === own) continue;
+			const xs = span.x < b.x + b.w - 0.5 && span.x + span.w > b.x + 0.5;
+			if (xs && span.y < b.y + b.h - 0.5 && span.y + span.h > b.y + 0.5) total += BLOCKED;
+		}
+	}
+	return total;
+}
+
+/** A connector's orthogonal route from `a` to `b`: a stub out of each end, then the cheapest path of one or two bends that avoids both shapes. */
+export function elbow(a: End, b: End): Point[] {
+	const da = exitDirection(a, b.point);
+	const db = exitDirection(b, a.point);
+	const ea = axis(da.x, da.y);
+	const eb = axis(db.x, db.y);
+	const sa = { x: a.point.x + ea.x * STUB, y: a.point.y + ea.y * STUB };
+	const sb = { x: b.point.x + eb.x * STUB, y: b.point.y + eb.y * STUB };
+	const boxes = [a.shape && rotatedBox(a.shape), b.shape && rotatedBox(b.shape)];
+	const hull = boxOf([sa, sb, ...boxes.flatMap((box) => (box ? [box, { x: box.x + box.w, y: box.y + box.h }] : []))]);
+	const xs = [(sa.x + sb.x) / 2, sa.x, sb.x, hull.x - STUB, hull.x + hull.w + STUB];
+	const ys = [(sa.y + sb.y) / 2, sa.y, sb.y, hull.y - STUB, hull.y + hull.h + STUB];
+	const routes = [
+		...xs.map((x) => [a.point, sa, { x, y: sa.y }, { x, y: sb.y }, sb, b.point]),
+		...ys.map((y) => [a.point, sa, { x: sa.x, y }, { x: sb.x, y }, sb, b.point])
+	].map(simplify);
+	const scores = routes.map((route) => cost(route, boxes));
+	return routes[scores.indexOf(Math.min(...scores))];
 }

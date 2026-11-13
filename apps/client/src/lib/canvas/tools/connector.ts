@@ -1,6 +1,6 @@
 import type { Binding, Shape } from '$lib/board/schema';
 import { createShape } from '../actions';
-import { anchorOf, anchorPoint, curve, type End } from '../anchors';
+import { anchorOf, anchorPoint, elbow, type End } from '../anchors';
 import type { Point } from '../camera';
 import type { Editor } from '../editor.svelte';
 import { topHit } from '../hit';
@@ -85,7 +85,7 @@ export class ConnectorTool implements Tool {
 			shape: side.binding && this.editor.scene.get(side.binding.shape),
 			anchor: side.binding?.anchor
 		});
-		return curve(end(from), end(to));
+		return elbow(end(from), end(to));
 	}
 
 	hover(sample: PointerSample): void {

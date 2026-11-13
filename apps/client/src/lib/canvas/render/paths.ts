@@ -1,8 +1,7 @@
 import { getStroke } from 'perfect-freehand';
 import type { Shape } from '$lib/board/schema';
-import { cubicCurve, type CubicCurve } from '../anchors';
 import type { Point } from '../camera';
-import { pathPoints, routePoints, strokeWidth } from '../bounds';
+import { routePoints, strokeWidth } from '../bounds';
 import type { DrawEnv } from './shapes';
 
 const strokes = new WeakMap<Shape, Path2D>();
@@ -46,62 +45,42 @@ function head(ctx: CanvasRenderingContext2D, tip: Point, tail: Point, size: numb
 	ctx.fill();
 }
 
-/** Strokes a polyline with optional heads, in world space. */
+/** The corner radius of a connector bound to a shape, in world units. */
+export const CONNECTOR_RADIUS = 12;
+
+/** Strokes a polyline with optional heads, in world space; interior corners round by up to `radius`. */
 export function strokePolyline(
 	ctx: CanvasRenderingContext2D,
 	points: Point[],
 	width: number,
-	heads: 'none' | 'end' | 'both'
+	heads: 'none' | 'end' | 'both',
+	radius = 0
 ): void {
 	if (points.length < 2) return;
 	ctx.lineWidth = width;
 	ctx.lineCap = 'round';
 	ctx.lineJoin = 'round';
 	ctx.beginPath();
-	points.forEach((p, i) => (i === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y)));
+	ctx.moveTo(points[0].x, points[0].y);
+	for (let i = 1; i < points.length - 1; i += 1) {
+		const [p, c, n] = [points[i - 1], points[i], points[i + 1]];
+		const r = Math.min(radius, Math.hypot(c.x - p.x, c.y - p.y) / 2, Math.hypot(n.x - c.x, n.y - c.y) / 2);
+		ctx.arcTo(c.x, c.y, n.x, n.y, r);
+	}
+	const last = points[points.length - 1];
+	ctx.lineTo(last.x, last.y);
 	ctx.stroke();
 	const size = 8 + width * 2;
-	if (heads !== 'none') head(ctx, points[points.length - 1], points[points.length - 2], size);
+	if (heads !== 'none') head(ctx, last, points[points.length - 2], size);
 	if (heads === 'both') head(ctx, points[0], points[1], size);
 }
 
-/** Draws a bezier curve connector with optional heads. */
-export function strokeBezier(
-	ctx: CanvasRenderingContext2D,
-	curve: CubicCurve,
-	width: number,
-	heads: 'none' | 'end' | 'both'
-): void {
-	ctx.lineWidth = width;
-	ctx.lineCap = 'round';
-	ctx.lineJoin = 'round';
-	ctx.beginPath();
-	ctx.moveTo(curve.a.x, curve.a.y);
-	ctx.bezierCurveTo(curve.c1.x, curve.c1.y, curve.c2.x, curve.c2.y, curve.b.x, curve.b.y);
-	ctx.stroke();
-	const size = 8 + width * 2;
-	if (heads !== 'none') head(ctx, curve.b, curve.c2, size);
-	if (heads === 'both') head(ctx, curve.a, curve.c1, size);
-}
-
-/** Draws a line or an arrow, bound ends resolved. */
+/** Draws a line or an arrow, bound ends resolved; a connector bound to a shape rounds its elbows. */
 export function drawArrow(ctx: CanvasRenderingContext2D, shape: Shape, env: DrawEnv): void {
 	const color = shape.style.stroke ?? env.palette.fg;
 	ctx.strokeStyle = color;
 	ctx.fillStyle = color;
 	const heads = shape.type === 'line' ? 'none' : (shape.head ?? 'end');
-	const from = shape.from && env.lookup(shape.from.shape);
-	const to = shape.to && env.lookup(shape.to.shape);
-	if ((from || to) && shape.points?.length === 4) {
-		const pts = pathPoints(shape, env.lookup);
-		if (pts.length === 2) {
-			const bz = cubicCurve(
-				{ point: pts[0], shape: from, anchor: shape.from?.anchor },
-				{ point: pts[1], shape: to, anchor: shape.to?.anchor }
-			);
-			strokeBezier(ctx, bz, strokeWidth(shape), heads);
-			return;
-		}
-	}
-	strokePolyline(ctx, routePoints(shape, env.lookup), strokeWidth(shape), heads);
+	const bound = Boolean((shape.from && env.lookup(shape.from.shape)) || (shape.to && env.lookup(shape.to.shape)));
+	strokePolyline(ctx, routePoints(shape, env.lookup), strokeWidth(shape), heads, bound ? CONNECTOR_RADIUS : 0);
 }

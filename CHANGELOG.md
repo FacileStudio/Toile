@@ -4,6 +4,10 @@ All notable changes to Toile. Versions follow SemVer.
 
 ## [Unreleased]
 
+### Changed
+
+- Connectors bound to a shape route as orthogonal elbows with rounded corners, Miro style, instead of Bezier curves; stored points stay the two endpoints
+
 ## [0.7.0] - 2026-11-13
 
 ### Added

@@ -6,7 +6,7 @@ import { toScreen } from '../camera';
 import { corners } from '../geometry';
 import type { Scene } from '../scene';
 import { fitCanvas } from './renderer';
-import { inkPath, strokePolyline } from './paths';
+import { CONNECTOR_RADIUS, inkPath, strokePolyline } from './paths';
 import type { Palette } from './palette';
 
 /** A peer as the overlay draws them. */
@@ -87,7 +87,7 @@ function drawDraft(ctx: CanvasRenderingContext2D, draft: Draft, camera: Camera, 
 		ctx.fill(inkPath(draft.points, draft.width * 2));
 	} else if (draft.kind === 'connector') {
 		ctx.strokeStyle = ctx.fillStyle = draft.color;
-		strokePolyline(ctx, draft.points, 2, draft.head ? 'end' : 'none');
+		strokePolyline(ctx, draft.points, 2, draft.head ? 'end' : 'none', CONNECTOR_RADIUS);
 	} else {
 		ctx.strokeStyle = palette.muted;
 		ctx.globalAlpha = 0.4;

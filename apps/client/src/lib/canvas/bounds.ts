@@ -1,5 +1,5 @@
 import { PATH_TYPES, type Shape } from '$lib/board/schema';
-import { anchorPoint, curve } from './anchors';
+import { anchorPoint, elbow } from './anchors';
 import type { Box, Point } from './camera';
 import { boxOf, center, rotate, rotatedBox } from './geometry';
 
@@ -32,13 +32,13 @@ export function pathPoints(shape: Shape, lookup: Lookup): Point[] {
 	return points;
 }
 
-/** The world points a line or arrow is drawn along: a curve when it connects shapes, its own points otherwise. */
+/** The world points a line or arrow is drawn along: a rounded elbow route when it connects shapes, its own points otherwise. */
 export function routePoints(shape: Shape, lookup: Lookup): Point[] {
 	const points = pathPoints(shape, lookup);
 	const from = shape.from && lookup(shape.from.shape);
 	const to = shape.to && lookup(shape.to.shape);
 	if (points.length !== 2 || (!from && !to)) return points;
-	return curve(
+	return elbow(
 		{ point: points[0], shape: from, anchor: shape.from?.anchor },
 		{ point: points[1], shape: to, anchor: shape.to?.anchor }
 	);
