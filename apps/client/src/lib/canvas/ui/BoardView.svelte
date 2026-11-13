@@ -79,6 +79,11 @@
 	}
 
 	const chrome = 'pointer-events-auto flex items-center gap-1 rounded-fc-pill bg-fc-component p-1.5 shadow-lg';
+
+	function closeAssistant() {
+		assisting = false;
+		document.querySelector<HTMLElement>('[data-testid="assistant-trigger"]')?.focus();
+	}
 </script>
 
 <div
@@ -131,7 +136,8 @@
 							<IconButton
 								variant="ghost"
 								aria-label={assistant}
-								aria-pressed={assisting}
+								aria-haspopup="dialog"
+								aria-expanded={assisting}
 								data-testid="assistant-trigger"
 								onclick={() => (assisting = !assisting)}><Blob name={assistant} size={22} /></IconButton
 							>
@@ -177,7 +183,7 @@
 			<div class="hidden md:block md:w-48"></div>
 			<div class="flex flex-col items-center gap-2">
 				{#if assisting && editBoard}
-					<Assistant board={editBoard} {editor} name={assistant} onclose={() => (assisting = false)} />
+					<Assistant board={editBoard} {editor} name={assistant} onclose={closeAssistant} />
 				{/if}
 				<StyleBar {editor} {ui} />
 				<Toolbar {editor} onimage={() => picker.click()} />

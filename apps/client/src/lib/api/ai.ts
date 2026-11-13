@@ -58,13 +58,21 @@ export async function generateShapes(
 
 const names = new Map<string, Promise<string>>();
 
-/** The caller's Bulle assistant name, asked once per board; "Bulle" when it cannot be read. */
+/** Forgets every assistant name read so far, so the next account in this tab asks again. */
+export function forgetAssistants(): void {
+  names.clear();
+}
+
+/** The caller's Bulle assistant name, asked once per board; "Bulle" when it cannot be read, and asked again next time. */
 export function assistantName(board: string): Promise<string> {
   let name = names.get(board);
   if (!name) {
     name = api<{ name: string }>(path(board, "assistant"))
       .then((answer) => answer.name || "Bulle")
-      .catch(() => "Bulle");
+      .catch(() => {
+        names.delete(board);
+        return "Bulle";
+      });
     names.set(board, name);
   }
   return name;

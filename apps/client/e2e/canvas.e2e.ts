@@ -167,7 +167,7 @@ test('the assistant composer opens above the toolbar and closes with Escape', as
 	await trigger.click();
 	const composer = page.getByRole('dialog', { name: 'Bulle' });
 	await composer.waitFor();
-	expect(await trigger.getAttribute('aria-pressed')).toBe('true');
+	expect(await trigger.getAttribute('aria-expanded')).toBe('true');
 	const kinds = composer.getByRole('radiogroup', { name: 'Forme' });
 	expect(await kinds.getByRole('radio', { name: 'Post-it' }).getAttribute('aria-checked')).toBe('true');
 	await kinds.getByRole('radio', { name: 'Logigramme' }).click();

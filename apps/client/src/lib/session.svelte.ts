@@ -1,4 +1,5 @@
 import { createSession } from '@facile/client/session';
+import { forgetAssistants } from './api/ai';
 import { api, backend } from './backend';
 import { clearToken } from './platform';
 import type { SessionUser, Space } from './types';
@@ -53,6 +54,7 @@ class Session {
 			await this.account.logout();
 		} finally {
 			await clearToken();
+			forgetAssistants();
 			this.spaces = [];
 		}
 	}
