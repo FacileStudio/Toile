@@ -1,13 +1,20 @@
 <script lang="ts">
-	import { Icon, icons } from '@facile/muse';
+	import { ConnectionHint, Icon, Presence, icons } from '@facile/muse';
 	import type { BoardSession } from '$lib/board/session.svelte';
-	import AvatarStack from './AvatarStack.svelte';
+	import { presencePeers } from '$lib/board/presence';
 
 	let { session, href }: { session: BoardSession; href: string } = $props();
 </script>
 
 <div class="flex items-start justify-end gap-2">
-	<AvatarStack {session} />
+	<ConnectionHint state={session.connection} class="pointer-events-auto self-center" />
+	<Presence
+		peers={presencePeers(session.peers)}
+		following={session.following}
+		onfollow={(id) => session.follow(id === null ? null : Number(id))}
+		class="pointer-events-auto"
+		data-board-ui
+	/>
 	<a
 		{href}
 		target="_blank"

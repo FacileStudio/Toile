@@ -98,7 +98,8 @@ test('two members edit one board and see each other live', async () => {
 	await alice.keyboard.press('Escape');
 	await alice.getByRole('textbox', { name: 'Rechercher' }).waitFor({ state: 'hidden' });
 	await find(alice, 'Idée d’Alice');
-	expect(await alice.getByText('En ligne').count()).toBe(1);
+	expect(await alice.locator('[data-testid=board][data-connection=live]').count()).toBe(1);
+	expect(await alice.getByText('En ligne').count()).toBe(0);
 }, 90_000);
 
 test('a guest with a view link sees the board but cannot edit it', async () => {
@@ -108,7 +109,7 @@ test('a guest with a view link sees the board but cannot edit it', async () => {
 	await guest.getByRole('button', { name: 'Ouvrir le tableau' }).click();
 	const board = guest.locator('[data-testid=board]');
 	await board.waitFor({ timeout: 20_000 });
-	await guest.getByText('En ligne').waitFor({ timeout: 20_000 });
+	await guest.locator('[data-testid=board][data-connection=live]').waitFor({ timeout: 20_000 });
 	expect(await board.getAttribute('data-editable')).toBe('false');
 	expect(await board.getAttribute('data-role')).toBe('viewer');
 	expect(await guest.getByRole('button', { name: 'Post-it', exact: true }).count()).toBe(0);
@@ -138,7 +139,8 @@ test('a pasted youtube link becomes a card that plays in place and the server ke
 	expect(await player.getAttribute('src')).toBe('https://www.youtube-nocookie.com/embed/PAy5EBTnV6Q?autoplay=1&rel=0');
 	expect(await player.getAttribute('referrerpolicy')).toBe('strict-origin-when-cross-origin');
 	await alice.waitForTimeout(1_500);
-	expect(await alice.getByText('En ligne').count()).toBe(1);
+	expect(await alice.locator('[data-testid=board][data-connection=live]').count()).toBe(1);
+	expect(await alice.getByText('En ligne').count()).toBe(0);
 	expect(await alice.locator('[data-testid=board][data-editable=true]').count()).toBe(1);
 }, 60_000);
 

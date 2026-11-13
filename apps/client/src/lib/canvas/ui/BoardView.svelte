@@ -1,9 +1,10 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
 	import { Blob } from '@facile/blob';
-	import { Alert, Icon, IconButton, Spinner, Tooltip, icons } from '@facile/muse';
+	import { Alert, ConnectionHint, Icon, IconButton, Presence, Tooltip, icons } from '@facile/muse';
 	import { assistantName } from '$lib/api/ai';
 	import { boardApi, canEdit } from '$lib/board/api';
+	import { presencePeers } from '$lib/board/presence';
 	import type { BoardSession } from '$lib/board/session.svelte';
 	import type { CommandUi } from '../commands';
 	import { toolIcons } from '../icons';
@@ -12,7 +13,6 @@
 	import { thumbnailer } from '../thumbnail';
 	import { zoomFit } from '../view';
 	import Assistant from './Assistant.svelte';
-	import AvatarStack from './AvatarStack.svelte';
 	import BoardTitle from './BoardTitle.svelte';
 	import Board from './Board.svelte';
 	import EmbedBar from './EmbedBar.svelte';
@@ -61,7 +61,6 @@
 		image: () => picker.click(),
 		minimap: () => (minimap = !minimap)
 	};
-	const STATUS = { connecting: 'Connexion…', live: 'En ligne', offline: 'Hors ligne', stopped: 'Arrêté' } as const;
 
 	$effect(() => {
 		if (!session.synced || fitted || !editor.size.width) return;
@@ -96,6 +95,7 @@
 	class="relative h-dvh w-full overflow-hidden bg-fc-page"
 	data-testid="board"
 	data-role={session.role}
+	data-connection={session.connection}
 	data-editable={editor.editable}
 >
 	<Board {editor} {ui} bind:input />
@@ -117,13 +117,16 @@
 						</Tooltip>
 					{/if}
 					<BoardTitle {name} board={editBoard} />
-					<span class="flex items-center gap-1.5 pr-3 text-fc-xs text-fc-fg-muted" aria-live="polite">
-						{#if session.connection === 'connecting'}<Spinner size="sm" />{/if}
-						{STATUS[session.connection]}
-					</span>
+					<ConnectionHint state={session.connection} class="mr-1" />
 				</div>
 				<div class="flex items-center gap-2">
-					<AvatarStack {session} />
+					<Presence
+						peers={presencePeers(session.peers)}
+						following={session.following}
+						onfollow={(id) => session.follow(id === null ? null : Number(id))}
+						class="pointer-events-auto"
+						data-board-ui
+					/>
 					<div class={chrome} data-board-ui>
 						<Tooltip text="Rechercher (⌘ K)">
 							<IconButton variant="ghost" aria-label="Rechercher" onclick={() => (search = true)}

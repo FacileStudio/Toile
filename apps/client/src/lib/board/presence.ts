@@ -1,4 +1,4 @@
-import { USER_COLORS } from '@facile/muse';
+import { USER_COLORS, type PresencePeer } from '@facile/muse';
 import type { Awareness } from 'y-protocols/awareness';
 import type { Box, Point } from '$lib/canvas/camera';
 
@@ -13,6 +13,11 @@ export type Peer = {
 	selection: string[];
 	viewport: Box | null;
 };
+
+/** The other people on the board as muse `Presence` draws them; `peers` already leaves this client out. */
+export function presencePeers(peers: readonly Peer[]): PresencePeer[] {
+	return peers.map(({ id, user }) => ({ id, name: user.name, color: user.color, picture: user.picture }));
+}
 
 /** A stable identity colour for a name, from the suite palette. */
 export function colorFor(seed: string): string {
