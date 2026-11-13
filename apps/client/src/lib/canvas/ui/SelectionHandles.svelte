@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { Tooltip } from '@facile/muse';
 	import type { Editor } from '../editor.svelte';
 	import type { Input } from '../input';
 	import { anchorPoint } from '../anchors';
@@ -186,21 +187,22 @@
 		{#if single?.type === 'card' && single.url}
 			{@const topH = (single.image ? Math.min(single.h * 0.6, 120) : 0) * editor.camera.z}
 			{#if single.kind === 'youtube'}
-				<button
-					type="button"
-					class="pointer-events-auto absolute left-1/2 flex -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-fc-pill transition-transform hover:scale-110 active:scale-95 cursor-pointer z-10"
-					style:top="{topH / 2}px"
-					style:width="{Math.min(48, topH * 0.6)}px"
-					style:height="{Math.min(48, topH * 0.6)}px"
-					aria-label="Lire la vidéo"
-					title="Lire la vidéo"
-					onclick={(e) => {
-						e.stopPropagation();
-						openCard(editor, single);
-					}}
-				>
-					<span class="sr-only">Lire la vidéo</span>
-				</button>
+				<Tooltip text="Lire la vidéo" describe={false} class="contents">
+					<button
+						type="button"
+						class="pointer-events-auto absolute left-1/2 flex -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-fc-pill transition-transform hover:scale-110 active:scale-95 cursor-pointer z-10"
+						style:top="{topH / 2}px"
+						style:width="{Math.min(48, topH * 0.6)}px"
+						style:height="{Math.min(48, topH * 0.6)}px"
+						aria-label="Lire la vidéo"
+						onclick={(e) => {
+							e.stopPropagation();
+							openCard(editor, single);
+						}}
+					>
+						<span class="sr-only">Lire la vidéo</span>
+					</button>
+				</Tooltip>
 			{/if}
 
 		{/if}

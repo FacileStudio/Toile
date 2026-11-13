@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { Button, Icon, icons } from '@facile/muse';
+	import { Button, Icon, Tooltip, icons } from '@facile/muse';
 	import { logoIcon } from '$lib/brand';
 
 	type Slide = { title: string; body: string; icon: string };
@@ -78,20 +78,22 @@
 	<footer class="flex flex-col items-center gap-6 px-6 pt-4 pb-6">
 		<div class="flex items-center gap-1" role="tablist" aria-label="Diapositives">
 			{#each SLIDES as slide, i (slide.title)}
-				<button
-					type="button"
-					role="tab"
-					aria-selected={i === index}
-					aria-label="Aller à la diapositive {i + 1}"
-					class="flex size-11 items-center justify-center"
-					onclick={() => show(i)}
-				>
-					<span
-						class="h-1.5 rounded-full transition-all duration-300 motion-reduce:transition-none {i === index
-							? 'w-6 bg-fc-fg'
-							: 'w-1.5 bg-fc-fg/25'}"
-					></span>
-				</button>
+				<Tooltip text="Diapositive {i + 1}" describe={false} class="contents">
+					<button
+						type="button"
+						role="tab"
+						aria-selected={i === index}
+						aria-label="Aller à la diapositive {i + 1}"
+						class="flex size-11 items-center justify-center"
+						onclick={() => show(i)}
+					>
+						<span
+							class="h-1.5 rounded-full transition-all duration-300 motion-reduce:transition-none {i === index
+								? 'w-6 bg-fc-fg'
+								: 'w-1.5 bg-fc-fg/25'}"
+						></span>
+					</button>
+				</Tooltip>
 			{/each}
 		</div>
 		<Button size="lg" class="w-full max-w-sm" iconRight={icons.arrow} onclick={next}>

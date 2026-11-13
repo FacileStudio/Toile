@@ -110,11 +110,9 @@
 			<div class="flex items-start justify-between gap-2">
 				<div class={chrome} data-board-ui>
 					{#if back}
-						<Tooltip text="Retour aux tableaux">
-							<IconButton variant="ghost" aria-label="Retour aux tableaux" onclick={() => back && goto(back)}>
-								<Icon icon={icons.chevronLeft} size={20} />
-							</IconButton>
-						</Tooltip>
+						<IconButton variant="ghost" aria-label="Retour aux tableaux" onclick={() => back && goto(back)}>
+							<Icon icon={icons.chevronLeft} size={20} />
+						</IconButton>
 					{/if}
 					<BoardTitle {name} board={editBoard} />
 					<ConnectionHint state={session.connection} class="mr-1" />
@@ -128,34 +126,26 @@
 						data-board-ui
 					/>
 					<div class={chrome} data-board-ui>
-						<Tooltip text="Rechercher (⌘ K)">
-							<IconButton variant="ghost" aria-label="Rechercher" onclick={() => (search = true)}
-								><Icon icon={icons.search} size={20} /></IconButton
-							>
-						</Tooltip>
-						<Tooltip text="Commentaires">
-							<IconButton
-								variant="ghost"
-								aria-label="Commentaires"
-								aria-pressed={comments}
-								onclick={() => (comments = !comments)}
-							>
-								<Icon icon={toolIcons.comment} size={20} />
-							</IconButton>
-						</Tooltip>
+						<IconButton variant="ghost" aria-label="Rechercher" tooltip="Rechercher (⌘ K)" onclick={() => (search = true)}
+							><Icon icon={icons.search} size={20} /></IconButton
+						>
+						<IconButton
+							variant="ghost"
+							aria-label="Commentaires"
+							aria-pressed={comments}
+							onclick={() => (comments = !comments)}
+						>
+							<Icon icon={toolIcons.comment} size={20} />
+						</IconButton>
 						<span class="hidden md:inline-flex">
-							<Tooltip text="Raccourcis (?)">
-								<IconButton variant="ghost" aria-label="Raccourcis clavier" onclick={() => (help = true)}
-									><Icon icon={toolIcons.keyboard} size={20} /></IconButton
-								>
-							</Tooltip>
+							<IconButton variant="ghost" aria-label="Raccourcis clavier" tooltip="Raccourcis (?)" onclick={() => (help = true)}
+								><Icon icon={toolIcons.keyboard} size={20} /></IconButton
+							>
 						</span>
 						{#if session.role === 'owner' && 'board' in session.target}
-							<Tooltip text="Partager">
-								<IconButton variant="ghost" aria-label="Partager" onclick={() => (sharing = true)}
-									><Icon icon={toolIcons.share} size={20} /></IconButton
-								>
-							</Tooltip>
+							<IconButton variant="ghost" aria-label="Partager" onclick={() => (sharing = true)}
+								><Icon icon={toolIcons.share} size={20} /></IconButton
+							>
 						{/if}
 					</div>
 				</div>
@@ -189,7 +179,7 @@
 				<StyleBar {editor} {ui} />
 				<div class="flex max-w-[calc(100vw-1.5rem)] items-center gap-2">
 					{#if editBoard}
-						<Tooltip text={assistant}>
+						<Tooltip text={assistant} describe={false} class="contents">
 							<button
 								type="button"
 								class="toile-rise toile-press pointer-events-auto flex size-14 shrink-0 cursor-pointer items-center justify-center rounded-fc-pill shadow-lg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-fc-ring {assisting

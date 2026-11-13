@@ -51,7 +51,6 @@
 			variant="secondary"
 			class="absolute -top-11 right-0 shadow-lg"
 			aria-label="Fermer la vidéo"
-			title="Fermer la vidéo"
 			onclick={close}
 		>
 			<Icon icon={icons.close} size={16} />
