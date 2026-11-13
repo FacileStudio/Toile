@@ -4,6 +4,13 @@ All notable changes to Toile. Versions follow SemVer.
 
 ## [Unreleased]
 
+## [0.10.4] - 2026-11-13
+
+### Added
+
+- The client loads Vision's analytics tracker on toile.facile.studio, with `data-mask` path masking, except on share links (`/s/<token>`): a share token is a capability and a 43-character token without a digit would slip past the mask
+- The CSP allows `https://vision.facile.studio` in `script-src`; the loader is hashed with the other inline scripts of the build
+
 ## [0.10.3] - 2026-11-13
 
 ### Changed
