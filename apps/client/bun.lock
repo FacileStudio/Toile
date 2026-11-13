@@ -12,8 +12,8 @@
         "@capacitor/ios": "8.6.0",
         "@facile/blob": "github:FacileStudio/blob#v0.2.2",
         "@facile/client": "github:FacileStudio/facile-client#v0.2.0",
-        "@facile/mise-en-scene": "github:FacileStudio/mise-en-scene#v0.1.1",
-        "@facile/muse": "github:FacileStudio/muse#v0.21.1",
+        "@facile/mise-en-scene": "github:FacileStudio/mise-en-scene#v0.2.1",
+        "@facile/muse": "github:FacileStudio/muse#v0.22.0",
         "@tauri-apps/api": "2.12.4",
         "@tauri-apps/plugin-opener": "2.7.3",
         "capacitor-secure-storage-plugin": "0.13.0",
@@ -66,9 +66,9 @@
 
     "@facile/client": ["@facile/client@github:FacileStudio/facile-client#83ed82c", { "peerDependencies": { "@sveltejs/kit": "^2.0.0", "svelte": "^5.0.0" } }, "FacileStudio-facile-client-83ed82c", "sha512-o0fSs/BDwnIJHqfK8Y7xTvuJFCH1OmW6orYsukd7gIj53UR9SuURDcSHffx69sDPcRH0qTVX9pvKZyZDRnOUiQ=="],
 
-    "@facile/mise-en-scene": ["@facile/mise-en-scene@github:FacileStudio/mise-en-scene#8f20520", { "peerDependencies": { "svelte": "^5.29.0" } }, "FacileStudio-mise-en-scene-8f20520", "sha512-/y1jzWj1e0Ya+TrS2bLRhLp+jMU7oEIu+XLWIiMJ6UAe/rSEO44psYVf77Qb3AtMCfF8o07kGQJLPJ40vFeeDQ=="],
+    "@facile/mise-en-scene": ["@facile/mise-en-scene@github:FacileStudio/mise-en-scene#29d936d", { "peerDependencies": { "svelte": "^5.29.0" } }, "FacileStudio-mise-en-scene-29d936d", "sha512-ZWvqtesVLNlH4i+oEBHh/obcLTDhdK+JFtnQYnwxrfEERCG2F111AxzEJ9syJkp2NFztic+oz/o4Y6pSh/KCtA=="],
 
-    "@facile/muse": ["@facile/muse@github:FacileStudio/muse#0c1df3e", { "dependencies": { "gsap": "^3.13.0", "tailwind-merge": "^3.5.0" }, "peerDependencies": { "svelte": "^5.0.0", "tailwindcss": "^4.0.0" } }, "FacileStudio-muse-0c1df3e", "sha512-zb00SKPxhK91rIYI9f8JbVDaI9iZO0VR8Uf5N4H+eTl6NrM2ntVq3hr4EzkM/yrWiyg7Mr42JUZOUvPMmlEvCg=="],
+    "@facile/muse": ["@facile/muse@github:FacileStudio/muse#29caf55", { "dependencies": { "gsap": "^3.13.0", "tailwind-merge": "^3.5.0" }, "peerDependencies": { "svelte": "^5.0.0", "tailwindcss": "^4.0.0" } }, "FacileStudio-muse-29caf55", "sha512-dPAphXD+ACLqFSXG1SJppNrXHtq/ZjYyQNupPirJ7U6HPqA6JKNLpJz8WYUc2pVPsFeBqt0+G4AuofO78qt9tQ=="],
 
     "@ionic/cli-framework-output": ["@ionic/cli-framework-output@2.2.8", "", { "dependencies": { "@ionic/utils-terminal": "2.3.5", "debug": "^4.0.0", "tslib": "^2.0.1" } }, "sha512-TshtaFQsovB4NWRBydbNFawql6yul7d5bMiW1WYYf17hd99V6xdDdk3vtF51bw6sLkxON3bDQpWsnUc9/hVo3g=="],
 
