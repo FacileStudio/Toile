@@ -14,7 +14,7 @@ One landing card: an icon plate, a title and its sentence. With `href`, the titl
 	<span class="flex size-10 items-center justify-center rounded-fc-md bg-fc-surface text-fc-fg">
 		<Icon icon={feature.icon} size={20} />
 	</span>
-	<h3 class="text-fc-lg font-semibold text-fc-fg">
+	<h3 class="text-fc-lg font-bold text-fc-fg">
 		{#if href}
 			<a
 				{href}

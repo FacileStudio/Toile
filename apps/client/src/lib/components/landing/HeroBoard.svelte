@@ -37,7 +37,6 @@
 	}
 
 	async function script(act: Act) {
-		reset();
 		Object.assign(cursor, act.point(canvas, 0.86, 0.9));
 		await act.wait(700);
 		cursor.visible = true;
@@ -65,8 +64,8 @@
 
 <Stage
 	width={960}
-	height={580}
-	compact={{ below: 640, width: 358, height: 556 }}
+	height={640}
+	compact={{ below: 640, width: 358, height: 620 }}
 	{script}
 	{reset}
 	{poster}
@@ -88,7 +87,7 @@
 			<div bind:this={canvas} class="board relative flex-1 overflow-hidden">
 				{#each layout.frames as frame, at (at)}
 					<div
-						class="absolute rounded-fc-lg bg-fc-component"
+						class="absolute rounded-fc-lg bg-fc-surface"
 						style:left="{frame.x}px"
 						style:top="{frame.y}px"
 						style:width="{frame.w}px"

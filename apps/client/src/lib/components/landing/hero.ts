@@ -21,9 +21,9 @@ export type HeroLayout = {
 
 const point = (x: number, y: number): Spot => ({ x, y });
 
-/** The 960 × 580 design under the hero copy. */
+/** The 960 × 640 design under the hero copy. */
 export const WIDE: HeroLayout = {
-	window: 'top:20px;left:40px;width:880px;height:540px',
+	window: 'top:16px;left:50px;width:860px;height:540px',
 	frames: [
 		{ x: 96, y: 52, w: 440, h: 384 },
 		{ x: 584, y: 52, w: 256, h: 384 }
@@ -44,7 +44,7 @@ export const WIDE: HeroLayout = {
 	toolbar: 'column'
 };
 
-/** The 358 × 556 design for a phone column. */
+/** The 358 × 620 design for a phone column. */
 export const COMPACT: HeroLayout = {
 	window: 'top:8px;left:8px;width:342px;height:540px',
 	frames: [

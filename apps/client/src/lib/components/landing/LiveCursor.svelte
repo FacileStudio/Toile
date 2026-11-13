@@ -24,7 +24,7 @@ same curve as the kit's cursor.
 		display: flex;
 		align-items: flex-start;
 		pointer-events: none;
-		filter: drop-shadow(0 1px 2px rgb(0 0 0 / 0.18));
+		filter: drop-shadow(0 1px 2px color-mix(in oklch, var(--color-fc-scrim) 36%, transparent));
 		transition: translate 0.9s cubic-bezier(0.45, 0, 0.1, 1);
 	}
 	.tag {

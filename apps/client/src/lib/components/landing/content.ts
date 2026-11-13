@@ -1,6 +1,6 @@
 import { icons } from '@facile/muse';
 
-/** One card of the landing: an icon, a title and one or two sentences. */
+/** One card of the landing: an icon, a title and one sentence. */
 export type Feature = { icon: string; title: string; body: string };
 
 /** What Toile does, in the order the landing tells it. */
@@ -8,22 +8,22 @@ export const FEATURES: readonly Feature[] = [
 	{
 		icon: icons.compass,
 		title: 'Une toile sans bord',
-		body: 'Post-it, texte, formes, flèches accrochées aux formes, dessin à main levée, images et cadres. Zoomez et circulez sans limite.'
+		body: 'Post-it, formes, flèches, dessin, images et cadres, sans limite de place.'
 	},
 	{
 		icon: icons.usersGroup,
 		title: 'À plusieurs, en direct',
-		body: 'Chacun voit les curseurs, les sélections et les ajouts des autres à l’instant. Suivez quelqu’un, commentez n’importe où.'
+		body: 'Vous voyez les curseurs et les ajouts des autres à la seconde.'
 	},
 	{
 		icon: icons.globe,
 		title: 'Des liens pour vos invités',
-		body: 'Partagez un lien en lecture, en commentaire ou en édition. Vos invités tapent leur nom et entrent, sans créer de compte.'
+		body: "Lecture, commentaire ou édition. Vos invités entrent sans créer de compte."
 	},
 	{
 		icon: icons.download,
 		title: 'Exportez, importez',
-		body: 'PNG, SVG, PDF ou JSON Canvas, du tableau entier ou d’un seul cadre. Importez vos fichiers JSON Canvas et Excalidraw.'
+		body: 'PNG, SVG, PDF ou JSON Canvas en sortie, JSON Canvas et Excalidraw en entrée.'
 	}
 ];
 
