@@ -4,6 +4,15 @@ All notable changes to Toile. Versions follow SemVer.
 
 ## [Unreleased]
 
+## [0.11.0] - 2026-11-14
+
+### Changed
+
+- Landing: shorter copy, one sentence per feature, and the suite section is gone (the footer still links each app)
+- Landing: muse `DownloadSection` replaces the custom download tiles, with the same release asset URLs
+- Client: `@facile/muse` v0.22.0 brings the Magnetik typeface; the body no longer overrides the muse font with a system stack
+- Client: `@facile/mise-en-scene` v0.2.1; the hero demo relies on the stage's own reset and reads its cursor shadow from muse tokens
+
 ## [0.10.4] - 2026-11-13
 
 ### Added
