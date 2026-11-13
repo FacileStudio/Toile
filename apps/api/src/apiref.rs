@@ -56,6 +56,7 @@ const ROUTES: &[Row] = &[
     ("POST", "/share/{token}/assets", "assets", "Always 403: guests cannot upload", "403"),
     ("POST", "/cards/resolve", "cards", "Resolves a link into a live card for the caller", "200"),
     ("POST", "/boards/{id}/shapes/{shape}/task", "tasks", "Turns a sticky into an Opus task and adds its card", "201"),
+    ("GET", "/boards/{id}/ai/assistant", "ai", "The caller's Bulle assistant name", "200"),
     ("POST", "/boards/{id}/ai/summarize", "ai", "A Markdown summary of the board, written by Bulle (ai.access)", "200"),
     ("POST", "/boards/{id}/ai/cluster", "ai", "Frames the selected stickies by theme (ai.access)", "200"),
     (

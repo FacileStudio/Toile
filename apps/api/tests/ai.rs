@@ -9,7 +9,7 @@ use axum::Router;
 use axum::extract::State;
 use axum::http::{HeaderMap, StatusCode, header};
 use axum::response::{IntoResponse, Response};
-use axum::routing::post;
+use axum::routing::{get, post};
 use common::directory::{base, snapshot, space};
 use common::fixture;
 use porte::directory::Person;
@@ -19,6 +19,7 @@ use serde_json::{Value, json};
 struct Bulle {
     calls: Mutex<Vec<(String, Value)>>,
     refuse: Mutex<Option<u16>>,
+    nameless: Mutex<bool>,
 }
 
 fn refusal(status: u16) -> Response {
@@ -72,9 +73,21 @@ async fn complete(State(fake): State<Arc<Bulle>>, headers: HeaderMap, axum::Json
     }
 }
 
+async fn profile(State(fake): State<Arc<Bulle>>, headers: HeaderMap) -> Response {
+    let token = headers.get(header::AUTHORIZATION).and_then(|v| v.to_str().ok()).unwrap_or_default();
+    match (token.split('.').nth(1), *fake.nameless.lock().unwrap()) {
+        (Some("bulle"), false) => axum::Json(json!({"name": "  Pixel ", "archetype": "calm"})).into_response(),
+        (Some("bulle"), true) => StatusCode::NOT_FOUND.into_response(),
+        _ => StatusCode::UNAUTHORIZED.into_response(),
+    }
+}
+
 async fn start() -> (Arc<Bulle>, api::modules::suite::Apps) {
     let fake = Arc::new(Bulle::default());
-    let router = Router::new().route("/api/ai/complete", post(complete)).with_state(fake.clone());
+    let router = Router::new()
+        .route("/api/ai/complete", post(complete))
+        .route("/api/assistant", get(profile))
+        .with_state(fake.clone());
     let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
     let url = format!("http://{}", listener.local_addr().unwrap());
     tokio::spawn(async move { axum::serve(listener, router).await.unwrap() });
@@ -183,4 +196,33 @@ async fn no_ai_access_answers_402_before_bulle_and_bulle_refusals_pass_through()
     let path = format!("/api/boards/{personal}/ai/generate");
     assert_eq!(app.call("POST", &path, Some(&ada), Some(generate)).await.status, 402);
     assert!(bulle.calls.lock().unwrap().is_empty(), "a refused plan never reaches Bulle");
+}
+
+#[tokio::test]
+async fn an_editor_reads_the_assistant_name_without_ai_access() {
+    let Some(pool) = common::pool("toile_ai_assistant").await else { return };
+    let (bulle, apps) = start().await;
+    let app = common::app_with(pool.clone(), apps).await;
+    let roles = fixture::roles(&app).await;
+    let ada = app.person("ada").await;
+    let shared = fixture::id(&fixture::board(&app, &roles.owner, Some(&roles.space), "Atelier").await);
+    let personal = fixture::id(&fixture::board(&app, &ada, None, "Perso").await);
+    let path = format!("/api/boards/{shared}/ai/assistant");
+    let named = app.call("GET", &path, Some(&roles.member), None).await;
+    assert_eq!((named.status.as_u16(), named.json()), (200, json!({"name": "Pixel"})), "{}", named.text());
+    assert_eq!(app.call("GET", &path, Some(&roles.outsider), None).await.status, 404);
+    *bulle.nameless.lock().unwrap() = true;
+    assert_eq!(app.call("GET", &path, Some(&roles.member), None).await.json()["name"], "Bulle");
+    *bulle.nameless.lock().unwrap() = false;
+
+    let mut snap = snapshot(base(), vec![space("unused", &[])]);
+    snap.entitlements_revision = 1;
+    snap.people =
+        vec![Person { subject: ada.subject.clone(), entitlements: [("ai.access".into(), json!(false))].into() }];
+    let apply = SpacesApply::new(pool, app.state.hub.clone(), app.state.suite.plans.clone());
+    porte::directory::Apply::apply(&apply, &snap).await.unwrap();
+    let mine = app.call("GET", &format!("/api/boards/{personal}/ai/assistant"), Some(&ada), None).await;
+    assert_eq!((mine.status.as_u16(), mine.json()["name"].clone()), (200, json!("Pixel")), "{}", mine.text());
+    let summary = app.call("POST", &format!("/api/boards/{personal}/ai/summarize"), Some(&ada), None).await;
+    assert_eq!(summary.status, 402, "the plan really lacks ai.access");
 }

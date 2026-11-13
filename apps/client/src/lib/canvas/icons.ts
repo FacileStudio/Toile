@@ -31,7 +31,6 @@ export const toolIcons = {
   keyboard: "toile:keyboard",
   undo: "toile:undo",
   redo: "toile:redo",
-  ai: "toile:ai",
   dots: "toile:dots",
   cut: "toile:cut",
   paste: "toile:paste",
@@ -51,9 +50,6 @@ registerIcons({
     height: 24,
     body: '<g fill="currentColor"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></g>',
   },
-  [toolIcons.ai]: line(
-    '<path d="M10 4.5l1.6 4.4 4.4 1.6-4.4 1.6L10 16.5l-1.6-4.4L4 10.5l4.4-1.6z"/><path d="M17.5 14l.8 2.2 2.2.8-2.2.8-.8 2.2-.8-2.2-2.2-.8 2.2-.8z"/><path d="M17 3.5v3M15.5 5h3"/>',
-  ),
   [toolIcons.select]: line('<path d="M5 3.5l13 7-5.5 1.6L10 18z"/>'),
   [toolIcons.hand]: line(
     '<path d="M8 12V6a1.5 1.5 0 0 1 3 0v5m0-6.5a1.5 1.5 0 0 1 3 0V11m0-4a1.5 1.5 0 0 1 3 0v6c0 4-2.5 7-6.5 7-3 0-4.5-1.5-6-4l-1.5-3a1.5 1.5 0 0 1 2.6-1.5L8 13"/>',
