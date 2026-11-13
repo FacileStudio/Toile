@@ -1640,8 +1640,8 @@ dependencies = [
 
 [[package]]
 name = "porte"
-version = "0.6.1"
-source = "git+https://github.com/FacileStudio/porte-rs?tag=v0.6.1#9e5c29f8c40394a2118e6fca984f6b11dd9efdb7"
+version = "0.7.1"
+source = "git+https://github.com/FacileStudio/porte-rs?tag=v0.7.1#f28754c0c0d42ad955ba51fe14bddd1e7f0f53be"
 dependencies = [
  "aes-gcm",
  "async-trait",

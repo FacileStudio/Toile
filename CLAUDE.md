@@ -7,7 +7,7 @@ board document contract is `docs/board-schema.md` (normative).
 ## Stack
 
 - **API** (`apps/api`): Rust 1.98 (edition 2024), axum 0.8, sqlx 0.9 on Postgres 16
-- **Libraries**: `tronc` (tronc-rs v0.4.0), `porte` (porte-rs v0.6.1), from their public
+- **Libraries**: `tronc` (tronc-rs v0.4.0), `porte` (porte-rs v0.7.1), from their public
   `github.com/FacileStudio` repos by tag (bump: `docs/deployment.md`). Never copy their code
   here; report a gap instead. Toile does not depend on encre
 - **Client** (`apps/client`): SvelteKit 2, Svelte 5 runes, Tailwind 4, `@facile/muse`,
