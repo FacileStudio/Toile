@@ -7,7 +7,7 @@ use tronc::json::Json;
 
 use super::bulle::{Refusal, gate};
 use super::cluster::{self, Framed};
-use super::generate::{self, Draw};
+use super::generate::{self, Draw, Request};
 use super::summarize;
 use crate::extract::id;
 use crate::scene::input::Placed;
@@ -34,6 +34,8 @@ struct ClusterOut {
 struct GenerateIn {
     prompt: String,
     kind: Draw,
+    #[serde(default)]
+    accent: Option<String>,
 }
 
 #[derive(Serialize)]
@@ -70,7 +72,8 @@ async fn generate(
 ) -> Result<Json<GenerateOut>, Refusal> {
     let board = id(&board)?;
     gate(&state, who.user_id, board).await?;
-    let created = generate::generate(&state, who.user_id, board, &body.prompt, body.kind).await?;
+    let request = Request { prompt: &body.prompt, draw: body.kind, accent: body.accent.as_deref() };
+    let created = generate::generate(&state, who.user_id, board, request).await?;
     Ok(Json(GenerateOut { created }))
 }
 

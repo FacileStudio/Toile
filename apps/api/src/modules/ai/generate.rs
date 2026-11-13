@@ -19,7 +19,7 @@ pub const MAX_PROMPT: usize = 2000;
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub enum Draw {
-    /// A central idea, its branches and their sub-ideas, joined by lines.
+    /// A central idea, its branches and their sub-ideas, joined by arrows.
     Mindmap,
     /// Steps and decisions joined by arrows, top to bottom.
     Flowchart,
@@ -27,8 +27,10 @@ pub enum Draw {
     Stickies,
 }
 
-const SHARED: &str = "Write every label in the language of the request, short enough for a \
-sticky note. The request comes from the person using the whiteboard; it is inside the input block.";
+const SHARED: &str = "Each idea becomes one short sticky note. Write every label in the language of \
+the request. The request comes from the person using the whiteboard; it is inside the input block.";
+
+const SHORT: &str = "Keep every text at most 80 characters.";
 
 fn text(max: u32) -> Value {
     json!({"type": "string", "minLength": 1, "maxLength": max})
@@ -45,7 +47,7 @@ fn mindmap() -> (String, Value) {
     });
     (
         format!(
-            "Draft a mind map for this request: a central title, its main branches and up to six sub-ideas per branch. {SHARED}"
+            "Draft a mind map for this request: a central title, its main branches and up to six sub-ideas per branch. {SHORT} {SHARED}"
         ),
         schema,
     )
@@ -72,7 +74,7 @@ fn flowchart() -> (String, Value) {
     });
     (
         format!(
-            "Draft a flowchart for this request: one start, the steps and decisions in order, and the ends. Edges name node ids. {SHARED}"
+            "Draft a flowchart for this request: one start, the steps and decisions in order, and the ends. Edges name node ids. {SHORT} {SHARED}"
         ),
         schema,
     )
@@ -86,10 +88,10 @@ fn stickies() -> (String, Value) {
     (format!("Write sticky notes for this request, one idea per note, under a short title. {SHARED}"), schema)
 }
 
-fn convert(draw: Draw, value: Value) -> Result<Vec<NewShape>, serde_json::Error> {
+fn convert(draw: Draw, accent: Option<&str>, value: Value) -> Result<Vec<NewShape>, serde_json::Error> {
     Ok(match draw {
         Draw::Mindmap => shapes::mindmap(serde_json::from_value(value)?),
-        Draw::Flowchart => shapes::flowchart(serde_json::from_value(value)?),
+        Draw::Flowchart => shapes::flowchart(serde_json::from_value(value)?, accent),
         Draw::Stickies => shapes::stickies(serde_json::from_value(value)?),
     })
 }
@@ -106,16 +108,25 @@ fn place(txn: &mut TransactionMut, map: &MapRef, mut shapes: Vec<NewShape>) -> R
     Ok(planned.into_iter().map(|p| p.placed).collect())
 }
 
-/// Asks Bulle to draft `draw` from `prompt`, then lays it out right of the board's content and
-/// writes it through the room.
+/// One generate request: what to draw, from which prompt, and the person's accent color.
+pub struct Request<'a> {
+    /// The person's request, at most [`MAX_PROMPT`] characters.
+    pub prompt: &'a str,
+    /// What to draw.
+    pub draw: Draw,
+    /// The fill of flowchart decisions, a `#rrggbb` color; anything else keeps the default.
+    pub accent: Option<&'a str>,
+}
+
+/// Asks Bulle to draft `request.draw` from `request.prompt`, then lays it out right of the
+/// board's content and writes it through the room.
 pub async fn generate(
     state: &AppState,
     user_id: i64,
     board: Uuid,
-    prompt: &str,
-    draw: Draw,
+    request: Request<'_>,
 ) -> Result<Vec<Placed>, Refusal> {
-    let prompt = prompt.trim();
+    let (prompt, draw) = (request.prompt.trim(), request.draw);
     if prompt.is_empty() || prompt.chars().count() > MAX_PROMPT {
         return Err(tronc::Error::invalid(format!("prompt is required and at most {MAX_PROMPT} characters")).into());
     }
@@ -126,7 +137,8 @@ pub async fn generate(
     };
     let ask = Ask { prompt: instructions, input: prompt.to_owned(), schema: Some(schema), max_tokens: 3000 };
     let answer = bulle::complete(state, user_id, ask).await?;
-    let shapes = convert(draw, answer).map_err(|_| tronc::Error::unavailable("Bulle answered no drawing"))?;
+    let shapes =
+        convert(draw, request.accent, answer).map_err(|_| tronc::Error::unavailable("Bulle answered no drawing"))?;
     let out = Arc::new(Mutex::new(Vec::new()));
     let sink = out.clone();
     let edit = Box::new(move |txn: &mut TransactionMut, map: &MapRef| {
