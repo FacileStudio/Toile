@@ -4,6 +4,23 @@ All notable changes to Toile. Versions follow SemVer.
 
 ## [Unreleased]
 
+## [0.9.0] - 2026-11-13
+
+### Added
+
+- The sticky tool shows a translucent post-it under the pointer, FigJam style; a click drops a 200×200 square one and a drag stays square
+
+### Changed
+
+- The bottom toolbar groups its tools into 8 slots: Sélection (with Main), Post-it, Texte, Formes, Connecteurs, Dessin, Insérer (Cadre, Image) and Commentaire. A slot shows its last tool and picks it in one click; a second click opens its menu. Every keyboard shortcut still picks its tool directly
+- The Bulle button is a floating circle with the assistant's blob, just left of the bottom toolbar, where its composer opens
+- Corner resize handles are rounded squares and connection dots are solid, both in the muse blue, and the dots sit further from the selection border
+- The zoom percentage stays on one line
+
+### Removed
+
+- The rotate handle: shapes can no longer be rotated by hand. Shapes already rotated on a board keep their angle and still resize correctly
+
 ## [0.8.0] - 2026-11-13
 
 ### Added
