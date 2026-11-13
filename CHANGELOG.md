@@ -4,6 +4,16 @@ All notable changes to Toile. Versions follow SemVer.
 
 ## [Unreleased]
 
+## [0.10.3] - 2026-11-13
+
+### Changed
+
+- Client: `@facile/muse` moves from v0.20.0 to v0.21.1. Board tooltips open after 300 ms, at once while moving along a toolbar and on keyboard focus, one at a time.
+
+### Fixed
+
+- Board: every icon-only control shows a muse tooltip, including the bottom toolbar, zoom controls, style bar, Assistant trigger, comment pins, the card play button and the intro carousel dots. The top bar no longer wraps `IconButton` in a second `Tooltip`, and no control uses the native `title` any more.
+
 ## [0.10.2] - 2026-11-13
 
 ### Changed
