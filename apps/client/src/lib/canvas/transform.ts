@@ -58,17 +58,3 @@ export function scaleInto(shape: Shape, from: Box, to: Box): ShapeFields {
 	}
 	return fields;
 }
-
-/** The rotation of a drag from `start` to `now` around `pivot`, snapped to 15° steps when `snap`. */
-export function rotationDelta(pivot: Point, start: Point, now: Point, snap: boolean): number {
-	const delta = Math.atan2(now.y - pivot.y, now.x - pivot.x) - Math.atan2(start.y - pivot.y, start.x - pivot.x);
-	const step = Math.PI / 12;
-	return snap ? Math.round(delta / step) * step : delta;
-}
-
-/** Normalises an angle into `(-π, π]`. */
-export function normalizeAngle(angle: number): number {
-	const turned = angle % (Math.PI * 2);
-	if (turned > Math.PI) return turned - Math.PI * 2;
-	return turned <= -Math.PI ? turned + Math.PI * 2 : turned;
-}

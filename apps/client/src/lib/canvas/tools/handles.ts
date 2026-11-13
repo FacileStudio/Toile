@@ -2,7 +2,7 @@ import type { Shape, ShapeFields } from '$lib/board/schema';
 import type { Box, Point } from '../camera';
 import type { Editor } from '../editor.svelte';
 import { center, rotate, rotatedBox, union } from '../geometry';
-import { normalizeAngle, resizeBox, rotationDelta, scaleInto, type Handle } from '../transform';
+import { resizeBox, scaleInto, type Handle } from '../transform';
 import type { PointerSample, Tool } from './tool';
 
 function editableShapes(editor: Editor): Shape[] {
@@ -55,38 +55,6 @@ export class ResizeGesture implements Tool {
 		const before = rotate(fixedPoint(shape, this.handle), center(shape), shape.rot);
 		const after = rotate(fixedPoint(to, this.handle), center(to), shape.rot);
 		return scaleInto(shape, shape, { ...to, x: to.x + before.x - after.x, y: to.y + before.y - after.y });
-	}
-
-	up(): void {}
-
-	cancel(): void {}
-}
-
-/** Rotates the selection around its centre; Shift snaps to 15° steps. Arrows with bound ends stay. */
-export class RotateGesture implements Tool {
-	cursor = 'grabbing';
-	private shapes: Shape[];
-	private pivot: Point;
-
-	constructor(
-		private editor: Editor,
-		private start: Point
-	) {
-		this.shapes = editableShapes(editor).filter((s) => !s.from && !s.to);
-		const box = union(this.shapes.map((s) => rotatedBox(s)));
-		this.pivot = box ? center(box) : start;
-	}
-
-	down(): void {}
-
-	move(sample: PointerSample): void {
-		const delta = rotationDelta(this.pivot, this.start, sample.world, sample.shift);
-		const changes = new Map<string, ShapeFields>();
-		for (const shape of this.shapes) {
-			const c = rotate(center(shape), this.pivot, delta);
-			changes.set(shape.id, { x: c.x - shape.w / 2, y: c.y - shape.h / 2, rot: normalizeAngle(shape.rot + delta) });
-		}
-		this.editor.doc.updateMany(changes);
 	}
 
 	up(): void {}
