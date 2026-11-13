@@ -1,9 +1,10 @@
 import type { ShapeType } from '$lib/board/schema';
-import { createShape } from '../actions';
+import { createShape, styleFor } from '../actions';
 import type { Box, Point } from '../camera';
 import type { Editor } from '../editor.svelte';
 import { boxOf } from '../geometry';
 import { frameAt } from '../hit';
+import { STICKY_FILL } from '../render/palette';
 import type { PointerSample, Tool } from './tool';
 
 /** The size a click (no drag) gives each box type, in world units. */
@@ -16,7 +17,10 @@ export const DEFAULT_SIZE: Partial<Record<ShapeType, [number, number]>> = {
 	frame: [800, 520]
 };
 
-/** Places a box shape by click (default size, centred) or by drag (the dragged box), then selects it. */
+/**
+ * Places a box shape by click (default size, centred) or by drag (the dragged box), then selects it. A sticky shows a
+ * translucent preview under the pointer before the click and stays square when dragged, as in FigJam.
+ */
 export class CreateTool implements Tool {
 	cursor = 'crosshair';
 	private start: Point | null = null;
@@ -30,6 +34,17 @@ export class CreateTool implements Tool {
 	down(sample: PointerSample): void {
 		this.start = sample.world;
 		this.box = null;
+		this.preview(null);
+	}
+
+	hover(sample: PointerSample): void {
+		if (this.type !== 'sticky') return;
+		const [w, h] = DEFAULT_SIZE.sticky ?? [200, 200];
+		this.preview({ x: sample.world.x - w / 2, y: sample.world.y - h / 2, w, h });
+	}
+
+	leave(): void {
+		this.preview(null);
 	}
 
 	move(sample: PointerSample): void {
@@ -37,8 +52,9 @@ export class CreateTool implements Tool {
 		const dragged = Math.hypot(sample.world.x - this.start.x, sample.world.y - this.start.y) * this.editor.camera.z;
 		if (dragged < 6) return;
 		this.box = boxOf([this.start, sample.world]);
-		if (sample.shift) this.box.w = this.box.h = Math.max(this.box.w, this.box.h);
-		this.editor.overlay.marquee = this.box;
+		if (sample.shift || this.type === 'sticky') this.square(this.box, sample.world);
+		if (this.type === 'sticky') this.preview(this.box);
+		else this.editor.overlay.marquee = this.box;
 		this.editor.invalidateOverlay();
 	}
 
@@ -66,6 +82,19 @@ export class CreateTool implements Tool {
 		this.start = null;
 		this.box = null;
 		this.editor.overlay.marquee = null;
+		this.preview(null);
+	}
+
+	private square(box: Box, to: Point): void {
+		const side = Math.max(box.w, box.h);
+		if (this.start && to.x < this.start.x) box.x = this.start.x - side;
+		if (this.start && to.y < this.start.y) box.y = this.start.y - side;
+		box.w = box.h = side;
+	}
+
+	private preview(box: Box | null): void {
+		const color = styleFor('sticky', this.editor.style).fill ?? STICKY_FILL;
+		this.editor.overlay.draft = box ? { kind: 'box', box, color, radius: 4 } : null;
 		this.editor.invalidateOverlay();
 	}
 }

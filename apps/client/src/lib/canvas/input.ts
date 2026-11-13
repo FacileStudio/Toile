@@ -42,6 +42,7 @@ export class Input {
 	/** Switches the active tool, cancelling any gesture in progress. */
 	setTool(name: ToolName): void {
 		this.cancel();
+		this.tool.leave?.();
 		this.tool = makeTool(this.editor, name);
 		this.editor.overlay.target = null;
 		this.editor.overlay.hover = null;
@@ -77,6 +78,7 @@ export class Input {
 		};
 		on(this.element, 'pointerdown', (e) => this.down(e));
 		on(window, 'pointermove', (e) => this.move(e));
+		on(this.element, 'pointerleave', () => this.tool.leave?.());
 		on(window, 'pointerup', (e) => this.up(e));
 		on(window, 'pointercancel', (e) => this.up(e, true));
 		on(this.element, 'wheel', (e) => this.wheel(e), { passive: false });

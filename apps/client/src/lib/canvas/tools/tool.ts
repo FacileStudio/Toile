@@ -37,6 +37,8 @@ export interface Tool {
 	up(sample: PointerSample): void;
 	cancel(): void;
 	hover?(sample: PointerSample): void;
+	/** The pointer left the board, or the tool is being replaced: drop any hover preview. */
+	leave?(): void;
 }
 
 /** The tools that create a box shape by click or drag. */

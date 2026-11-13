@@ -16,7 +16,8 @@ export type PeerView = { id: number; name: string; color: string; cursor: Point 
 export type Draft =
 	| { kind: 'ink'; points: number[]; width: number; color: string }
 	| { kind: 'connector'; points: Point[]; color: string; head: boolean }
-	| { kind: 'eraser'; points: Point[] };
+	| { kind: 'eraser'; points: Point[] }
+	| { kind: 'box'; box: Box; color: string; radius: number };
 
 /** Everything the overlay canvas shows over the scene. */
 export type OverlayState = {
@@ -86,6 +87,12 @@ function drawDraft(ctx: CanvasRenderingContext2D, draft: Draft, camera: Camera, 
 	if (draft.kind === 'ink') {
 		ctx.fillStyle = draft.color;
 		ctx.fill(inkPath(draft.points, draft.width * 2));
+	} else if (draft.kind === 'box') {
+		ctx.globalAlpha = 0.5;
+		ctx.fillStyle = draft.color;
+		ctx.beginPath();
+		ctx.roundRect(draft.box.x, draft.box.y, draft.box.w, draft.box.h, draft.radius);
+		ctx.fill();
 	} else if (draft.kind === 'connector') {
 		ctx.strokeStyle = ctx.fillStyle = draft.color;
 		strokePolyline(ctx, draft.points, 2, draft.head ? 'end' : 'none', CONNECTOR_RADIUS);
