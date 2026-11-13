@@ -76,7 +76,7 @@ export type FrameInput = {
 
 /**
  * Paints the scene canvas: background, dot grid, then every shape the viewport overlaps, back to front. Under 15%
- * zoom, and for any box under two screen pixels, an unrotated box shape is one filled rectangle.
+ * zoom, and for any box under two screen pixels, an unrotated box shape is one filled rounded rectangle.
  */
 export function drawScene(canvas: HTMLCanvasElement, scene: Scene, input: FrameInput): number {
 	const ctx = canvas.getContext('2d');
@@ -95,8 +95,12 @@ export function drawScene(canvas: HTMLCanvasElement, scene: Scene, input: FrameI
 	for (const shape of visible) {
 		const boxy = !PATH_TYPES.has(shape.type) && shape.type !== 'frame';
 		if (boxy && (coarse || (shape.w < tiny && shape.h < tiny)) && !shape.rot) {
+			const w = Math.max(shape.w, tiny / 2);
+			const h = Math.max(shape.h, tiny / 2);
 			ctx.fillStyle = shape.style.fill ?? palette.surface;
-			ctx.fillRect(shape.x, shape.y, Math.max(shape.w, tiny / 2), Math.max(shape.h, tiny / 2));
+			ctx.beginPath();
+			ctx.roundRect(shape.x, shape.y, w, h, Math.min(tiny, w / 2, h / 2));
+			ctx.fill();
 			continue;
 		}
 		drawMoving(ctx, shape, input.motion, () => drawShape(ctx, shape, env));

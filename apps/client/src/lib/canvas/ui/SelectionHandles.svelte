@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { Icon, icons, toast } from '@facile/muse';
 	import type { Editor } from '../editor.svelte';
 	import type { Input } from '../input';
 	import { anchorPoint } from '../anchors';
@@ -211,43 +210,11 @@
 				</button>
 			{/if}
 
-			<div
-				class="pointer-events-auto absolute -top-12 left-1/2 flex -translate-x-1/2 items-center gap-1.5 rounded-fc-pill bg-fc-component p-1 shadow-lg z-20"
-				data-board-ui
-			>
-				<button
-					type="button"
-					class="flex items-center gap-1.5 rounded-fc-pill bg-fc-surface px-2.5 py-1 text-fc-xs font-medium text-fc-fg hover:bg-fc-page transition-colors cursor-pointer"
-					onclick={(e) => {
-						e.stopPropagation();
-						window.open(single.url, '_blank', 'noopener');
-					}}
-					title="Ouvrir le lien dans un nouvel onglet"
-				>
-					<Icon icon={icons.external} size={14} />
-					<span>Ouvrir</span>
-				</button>
-				<button
-					type="button"
-					class="flex items-center gap-1 rounded-fc-pill px-2 py-1 text-fc-xs font-medium text-fc-fg hover:bg-fc-surface transition-colors cursor-pointer"
-					onclick={(e) => {
-						e.stopPropagation();
-						if (single.url) {
-							void navigator.clipboard.writeText(single.url);
-							toast.success('Lien copié');
-						}
-					}}
-					title="Copier l'adresse du lien"
-				>
-					<Icon icon={icons.copy} size={14} />
-					<span>Copier</span>
-				</button>
-			</div>
 		{/if}
 		<button
 			type="button"
 			class="handle pointer-events-auto absolute left-1/2 flex -translate-x-1/2 -translate-y-1/2 touch-none items-center justify-center"
-			style:top={single?.type === 'card' && single?.url ? '-68px' : '-36px'}
+			style:top="-36px"
 			style:cursor="grab"
 			aria-label="Faire pivoter"
 			onpointerdown={spin}

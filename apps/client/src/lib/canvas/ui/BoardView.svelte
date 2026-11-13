@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { tick } from 'svelte';
 	import { goto } from '$app/navigation';
 	import { Alert, Icon, IconButton, Spinner, Tooltip, icons, toast, type PlanLimitError } from '@facile/muse';
 	import { aiError, aiPlanLimit, summarizeBoard } from '$lib/api/ai';
@@ -9,10 +8,12 @@
 	import { toolIcons } from '../icons';
 	import type { Input } from '../input';
 	import { pasteInto } from '../paste';
+	import { thumbnailer } from '../thumbnail';
 	import { zoomFit } from '../view';
 	import AiMenu from './AiMenu.svelte';
 	import AiPanel from './AiPanel.svelte';
 	import AvatarStack from './AvatarStack.svelte';
+	import BoardTitle from './BoardTitle.svelte';
 	import Board from './Board.svelte';
 	import Cheatsheet from './Cheatsheet.svelte';
 	import CommentPanel from './CommentPanel.svelte';
@@ -38,33 +39,16 @@
 	let thinking = $state(false);
 	let limit = $state<PlanLimitError | null>(null);
 	let picker: HTMLInputElement;
-	let editingTitle = $state(false);
-	let currentTitle = $state('');
-	let titleInput = $state<HTMLInputElement>();
-	const aiBoard = $derived('board' in session.target && canEdit(session.role) ? session.target.board : null);
+	const editBoard = $derived('board' in session.target && canEdit(session.role) ? session.target.board : null);
 	let fitted = false;
+	const shots = $derived(editBoard ? thumbnailer(editor, (png) => boardApi.thumbnail(editBoard, png)) : null);
 
-	$effect(() => { currentTitle = name; });
+	$effect(() => {
+		void editor.version;
+		if (session.synced) shots?.schedule();
+	});
 
-	async function saveTitle() {
-		if (!editingTitle) return;
-		editingTitle = false;
-		const trimmed = currentTitle.trim();
-		if (!trimmed || trimmed === name || !('board' in session.target)) return;
-		try {
-			await boardApi.rename(session.target.board, trimmed);
-			name = trimmed;
-		} catch {
-			currentTitle = name;
-			toast.danger('Renommage impossible');
-		}
-	}
-
-	function startEditTitle() {
-		if (!canEdit(session.role)) return;
-		editingTitle = true;
-		void tick().then(() => titleInput?.select());
-	}
+	$effect(() => () => shots?.flush());
 
 	const ui: CommandUi = {
 		help: () => (help = true),
@@ -83,12 +67,12 @@
 	$effect(() => { if (session.draft) comments = true; });
 
 	async function summarize() {
-		if (!aiBoard) return;
+		if (!editBoard) return;
 		comments = false;
 		summary = '';
 		thinking = true;
 		try {
-			summary = await summarizeBoard(aiBoard);
+			summary = await summarizeBoard(editBoard);
 		} catch (error) {
 			summary = null;
 			limit = aiPlanLimit(error);
@@ -125,33 +109,13 @@
 		<div class="flex items-start justify-between gap-2">
 			<div class={chrome} data-board-ui>
 				{#if back}
-					<IconButton variant="ghost" aria-label="Retour aux tableaux" onclick={() => back && goto(back)}>
-						<Icon icon={icons.chevronLeft} size={20} />
-					</IconButton>
+					<Tooltip text="Retour aux tableaux">
+						<IconButton variant="ghost" aria-label="Retour aux tableaux" onclick={() => back && goto(back)}>
+							<Icon icon={icons.chevronLeft} size={20} />
+						</IconButton>
+					</Tooltip>
 				{/if}
-				{#if editingTitle}
-					<input
-						bind:this={titleInput}
-						bind:value={currentTitle}
-						class="max-w-[40vw] rounded-fc-xs bg-fc-surface px-2 py-0.5 text-fc-sm font-semibold text-fc-fg focus:outline-2 focus:outline-fc-ring"
-						aria-label="Nom du tableau"
-						onblur={saveTitle}
-						onkeydown={(e) => {
-							if (e.key === 'Enter') void saveTitle();
-							else if (e.key === 'Escape') (currentTitle = name), (editingTitle = false);
-						}}
-					/>
-				{:else}
-					<button
-						type="button"
-						class="max-w-[40vw] truncate rounded-fc-xs px-2 py-0.5 text-left text-fc-sm font-semibold text-fc-fg hover:bg-fc-surface/60 focus-visible:outline-2 focus-visible:outline-fc-ring disabled:cursor-default disabled:hover:bg-transparent"
-						disabled={!canEdit(session.role)}
-						title={canEdit(session.role) ? 'Cliquer pour renommer' : name}
-						onclick={startEditTitle}
-					>
-						{name}
-					</button>
-				{/if}
+				<BoardTitle {name} board={editBoard} />
 				<span class="flex items-center gap-1.5 pr-3 text-fc-xs text-fc-fg-muted" aria-live="polite">
 					{#if session.connection === 'connecting'}<Spinner size="sm" />{/if}
 					{STATUS[session.connection]}
@@ -175,8 +139,10 @@
 							<Icon icon={toolIcons.comment} size={20} />
 						</IconButton>
 					</Tooltip>
-					{#if aiBoard}
-						<AiMenu board={aiBoard} {editor} bind:busy={thinking} bind:limit onsummarize={summarize} />
+					{#if editBoard}
+						<Tooltip text="Intelligence artificielle">
+							<AiMenu board={editBoard} {editor} bind:busy={thinking} bind:limit onsummarize={summarize} />
+						</Tooltip>
 					{/if}
 					<span class="hidden md:inline-flex">
 						<Tooltip text="Raccourcis (?)">

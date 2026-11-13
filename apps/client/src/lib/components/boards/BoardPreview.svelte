@@ -18,7 +18,6 @@
 		const next = sequence(seed);
 		const count = 3 + Math.floor(next() * 3);
 		return Array.from({ length: count }, (_, i) => ({
-			opacity: 0.7 + next() * 0.25,
 			left: 6 + (i * 68) / count + next() * 6,
 			top: 10 + next() * 42,
 			tilt: (next() - 0.5) * 10,
@@ -40,10 +39,9 @@
 		<div class="preview-dots absolute inset-0"></div>
 		{#each notes as note, i (i)}
 			<span
-				class="preview-note absolute aspect-square w-[22%] rounded-fc-xs bg-fc-component border border-fc-border/60 shadow-xs"
+				class="preview-note absolute aspect-square w-[22%] rounded-fc-xs bg-fc-component shadow-xs"
 				style:left="{note.left}%"
 				style:top="{note.top}%"
-				style:opacity={note.opacity}
 				style:--tilt="{note.tilt}deg"
 				style:--drift="{note.drift}px"
 				style:--i={i}

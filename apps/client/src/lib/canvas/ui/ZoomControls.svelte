@@ -29,20 +29,26 @@
 			</button>
 		</Tooltip>
 	{/if}
-	<button type="button" class={button} aria-label="Zoom arrière" onclick={() => zoomBy(editor, 0.8)}>
-		<Icon icon={icons.minus} size={20} />
-	</button>
-	<button
-		type="button"
-		class="h-11 min-w-14 rounded-fc-pill px-2 text-fc-sm font-medium text-fc-fg tabular-nums hover:bg-fc-surface focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-fc-ring cursor-pointer"
-		aria-label="Zoom {percent} %, revenir à 100 %"
-		onclick={() => zoomReset(editor)}
-	>
-		{percent} %
-	</button>
-	<button type="button" class={button} aria-label="Zoom avant" onclick={() => zoomBy(editor, 1.25)}>
-		<Icon icon={icons.plus} size={20} />
-	</button>
+	<Tooltip text="Zoom arrière (⌘ −)">
+		<button type="button" class={button} aria-label="Zoom arrière" onclick={() => zoomBy(editor, 0.8)}>
+			<Icon icon={icons.minus} size={20} />
+		</button>
+	</Tooltip>
+	<Tooltip text="Revenir à 100 % (⇧ 0)">
+		<button
+			type="button"
+			class="h-11 min-w-14 rounded-fc-pill px-2 text-fc-sm font-medium text-fc-fg tabular-nums hover:bg-fc-surface focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-fc-ring cursor-pointer"
+			aria-label="Zoom {percent} %, revenir à 100 %"
+			onclick={() => zoomReset(editor)}
+		>
+			{percent} %
+		</button>
+	</Tooltip>
+	<Tooltip text="Zoom avant (⌘ +)">
+		<button type="button" class={button} aria-label="Zoom avant" onclick={() => zoomBy(editor, 1.25)}>
+			<Icon icon={icons.plus} size={20} />
+		</button>
+	</Tooltip>
 	<Tooltip text="Tout afficher (⇧ 1)">
 		<button type="button" class={button} aria-label="Tout afficher" onclick={() => zoomFit(editor)}>
 			<Icon icon={toolIcons.fit} size={20} />

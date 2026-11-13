@@ -9,6 +9,7 @@
 
 	const W = 200;
 	const H = 140;
+	const CORNER = 2;
 	let canvas: HTMLCanvasElement;
 	let world: Box | null = null;
 	let timer = 0;
@@ -36,12 +37,19 @@
 		for (const shape of editor.scene.order) {
 			ctx.fillStyle = shape.style.fill ?? editor.palette.muted;
 			const b = editor.scene.index.box(shape.id);
-			if (b) ctx.fillRect(b.x, b.y, Math.max(b.w, 1 / scale), Math.max(b.h, 1 / scale));
+			if (!b) continue;
+			const w = Math.max(b.w, 1 / scale);
+			const h = Math.max(b.h, 1 / scale);
+			ctx.beginPath();
+			ctx.roundRect(b.x, b.y, w, h, Math.min(CORNER / scale, w / 2, h / 2));
+			ctx.fill();
 		}
 		const view = viewport(editor.camera, editor.size.width, editor.size.height);
 		ctx.strokeStyle = editor.palette.info;
 		ctx.lineWidth = 1.5 / scale;
-		ctx.strokeRect(view.x, view.y, view.w, view.h);
+		ctx.beginPath();
+		ctx.roundRect(view.x, view.y, view.w, view.h, (CORNER * 2) / scale);
+		ctx.stroke();
 	}
 
 	$effect(() => {

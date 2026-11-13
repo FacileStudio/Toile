@@ -141,3 +141,21 @@ test('a pasted youtube link becomes a card that plays in place and the server ke
 	expect(await alice.getByText('En ligne').count()).toBe(1);
 	expect(await alice.locator('[data-testid=board][data-editable=true]').count()).toBe(1);
 }, 60_000);
+
+test('a double click on a sticky opens its text for editing', async () => {
+	const page = await open('alice', `/b/${setup.board}`);
+	await page.locator('[data-testid=board][data-editable=true]').waitFor({ timeout: 20_000 });
+	await addSticky(page, 'Brouillon', { x: 300, y: 600 });
+	const field = page.getByRole('textbox', { name: 'Texte' });
+	await field.waitFor({ state: 'hidden' });
+	await page.mouse.dblclick(300, 600);
+	await field.waitFor({ timeout: 5_000 });
+	expect(await field.inputValue()).toBe('Brouillon');
+	const stored = page.waitForResponse((r) => r.url().endsWith('/thumbnail.png') && r.request().method() === 'PUT', {
+		timeout: 15_000
+	});
+	await field.fill('Relu');
+	await page.keyboard.press('Escape');
+	await find(page, 'Relu');
+	expect((await stored).status()).toBe(204);
+}, 60_000);

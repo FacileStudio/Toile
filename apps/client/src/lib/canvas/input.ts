@@ -4,9 +4,13 @@ import { HandTool } from './tools/hand';
 import { makeTool } from './tools/index';
 import type { PointerSample, Tool, ToolName } from './tools/tool';
 
+const CLICK_MS = 500;
+const CLICK_SLOP = 6;
+
 /**
  * Turns pointer, wheel and Space events on the board element into camera moves and tool gestures. Two touches pinch
  * and pan; the middle button, Space or a finger after a pen has been seen pan; everything else goes to the tool.
+ * Browsers leave `detail` at 0 on `pointerdown`, so the click count tools read comes from `countClick`.
  */
 export class Input {
 	private pointers = new Map<number, Point>();
@@ -21,6 +25,7 @@ export class Input {
 	private wheelDelta = { x: 0, y: 0 };
 	private wheelZoom: { factor: number; screen: Point } | null = null;
 	private wheelRaf = 0;
+	private clicks = { count: 0, at: 0, x: 0, y: 0 };
 
 	constructor(
 		private editor: Editor,
@@ -108,7 +113,7 @@ export class Input {
 			shift: event.shiftKey,
 			alt: event.altKey,
 			meta: event.metaKey || event.ctrlKey,
-			detail: event.detail,
+			detail: event.type === 'pointerdown' ? this.clicks.count : event.detail,
 			coalesced
 		};
 	}
@@ -123,6 +128,7 @@ export class Input {
 		}
 		if (target?.closest?.('[data-board-ui]')) return;
 		if (event.pointerType === 'pen') this.penSeen = true;
+		this.countClick(event);
 		this.pointers.set(event.pointerId, this.screen(event));
 		if (this.pointers.size === 2 && event.pointerType === 'touch') return this.startPinch();
 		if (this.gesture || this.pointers.size > 1) return;
@@ -134,6 +140,17 @@ export class Input {
 		this.gesture = panning ? new HandTool(this.editor) : this.tool;
 		this.gestureId = event.pointerId;
 		this.gesture.down(this.sample(event));
+	}
+
+	private countClick(event: PointerEvent): void {
+		const near = Math.hypot(event.clientX - this.clicks.x, event.clientY - this.clicks.y) <= CLICK_SLOP;
+		const soon = event.timeStamp - this.clicks.at <= CLICK_MS;
+		this.clicks = {
+			count: near && soon ? this.clicks.count + 1 : 1,
+			at: event.timeStamp,
+			x: event.clientX,
+			y: event.clientY
+		};
 	}
 
 	private startPinch(): void {

@@ -48,6 +48,12 @@ export const boardApi = {
 	get: (id: string) => api<BoardInfo>(`/boards/${encodeURIComponent(id)}`),
 	rename: (id: string, name: string) => api<BoardInfo>(`/boards/${encodeURIComponent(id)}`, json('PATCH', { name })),
 	remove: (id: string) => api<void>(`/boards/${encodeURIComponent(id)}`, { method: 'DELETE' }),
+	thumbnail: (id: string, png: Blob) =>
+		api<void>(`/boards/${encodeURIComponent(id)}/thumbnail.png`, {
+			method: 'PUT',
+			body: png,
+			headers: { 'Content-Type': 'image/png' }
+		}),
 	duplicate: (id: string) => api<BoardInfo>(`/boards/${encodeURIComponent(id)}/duplicate`, { method: 'POST' }),
 	shares: (id: string) =>
 		api<Share[] | { shares: Share[] }>(`/boards/${encodeURIComponent(id)}/shares`).then((r) => asList(r, 'shares')),

@@ -10,6 +10,7 @@
 	let { editor, ui }: { editor: Editor; ui: CommandUi } = $props();
 
 	const WIDTHS = [2, 4, 8];
+	const WIDTH_LABELS: Record<number, string> = { 2: 'Fin', 4: 'Moyen', 8: 'Épais' };
 
 	const shapes = $derived.by(() => {
 		void editor.version;
@@ -69,44 +70,50 @@
 			{/if}
 		{:else}
 			<div class="flex items-center" role="radiogroup" aria-label="Couleur">
-				<button
-					type="button"
-					role="radio"
-					aria-checked={!current}
-					aria-label="Couleur par défaut"
-					class="{button} {!current ? 'bg-fc-surface' : ''}"
-					onclick={() => paint(editor, undefined)}
-				>
-					<span class="size-5 rounded-fc-pill bg-fc-fg"></span>
-				</button>
-				{#each FILLS as color, i (color)}
+				<Tooltip text="Couleur par défaut">
 					<button
 						type="button"
 						role="radio"
-						aria-checked={current === color}
-						aria-label={USER_COLOR_LABELS[color as UserColor]}
-						class="toile-pop {button} {current === color ? 'bg-fc-surface' : ''}"
-						style:--i={i + 1}
-						onclick={() => paint(editor, color)}
+						aria-checked={!current}
+						aria-label="Couleur par défaut"
+						class="{button} {!current ? 'bg-fc-surface' : ''}"
+						onclick={() => paint(editor, undefined)}
 					>
-						<span class="size-5 rounded-fc-pill" style:background-color={color}></span>
+						<span class="size-5 rounded-fc-pill bg-fc-fg"></span>
 					</button>
+				</Tooltip>
+				{#each FILLS as color, i (color)}
+					<Tooltip text={USER_COLOR_LABELS[color as UserColor]}>
+						<button
+							type="button"
+							role="radio"
+							aria-checked={current === color}
+							aria-label={USER_COLOR_LABELS[color as UserColor]}
+							class="toile-pop {button} {current === color ? 'bg-fc-surface' : ''}"
+							style:--i={i + 1}
+							onclick={() => paint(editor, color)}
+						>
+							<span class="size-5 rounded-fc-pill" style:background-color={color}></span>
+						</button>
+					</Tooltip>
 				{/each}
 			</div>
 		{/if}
 		{#if inky}
 			<div class="flex items-center" role="radiogroup" aria-label="Épaisseur">
 				{#each WIDTHS as size (size)}
-					<button
-						type="button"
-						role="radio"
-						aria-checked={width === size}
-						aria-label="Épaisseur {size}"
-						class="{button} {width === size ? 'bg-fc-surface' : ''}"
-						onclick={() => paint(editor, null, size)}
-					>
-						<span class="rounded-fc-pill bg-fc-fg" style:width="{size + 2}px" style:height="{size + 2}px"></span>
-					</button>
+					<Tooltip text={WIDTH_LABELS[size]}>
+						<button
+							type="button"
+							role="radio"
+							aria-checked={width === size}
+							aria-label="Épaisseur {WIDTH_LABELS[size].toLowerCase()}"
+							class="{button} {width === size ? 'bg-fc-surface' : ''}"
+							onclick={() => paint(editor, null, size)}
+						>
+							<span class="rounded-fc-pill bg-fc-fg" style:width="{size + 2}px" style:height="{size + 2}px"></span>
+						</button>
+					</Tooltip>
 				{/each}
 			</div>
 		{/if}
@@ -136,7 +143,7 @@
 					<Icon icon={icons.copy} size={20} />
 				</button>
 			</Tooltip>
-			<Tooltip text="Supprimer">
+			<Tooltip text="Supprimer (Suppr)">
 				<button type="button" class={button} aria-label="Supprimer" onclick={() => run({ run: 'delete' })}>
 					<Icon icon={icons.remove} size={20} />
 				</button>

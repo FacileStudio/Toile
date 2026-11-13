@@ -103,3 +103,32 @@ async fn a_stored_thumbnail_is_served_to_viewers_with_a_versioned_url() {
     let board = app.call("GET", &format!("/api/boards/{id}"), Some(&roles.member), None).await.json();
     assert!(board["thumbnail_url"].as_str().unwrap().starts_with(&format!("/api/boards/{id}/thumbnail.png?v=")));
 }
+
+#[tokio::test]
+async fn editors_store_a_png_thumbnail_that_viewers_read_back() {
+    let Some(pool) = common::pool("toile_boards_thumb").await else { return };
+    let app = common::app(pool).await;
+    let roles = fixture::roles(&app).await;
+    let id = fixture::id(&fixture::board(&app, &roles.member, Some(&roles.space), "Thumb").await);
+    let path = format!("/api/boards/{id}/thumbnail.png");
+    let put = |token: &str, body: Vec<u8>| {
+        http::Request::builder()
+            .method("PUT")
+            .uri(&path)
+            .header(http::header::HOST, "toile.test")
+            .header(http::header::AUTHORIZATION, format!("Bearer {token}"))
+            .header(http::header::CONTENT_TYPE, "image/png")
+            .body(axum::body::Body::from(body))
+            .unwrap()
+    };
+    assert_eq!(app.call("GET", &path, Some(&roles.member), None).await.status, 404);
+    assert_eq!(common::http::raw(&app.router, put(&roles.member.token, b"<svg/>".to_vec())).await.status, 400);
+    assert_eq!(common::http::raw(&app.router, put(&roles.member.token, vec![0x89; 600 << 10])).await.status, 413);
+    let png = [b"\x89PNG\r\n\x1a\n".as_slice(), b"pixels"].concat();
+    assert_eq!(common::http::raw(&app.router, put(&roles.outsider.token, png.clone())).await.status, 404);
+    assert_eq!(common::http::raw(&app.router, put(&roles.member.token, png.clone())).await.status, 204);
+    let read = app.call("GET", &path, Some(&roles.member), None).await;
+    assert_eq!((read.status.as_u16(), read.bytes), (200, png));
+    let board = app.call("GET", &format!("/api/boards/{id}"), Some(&roles.member), None).await.json();
+    assert!(board["thumbnail_url"].as_str().is_some_and(|url| url.contains("thumbnail.png?v=")));
+}

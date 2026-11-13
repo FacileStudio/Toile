@@ -30,6 +30,7 @@ const ROUTES: &[Row] = &[
     ("POST", "/boards/{id}/duplicate", "boards", "Copies a board into a new board of its scope", "201"),
     ("POST", "/boards/{id}/restore", "boards", "Takes a board out of the trash", "200"),
     ("GET", "/boards/{id}/thumbnail.png", "boards", "The board's last thumbnail", "200"),
+    ("PUT", "/boards/{id}/thumbnail.png", "boards", "Store the board's thumbnail (PNG, editors)", "204"),
     ("GET", "/boards/{id}/ws", "rooms", "The board's y-websocket socket (101)", "101"),
     ("GET", "/board-schema", "rooms", "The board schema version, shape types and limits", "200"),
     ("GET", "/boards/{id}/shares", "share", "The board's live share links", "200"),
@@ -74,6 +75,7 @@ const ROUTES: &[Row] = &[
 fn method(name: &str) -> HttpMethod {
     match name {
         "POST" => HttpMethod::Post,
+        "PUT" => HttpMethod::Put,
         "PATCH" => HttpMethod::Patch,
         "DELETE" => HttpMethod::Delete,
         _ => HttpMethod::Get,

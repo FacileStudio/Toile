@@ -122,6 +122,7 @@ refetch the comments.
 | `POST` | `/boards/{id}/duplicate` | Optional `{"name"}` (default `<name> (copie)`): copies the live content into a new board of the same scope, 201; needs `editor` in the scope |
 | `POST` | `/boards/{id}/restore` | Takes a trashed board back, needs `owner`; trashed boards are purged after 30 days |
 | `GET` | `/boards/{id}/thumbnail.png` | The stored thumbnail (`image/png`), 404 until one exists |
+| `PUT` | `/boards/{id}/thumbnail.png` | Editors store the thumbnail: a raw PNG body up to 512 KiB, `204`; anything else `400`/`413` |
 | `GET` | `/boards/{id}/ws` | The y-websocket socket (see above) |
 | `GET` | `/board-schema` | `{"schema": 1, "types", "limits"}`, no auth |
 | `GET` | `/boards/{id}/shares` | Live links, needs `owner` |
