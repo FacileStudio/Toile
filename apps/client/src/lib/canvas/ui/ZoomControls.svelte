@@ -18,23 +18,23 @@
 	data-board-ui
 >
 	{#if editor.editable}
-		<Tooltip text="Annuler (⌘ Z)">
+		<Tooltip text="Annuler (⌘ Z)" class="contents">
 			<button type="button" class={button} aria-label="Annuler" onclick={() => editor.undo.undo()}>
 				<Icon icon={toolIcons.undo} size={20} />
 			</button>
 		</Tooltip>
-		<Tooltip text="Rétablir (⌘ ⇧ Z)">
+		<Tooltip text="Rétablir (⌘ ⇧ Z)" class="contents">
 			<button type="button" class={button} aria-label="Rétablir" onclick={() => editor.undo.redo()}>
 				<Icon icon={toolIcons.redo} size={20} />
 			</button>
 		</Tooltip>
 	{/if}
-	<Tooltip text="Zoom arrière (⌘ −)">
+	<Tooltip text="Zoom arrière (⌘ −)" class="contents">
 		<button type="button" class={button} aria-label="Zoom arrière" onclick={() => zoomBy(editor, 0.8)}>
 			<Icon icon={icons.minus} size={20} />
 		</button>
 	</Tooltip>
-	<Tooltip text="Revenir à 100 % (⇧ 0)">
+	<Tooltip text="Revenir à 100 % (⇧ 0)" class="contents">
 		<button
 			type="button"
 			class="h-11 min-w-14 whitespace-nowrap rounded-fc-pill px-2 text-fc-sm font-medium text-fc-fg tabular-nums hover:bg-fc-surface focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-fc-ring cursor-pointer"
@@ -44,12 +44,12 @@
 			{percent} %
 		</button>
 	</Tooltip>
-	<Tooltip text="Zoom avant (⌘ +)">
+	<Tooltip text="Zoom avant (⌘ +)" class="contents">
 		<button type="button" class={button} aria-label="Zoom avant" onclick={() => zoomBy(editor, 1.25)}>
 			<Icon icon={icons.plus} size={20} />
 		</button>
 	</Tooltip>
-	<Tooltip text="Tout afficher (⇧ 1)">
+	<Tooltip text="Tout afficher (⇧ 1)" class="contents">
 		<button type="button" class={button} aria-label="Tout afficher" onclick={() => zoomFit(editor)}>
 			<Icon icon={toolIcons.fit} size={20} />
 		</button>

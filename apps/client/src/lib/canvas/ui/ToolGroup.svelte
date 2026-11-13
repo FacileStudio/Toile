@@ -80,7 +80,7 @@
 	const hint = $derived(grouped ? `${current.label} (${current.key}), ${label.toLowerCase()} : cliquer à nouveau pour choisir` : `${current.label} (${current.key})`);
 </script>
 
-<Tooltip text={hint} disabled={open}>
+<Tooltip text={hint} disabled={open} class="contents">
 	<button
 		bind:this={button}
 		type="button"

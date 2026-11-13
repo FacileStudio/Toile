@@ -42,7 +42,7 @@
 	>
 		{#if isCard}
 			{#if shapes[0].url}
-				<Tooltip text="Ouvrir le lien">
+				<Tooltip text="Ouvrir le lien" describe={false} class="contents">
 					<button
 						type="button"
 						class={button}
@@ -52,7 +52,7 @@
 						<Icon icon={icons.external} size={20} />
 					</button>
 				</Tooltip>
-				<Tooltip text="Copier le lien">
+				<Tooltip text="Copier le lien" describe={false} class="contents">
 					<button
 						type="button"
 						class={button}
@@ -70,7 +70,7 @@
 			{/if}
 		{:else}
 			<div class="flex items-center" role="radiogroup" aria-label="Couleur">
-				<Tooltip text="Couleur par défaut">
+				<Tooltip text="Couleur par défaut" describe={false} class="contents">
 					<button
 						type="button"
 						role="radio"
@@ -83,7 +83,7 @@
 					</button>
 				</Tooltip>
 				{#each FILLS as color, i (color)}
-					<Tooltip text={USER_COLOR_LABELS[color as UserColor]}>
+					<Tooltip text={USER_COLOR_LABELS[color as UserColor]} describe={false} class="contents">
 						<button
 							type="button"
 							role="radio"
@@ -102,7 +102,7 @@
 		{#if inky}
 			<div class="flex items-center" role="radiogroup" aria-label="Épaisseur">
 				{#each WIDTHS as size (size)}
-					<Tooltip text={WIDTH_LABELS[size]}>
+					<Tooltip text={WIDTH_LABELS[size]} class="contents">
 						<button
 							type="button"
 							role="radio"
@@ -118,17 +118,17 @@
 			</div>
 		{/if}
 		{#if shapes.length}
-			<Tooltip text="Premier plan (⌘ ])">
+			<Tooltip text="Premier plan (⌘ ])" class="contents">
 				<button type="button" class={button} aria-label="Premier plan" onclick={() => run({ run: 'front' })}>
 					<Icon icon={toolIcons.front} size={20} />
 				</button>
 			</Tooltip>
-			<Tooltip text="Arrière-plan (⌘ [)">
+			<Tooltip text="Arrière-plan (⌘ [)" class="contents">
 				<button type="button" class={button} aria-label="Arrière-plan" onclick={() => run({ run: 'back' })}>
 					<Icon icon={toolIcons.back} size={20} />
 				</button>
 			</Tooltip>
-			<Tooltip text={locked ? 'Déverrouiller' : 'Verrouiller'}>
+			<Tooltip text={locked ? 'Déverrouiller' : 'Verrouiller'} describe={false} class="contents">
 				<button
 					type="button"
 					class={button}
@@ -138,12 +138,12 @@
 					<Icon icon={locked ? toolIcons.unlock : toolIcons.lock} size={20} />
 				</button>
 			</Tooltip>
-			<Tooltip text="Dupliquer (⌘ D)">
+			<Tooltip text="Dupliquer (⌘ D)" class="contents">
 				<button type="button" class={button} aria-label="Dupliquer" onclick={() => run({ run: 'duplicate' })}>
 					<Icon icon={icons.copy} size={20} />
 				</button>
 			</Tooltip>
-			<Tooltip text="Supprimer (Suppr)">
+			<Tooltip text="Supprimer (Suppr)" class="contents">
 				<button type="button" class={button} aria-label="Supprimer" onclick={() => run({ run: 'delete' })}>
 					<Icon icon={icons.remove} size={20} />
 				</button>
