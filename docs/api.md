@@ -213,15 +213,25 @@ account. Metadata: `/.well-known/oauth-protected-resource/mcp`.
 
 | Tool | Scope | What it does |
 |---|---|---|
-| `toile_list_boards` | read | `{space_id?}`: the boards of one scope, or personal plus every space; and the caller's spaces |
+| `toile_list_boards` | read | `{space_id?, limit?, cursor?}`: the boards of one scope, or personal plus every space, 50 a page (200 at most) with `next_cursor`; and the caller's spaces |
 | `toile_read_board` | read | `{board_id}`: every shape as one line (`type id at x,y wxh color: "text"`), frames followed by their children, then `outside frames:`; arrows name the shapes they join. Plus the board, SVG export and thumbnail URLs |
 | `toile_add_shapes` | write | `{board_id, shapes}`: sticky, text, rect, ellipse, diamond, frame, arrow, line. Each takes an optional `ref`, `text`, `x`, `y`, `w`, `h`, `color`, `frame`, and for arrows `from`/`to` (an id or a `ref`). Shapes without `x`/`y` go inside their frame, or in rows to the right of the content; a new frame sizes to its new children. At most 500 per call |
 | `toile_update_shapes` | write | `{board_id, shapes: [{id, text?, x?, y?, w?, h?, color?, frame?}]}`, all or none; moving a frame moves its contents; `frame: ""` takes a shape out of its frame |
 | `toile_delete_shapes` | write | `{board_id, ids}`; a frame takes its contents. Confirmed by the person first: an elicitation when the client can ask, otherwise `pending_confirmation` with a `confirm_url` to `/pending?action=<id>` |
+| `toile_create_board` | write | `{name (alias title), space_id?}`: an empty board, personal or in a space the caller edits in |
+| `toile_update_board` | write | `{board_id, name?, move_to?}`: renames (editor) and moves to a space id or `personal` (owner, and editor in the destination). A move closes the room so clients reconnect under their new access; a board moved to personal becomes the caller's |
+| `toile_trash_board` | write | `{board_id}`: to the trash (owner), closing the room; trashing a trashed board answers it again |
+| `toile_restore_board` | write | `{board_id}`: out of the trash (owner); a live board answers as it is |
+| `toile_list_comments` | read | `{board_id, status?: open\|resolved\|all, limit?, cursor?}`: threads (open by default) with their replies and anchors, 50 a page |
 | `toile_comment` | write | `{board_id, body, shape_id? \| x?, y? \| reply_to?}`, signed by the caller |
+| `toile_resolve_comment` | write | `{board_id, comment_id, resolved?}`: resolves a thread, or reopens it with `resolved: false`; open clients refetch live |
 
-Every write runs in the board's room (`Hub::write`): open clients see it live and schema 1 checks
-it like any client update. Access is the caller's own: viewers read, commenters comment, editors
+Annotations: reads are read-only and idempotent; `toile_update_shapes`, `toile_update_board` and
+`toile_trash_board` are destructive and idempotent; `toile_delete_shapes` is destructive;
+`toile_restore_board` and `toile_resolve_comment` are idempotent. Every tool is closed-world.
+
+Every shape write runs in the board's room (`Hub::write`): open clients see it live and schema 1
+checks it like any client update. Comment writes broadcast `comments_changed` to the room. Access is the caller's own: viewers read, commenters comment, editors
 and owners change shapes.
 
 Back to the [documentation index](README.md).
