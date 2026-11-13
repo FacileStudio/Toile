@@ -34,6 +34,7 @@ export class Editor {
 	tool = $state<ToolName>('select');
 	selection = $state.raw<string[]>([]);
 	editing = $state<string | null>(null);
+	playing = $state<string | null>(null);
 	camera = $state.raw<Camera>({ x: 0, y: 0, z: 1 });
 	version = $state(0);
 	editable = $state(false);
@@ -235,5 +236,6 @@ export class Editor {
 		const kept = this.selection.filter((id) => this.scene.shapes.has(id));
 		if (kept.length !== this.selection.length) this.select(kept);
 		if (this.editing && !this.scene.shapes.has(this.editing)) this.editing = null;
+		if (this.playing && !this.scene.shapes.has(this.playing)) this.playing = null;
 	}
 }

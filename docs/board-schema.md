@@ -16,7 +16,8 @@ Written first as `docs/board-schema.md`, mirrored by `apps/client/src/lib/board/
 - Types: `sticky`, `text`, `rect`, `ellipse`, `diamond` (text in `text`: Y.Text), `line`,
   `arrow` (`points`, `from`/`to`: `{ shape, anchor: [0..1, 0..1] }` bindings, `head`), `ink`
   (`points`: flat number array `[x, y, pressure, ...]`, relative to `x`,`y`), `image` (`asset`:
-  Toile asset id), `card` (`url`, cached `title`, `kind`), `frame` (`name`).
+  Toile asset id), `card` (`url`, cached `title`, `kind`, and the cached preview `image`,
+  `description`, `favicon`, `site`), `frame` (`name`).
 - Limits checked by the server: 20,000 shapes, 10,000 ink points per stroke, 10,000 chars per
   text, 1 MiB per update, numbers finite and within ±1e7, unknown types or keys refused.
 - Presence (awareness, never stored): `user {name, color, picture?, guest}`, `cursor`,

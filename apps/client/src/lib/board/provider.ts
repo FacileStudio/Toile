@@ -19,6 +19,26 @@ export function stopOf(code: number): Stop | null {
 	return STOPS[code] ?? null;
 }
 
+const STOP_TEXT: Record<Stop, string> = {
+	refused: 'Le serveur a refusé une modification.',
+	'too-large': 'La dernière modification est trop volumineuse.',
+	failed: 'Le tableau a rencontré une erreur. Rechargez la page.'
+};
+
+const REASONS: Record<string, string> = {
+	'access revoked': 'Votre accès à ce tableau a été retiré.',
+	'board deleted': 'Ce tableau a été supprimé.'
+};
+
+/** What the stop banner says for a terminal close: the known reasons in words, any other with the server's detail. */
+export function stopMessage(stop: Stop, reason: string): string {
+	const known = REASONS[reason.trim()];
+	if (known) return known;
+	const detail = reason.trim();
+	if (stop !== 'refused' || !detail) return STOP_TEXT[stop];
+	return `${STOP_TEXT.refused} Rechargez la page. Détail : ${detail}`;
+}
+
 /** Where a board's room lives: a member's board id, or a guest's share token and display name. */
 export type RoomTarget = { board: string } | { token: string; name: string };
 

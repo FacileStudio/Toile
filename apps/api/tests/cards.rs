@@ -91,3 +91,30 @@ fn og_metadata_serialization_skips_none_fields() {
     assert_eq!(full_json["favicon"], "https://example.com/fav.ico");
     assert_eq!(full_json["site"], "Example Site");
 }
+
+const PASTED: &str = r#"{"type":"card","x":-1652.25,"y":-877.009765625,"w":320,"h":200,"rot":0,"z":"Y","style":{},
+"kind":"youtube","url":"https://youtu.be/PAy5EBTnV6Q?list=RDERCkf0j8pPM","title":"youtu.be",
+"image":"https://img.youtube.com/vi/PAy5EBTnV6Q/hqdefault.jpg",
+"favicon":"https://www.google.com/s2/favicons?domain=youtu.be&sz=64","site":"YouTube","description":"A video"}"#;
+
+#[tokio::test]
+async fn a_pasted_youtube_card_with_its_preview_is_kept_by_the_room() {
+    let Some(pool) = common::pool("toile_cards_pasted").await else { return };
+    let app = common::app(pool).await;
+    let roles = common::fixture::roles(&app).await;
+    let id = common::fixture::id(&common::fixture::board(&app, &roles.member, None, "Cards").await);
+    let url = common::board::ws(&app.serve().await, &id);
+    let mut peer = common::ysync::Peer::new();
+    peer.connect(&url, Some(&roles.member.token)).await;
+    let yrs::Any::Map(fields) = yrs::Any::from_json(PASTED).unwrap() else { panic!("not an object") };
+    peer.edit(|txn, shapes| {
+        let prelim: yrs::MapPrelim = fields.iter().map(|(k, v)| (k.as_str(), v.clone())).collect();
+        yrs::Map::insert(shapes, txn, "ceS6wM59r4pIHwfY", prelim);
+    })
+    .await;
+    peer.pump(std::time::Duration::from_millis(400)).await;
+    assert_eq!(peer.closed, None);
+    let mut fresh = common::ysync::Peer::new();
+    fresh.connect(&url, Some(&roles.member.token)).await;
+    assert_eq!(fresh.shapes(), ["ceS6wM59r4pIHwfY"]);
+}

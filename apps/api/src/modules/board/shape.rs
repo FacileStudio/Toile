@@ -23,7 +23,15 @@ const LINE: &[(&str, Rule)] =
     &[("points", Rule::Points(2, MAX_INK_POINTS)), ("from", Rule::Binding), ("to", Rule::Binding), ("head", Rule::Str)];
 const INK: &[(&str, Rule)] = &[("points", Rule::Points(3, MAX_INK_POINTS))];
 const IMAGE: &[(&str, Rule)] = &[("asset", Rule::Str)];
-const CARD: &[(&str, Rule)] = &[("url", Rule::Str), ("title", Rule::Str), ("kind", Rule::Str)];
+const CARD: &[(&str, Rule)] = &[
+    ("url", Rule::Str),
+    ("title", Rule::Str),
+    ("kind", Rule::Str),
+    ("image", Rule::Str),
+    ("description", Rule::Str),
+    ("favicon", Rule::Str),
+    ("site", Rule::Str),
+];
 const FRAME: &[(&str, Rule)] = &[("name", Rule::Str)];
 
 /// Every shape type of schema 1.
@@ -67,4 +75,30 @@ pub fn check<T: ReadTxn>(txn: &T, id: &str, value: &Out) -> Result<(), String> {
         let rule = rule(allowed, key).ok_or_else(|| fail(format!("has an unknown key {key}")))?;
         values::check(txn, rule, &value).map_err(|e| fail(format!("{key} {e}")))
     })
+}
+
+#[cfg(test)]
+mod tests {
+    use yrs::{Any, Map, MapPrelim, Transact};
+
+    use super::super::{SHAPES, new_doc, schema};
+
+    #[test]
+    fn a_card_holds_its_cached_preview() {
+        let doc = new_doc();
+        let fields: [(&str, Any); 10] = [
+            ("type", "card".into()),
+            ("x", 0.0.into()),
+            ("y", 0.0.into()),
+            ("kind", "youtube".into()),
+            ("url", "https://youtu.be/PAy5EBTnV6Q?list=RDERCkf0j8pPM".into()),
+            ("title", "youtu.be".into()),
+            ("image", "https://img.youtube.com/vi/PAy5EBTnV6Q/hqdefault.jpg".into()),
+            ("description", "A video".into()),
+            ("favicon", "https://www.google.com/s2/favicons?domain=youtu.be&sz=64".into()),
+            ("site", "YouTube".into()),
+        ];
+        doc.get_or_insert_map(SHAPES).insert(&mut doc.transact_mut(), "c", MapPrelim::from(fields));
+        assert_eq!(schema::check_all(&doc), Ok(()));
+    }
 }

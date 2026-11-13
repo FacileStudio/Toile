@@ -8,7 +8,8 @@ import { runCommand } from './commands';
 import { pasteInto } from './paste';
 import { duplicate, serialize } from './clipboard';
 import { createShape, deleteSelection } from './actions';
-import { openShape } from './tools/select';
+import { openCard, openShape } from './tools/select';
+import { youtubeId } from './youtube';
 import { restack } from './order';
 import { zoomFit, zoomReset, zoomSelection } from './view';
 import { toolIcons } from './icons';
@@ -35,6 +36,8 @@ export function elementMenuItems(editor: Editor, ui: CommandUi, shape: Shape): C
 	const items: ContextMenuItem[] = [];
 
 	if (single?.type === 'card' && single.url) {
+		if (single.kind === 'youtube' && youtubeId(single.url))
+			items.push({ label: 'Lire la vidéo', icon: toolIcons.play, onselect: () => openCard(editor, single) });
 		items.push(
 			{
 				label: 'Ouvrir le lien',

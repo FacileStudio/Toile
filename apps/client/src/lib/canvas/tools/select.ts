@@ -4,14 +4,22 @@ import type { Editor } from '../editor.svelte';
 import { boxOf } from '../geometry';
 import { marqueeHits, topHit } from '../hit';
 import { MoveGesture } from './move';
+import { youtubeId } from '../youtube';
 import type { PointerSample, Tool } from './tool';
 
-/** Opens a shape for editing: text types edit their text, frames their name, cards open their link. */
-export function openShape(editor: Editor, shape: Shape): void {
-	if (shape.type === 'card' && shape.url) {
-		window.open(shape.url, '_blank', 'noopener');
+/** Plays a YouTube card in place; any other card opens its link in a new tab. */
+export function openCard(editor: Editor, shape: Shape): void {
+	if (!shape.url) return;
+	if (shape.kind === 'youtube' && youtubeId(shape.url)) {
+		editor.playing = shape.id;
 		return;
 	}
+	window.open(shape.url, '_blank', 'noopener');
+}
+
+/** Opens a shape for editing: text types edit their text, frames their name, cards play or open their link. */
+export function openShape(editor: Editor, shape: Shape): void {
+	if (shape.type === 'card' && shape.url) return openCard(editor, shape);
 	if (!editor.editable || shape.locked) return;
 	if (TEXT_TYPES.has(shape.type) || shape.type === 'frame') {
 		editor.select([shape.id]);
@@ -52,7 +60,9 @@ export class SelectTool implements Tool {
 				sample.world.y <= hit.y + hit.h;
 			if (isYoutubePlay || isLinkArrow) {
 				editor.select([hit.id]);
-				return openShape(editor, hit);
+				if (isYoutubePlay) return openCard(editor, hit);
+				window.open(hit.url, '_blank', 'noopener');
+				return;
 			}
 		}
 		if (!hit) {

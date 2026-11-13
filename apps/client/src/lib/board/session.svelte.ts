@@ -6,14 +6,7 @@ import { canComment, canEdit, commentApi, type Anchor, type BoardRole, type Comm
 import { assetUrl, uploadError, uploadImage as store } from '$lib/api/assets';
 import { imageLoader, setAssets, uploadImage } from './assets';
 import { Presence, type Peer, type PresenceUser } from './presence';
-import { openRoom, type Connection, type Room, type RoomTarget, type Stop } from './provider';
-
-/** What the stop banner says for each terminal close. */
-export const STOP_TEXT: Record<Stop, string> = {
-	refused: "Le serveur a refusé une modification ou l'accès a été retiré.",
-	'too-large': 'La dernière modification est trop volumineuse.',
-	failed: 'Le tableau a rencontré une erreur. Rechargez la page.'
-};
+import { openRoom, stopMessage, type Connection, type Room, type RoomTarget, type Stop } from './provider';
 
 /**
  * One board opened in this tab: its Y.Doc and room, the editor on it, presence, follow mode and comments.
@@ -22,6 +15,7 @@ export const STOP_TEXT: Record<Stop, string> = {
 export class BoardSession {
 	connection = $state<Connection>('connecting');
 	stop = $state<Stop | null>(null);
+	stopText = $state('');
 	synced = $state(false);
 	peers = $state.raw<Peer[]>([]);
 	comments = $state.raw<Comment[]>([]);
@@ -59,7 +53,7 @@ export class BoardSession {
 		this.editor.commentable = canComment(role);
 		this.room = openRoom(target, ydoc, {
 			onconnection: (state) => (this.connection = state),
-			onstop: (stop) => this.halt(stop),
+			onstop: (stop, reason) => this.halt(stop, reason),
 			onsynced: () => this.onsynced(),
 			oncomments: () => void this.loadComments()
 		});
@@ -128,10 +122,12 @@ export class BoardSession {
 		if (this.editor.editable) this.editor.doc.ensureMeta();
 	}
 
-	private halt(stop: Stop): void {
+	private halt(stop: Stop, reason: string): void {
 		this.stop = stop;
+		this.stopText = stopMessage(stop, reason);
 		this.editor.editable = false;
-		toast.danger(STOP_TEXT[stop]);
+		this.editor.playing = null;
+		toast.danger(this.stopText);
 	}
 
 	private onpresence(): void {
