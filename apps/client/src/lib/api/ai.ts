@@ -42,17 +42,32 @@ export async function clusterShapes(
   return answer.frames;
 }
 
-/** Draws a `kind` from `prompt` right of the board's content; resolves the new shapes. */
+/** Draws a `kind` from `prompt` right of the board's content, with `accent` (`#rrggbb`) for its highlights; resolves the new shapes. */
 export async function generateShapes(
   board: string,
   prompt: string,
   kind: DrawKind,
+  accent?: string,
 ): Promise<Placed[]> {
   const answer = await api<{ created: Placed[] }>(path(board, "generate"), {
     method: "POST",
-    body: JSON.stringify({ prompt, kind }),
+    body: JSON.stringify({ prompt, kind, accent }),
   });
   return answer.created;
+}
+
+const names = new Map<string, Promise<string>>();
+
+/** The caller's Bulle assistant name, asked once per board; "Bulle" when it cannot be read. */
+export function assistantName(board: string): Promise<string> {
+  let name = names.get(board);
+  if (!name) {
+    name = api<{ name: string }>(path(board, "assistant"))
+      .then((answer) => answer.name || "Bulle")
+      .catch(() => "Bulle");
+    names.set(board, name);
+  }
+  return name;
 }
 
 /** The plan refusal of a failed AI call, for muse `PlanLimit`, or `null` for any other failure. */

@@ -34,6 +34,7 @@
 		"@capacitor/browser": "8.0.5",
 		"@capacitor/core": "8.6.0",
 		"@capacitor/ios": "8.6.0",
+		"@facile/blob": "github:FacileStudio/blob#v0.2.2",
 		"@facile/client": "github:FacileStudio/facile-client#v0.2.0",
 		"@facile/mise-en-scene": "github:FacileStudio/mise-en-scene#v0.1.1",
 		"@facile/muse": "github:FacileStudio/muse#v0.18.1",

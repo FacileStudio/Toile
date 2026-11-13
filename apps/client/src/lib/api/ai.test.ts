@@ -3,7 +3,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 vi.mock("$app/environment", () => ({ browser: true }));
 vi.mock("$app/navigation", () => ({ goto: async () => undefined }));
 
-const { aiPlanLimit, clusterShapes, generateShapes, summarizeBoard } =
+const { aiPlanLimit, assistantName, clusterShapes, generateShapes, summarizeBoard } =
   await import("./ai");
 
 afterEach(() => vi.unstubAllGlobals());
@@ -31,7 +31,7 @@ describe("ai api", () => {
     vi.stubGlobal("fetch", fetch);
     expect(await summarizeBoard("b/1")).toBe("# Hi");
     await clusterShapes("b1", ["s1", "s2"]);
-    await generateShapes("b1", "Plan", "mindmap");
+    await generateShapes("b1", "Plan", "mindmap", "#a1b2c3");
     const calls = fetch.mock.calls as unknown as [string, RequestInit][];
     expect(calls.map(([url]) => url)).toEqual([
       "/api/boards/b%2F1/ai/summarize",
@@ -42,6 +42,7 @@ describe("ai api", () => {
     expect(JSON.parse(String(calls[2][1].body))).toEqual({
       prompt: "Plan",
       kind: "mindmap",
+      accent: "#a1b2c3",
     });
   });
 
@@ -65,5 +66,18 @@ describe("ai api", () => {
       ),
     );
     expect(await summarizeBoard("b1").catch(aiPlanLimit)).toBeNull();
+  });
+
+  it("asks the assistant name once per board and falls back to Bulle", async () => {
+    const fetch = vi.fn(async (url: string) =>
+      url.includes("b2")
+        ? Response.json({ error: { code: "unavailable", message: "x" } }, { status: 503 })
+        : Response.json({ name: "Pixel" }),
+    );
+    vi.stubGlobal("fetch", fetch);
+    expect(await assistantName("b1")).toBe("Pixel");
+    expect(await assistantName("b1")).toBe("Pixel");
+    expect(await assistantName("b2")).toBe("Bulle");
+    expect(fetch).toHaveBeenCalledTimes(2);
   });
 });

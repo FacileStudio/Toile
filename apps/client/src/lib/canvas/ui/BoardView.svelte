@@ -1,7 +1,8 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
-	import { Alert, Icon, IconButton, Spinner, Tooltip, icons, toast, type PlanLimitError } from '@facile/muse';
-	import { aiError, aiPlanLimit, summarizeBoard } from '$lib/api/ai';
+	import { Blob } from '@facile/blob';
+	import { Alert, Icon, IconButton, Spinner, Tooltip, icons } from '@facile/muse';
+	import { assistantName } from '$lib/api/ai';
 	import { boardApi, canEdit } from '$lib/board/api';
 	import type { BoardSession } from '$lib/board/session.svelte';
 	import type { CommandUi } from '../commands';
@@ -10,8 +11,7 @@
 	import { pasteInto } from '../paste';
 	import { thumbnailer } from '../thumbnail';
 	import { zoomFit } from '../view';
-	import AiMenu from './AiMenu.svelte';
-	import AiPanel from './AiPanel.svelte';
+	import Assistant from './Assistant.svelte';
 	import AvatarStack from './AvatarStack.svelte';
 	import BoardTitle from './BoardTitle.svelte';
 	import Board from './Board.svelte';
@@ -35,9 +35,8 @@
 	let comments = $state(false);
 	let minimap = $state(true);
 	let thread = $state<string | null>(null);
-	let summary = $state<string | null>(null);
-	let thinking = $state(false);
-	let limit = $state<PlanLimitError | null>(null);
+	let assisting = $state(false);
+	let assistant = $state('Bulle');
 	let picker: HTMLInputElement;
 	const editBoard = $derived('board' in session.target && canEdit(session.role) ? session.target.board : null);
 	let fitted = false;
@@ -66,21 +65,9 @@
 
 	$effect(() => { if (session.draft) comments = true; });
 
-	async function summarize() {
-		if (!editBoard) return;
-		comments = false;
-		summary = '';
-		thinking = true;
-		try {
-			summary = await summarizeBoard(editBoard);
-		} catch (error) {
-			summary = null;
-			limit = aiPlanLimit(error);
-			if (!limit) toast.danger(aiError(error));
-		} finally {
-			thinking = false;
-		}
-	}
+	$effect(() => {
+		if (editBoard) void assistantName(editBoard).then((found) => (assistant = found));
+	});
 
 	async function picked() {
 		const files = picker.files;
@@ -134,14 +121,20 @@
 							variant="ghost"
 							aria-label="Commentaires"
 							aria-pressed={comments}
-							onclick={() => ((comments = !comments), (summary = null))}
+							onclick={() => (comments = !comments)}
 						>
 							<Icon icon={toolIcons.comment} size={20} />
 						</IconButton>
 					</Tooltip>
 					{#if editBoard}
-						<Tooltip text="Intelligence artificielle">
-							<AiMenu board={editBoard} {editor} bind:busy={thinking} bind:limit onsummarize={summarize} />
+						<Tooltip text={assistant}>
+							<IconButton
+								variant="ghost"
+								aria-label={assistant}
+								aria-pressed={assisting}
+								data-testid="assistant-trigger"
+								onclick={() => (assisting = !assisting)}><Blob name={assistant} size={22} /></IconButton
+							>
 						</Tooltip>
 					{/if}
 					<span class="hidden md:inline-flex">
@@ -173,11 +166,7 @@
 		{/if}
 
 		<div class="flex min-h-0 flex-1 justify-end">
-			{#if summary !== null}
-				<div class="absolute right-3 bottom-24 left-3 md:static md:h-full">
-					<AiPanel markdown={summary} busy={thinking} onretry={summarize} onclose={() => (summary = null)} />
-				</div>
-			{:else if comments}
+			{#if comments}
 				<div class="absolute right-3 bottom-24 left-3 md:static md:h-full">
 					<CommentPanel {session} bind:active={thread} onclose={() => (comments = false)} />
 				</div>
@@ -187,6 +176,9 @@
 		<div class="flex flex-col items-center gap-2 md:flex-row md:items-end md:justify-between">
 			<div class="hidden md:block md:w-48"></div>
 			<div class="flex flex-col items-center gap-2">
+				{#if assisting && editBoard}
+					<Assistant board={editBoard} {editor} name={assistant} onclose={() => (assisting = false)} />
+				{/if}
 				<StyleBar {editor} {ui} />
 				<Toolbar {editor} onimage={() => picker.click()} />
 			</div>

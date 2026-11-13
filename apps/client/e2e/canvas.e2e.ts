@@ -159,3 +159,23 @@ test('a double click on a sticky opens its text for editing', async () => {
 	await find(page, 'Relu');
 	expect((await stored).status()).toBe(204);
 }, 60_000);
+
+test('the assistant composer opens above the toolbar and closes with Escape', async () => {
+	const page = await open('alice', `/b/${setup.board}`);
+	await page.locator('[data-testid=board][data-editable=true]').waitFor({ timeout: 20_000 });
+	const trigger = page.getByTestId('assistant-trigger');
+	await trigger.click();
+	const composer = page.getByRole('dialog', { name: 'Bulle' });
+	await composer.waitFor();
+	expect(await trigger.getAttribute('aria-pressed')).toBe('true');
+	const kinds = composer.getByRole('radiogroup', { name: 'Forme' });
+	expect(await kinds.getByRole('radio', { name: 'Post-it' }).getAttribute('aria-checked')).toBe('true');
+	await kinds.getByRole('radio', { name: 'Logigramme' }).click();
+	expect(await kinds.getByRole('radio', { name: 'Logigramme' }).getAttribute('aria-checked')).toBe('true');
+	const box = await composer.boundingBox();
+	const tools = await page.getByRole('toolbar', { name: 'Outils' }).boundingBox();
+	expect(box && tools && box.y + box.height <= tools.y).toBe(true);
+	await composer.getByRole('textbox').focus();
+	await page.keyboard.press('Escape');
+	await composer.waitFor({ state: 'hidden' });
+}, 60_000);

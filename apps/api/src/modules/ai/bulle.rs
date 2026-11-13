@@ -70,7 +70,8 @@ impl IntoResponse for Refusal {
     }
 }
 
-struct Tokens<'a> {
+/// A token source that exchanges the caller's Registre session for a Bulle token.
+pub(super) struct Tokens<'a> {
     exchanger: &'a Exchanger,
     user_id: i64,
     target: Target,
@@ -131,14 +132,20 @@ pub fn clip(text: &str, max: usize) -> &str {
     &text[..end]
 }
 
-fn client(state: &AppState) -> Result<bulle::Client, Refusal> {
+/// The Bulle client and the caller's token source, or `503` while Bulle is not connected.
+pub(super) fn connect(state: &AppState, user_id: i64) -> Result<(bulle::Client, Tokens<'_>), Refusal> {
+    let app = &state.suite.apps.bulle;
+    let Some(exchanger) = state.suite.exchanger.as_ref().filter(|_| app.enabled()) else {
+        return Err(unavailable().into());
+    };
     let http = reqwest::Client::builder()
         .timeout(TIMEOUT)
         .redirect(reqwest::redirect::Policy::none())
         .no_proxy()
         .build()
         .map_err(|error| tronc::Error::internal("ai http client", error))?;
-    bulle::Client::with_http(&state.suite.apps.bulle.url, http).map_err(|_| unavailable().into())
+    let client = bulle::Client::with_http(&app.url, http).map_err(|_| unavailable())?;
+    Ok((client, Tokens { exchanger, user_id, target: app.target(true) }))
 }
 
 fn unavailable() -> tronc::Error {
@@ -148,17 +155,13 @@ fn unavailable() -> tronc::Error {
 /// Sends `ask` to Bulle's `POST /api/ai/complete` with a token exchanged for `user_id`, and
 /// answers its text, or its JSON when `ask` has a schema.
 pub async fn complete(state: &AppState, user_id: i64, ask: Ask) -> Result<Value, Refusal> {
-    let app = &state.suite.apps.bulle;
-    let Some(exchanger) = state.suite.exchanger.as_ref().filter(|_| app.enabled()) else {
-        return Err(unavailable().into());
-    };
+    let (client, tokens) = connect(state, user_id)?;
     let mut body = json!({"prompt": ask.prompt, "input": clip(&ask.input, MAX_INPUT), "max_tokens": ask.max_tokens});
     if let Some(schema) = ask.schema {
         body["schema"] = schema;
     }
-    let tokens = Tokens { exchanger, user_id, target: app.target(true) };
     let request = Request::new(Method::POST, ["ai", "complete"]).json(body);
-    let done: Completed = client(state)?.call(&tokens, request).await?;
+    let done: Completed = client.call(&tokens, request).await?;
     match (done.json, done.text) {
         (Some(value), _) => Ok(value),
         (None, Some(text)) => Ok(Value::String(text)),

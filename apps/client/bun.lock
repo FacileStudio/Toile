@@ -10,6 +10,7 @@
         "@capacitor/browser": "8.0.5",
         "@capacitor/core": "8.6.0",
         "@capacitor/ios": "8.6.0",
+        "@facile/blob": "github:FacileStudio/blob#v0.2.2",
         "@facile/client": "github:FacileStudio/facile-client#v0.2.0",
         "@facile/mise-en-scene": "github:FacileStudio/mise-en-scene#v0.1.1",
         "@facile/muse": "github:FacileStudio/muse#v0.18.1",
@@ -60,6 +61,8 @@
     "@emnapi/wasi-threads": ["@emnapi/wasi-threads@2.2.0", "", { "dependencies": { "tslib": "^2.4.0" } }, "sha512-JP7OYH38Q7+pyTAe14raZHLQIK7BDKbdwji+Xi3pcd/6QkJYQH3SX4wu6EplGrGJWRepoNzedfm0G3B9Z4e9Rw=="],
 
     "@exodus/bytes": ["@exodus/bytes@1.16.0", "", { "peerDependencies": { "@noble/hashes": "^1.8.0 || ^2.0.0" }, "optionalPeers": ["@noble/hashes"] }, "sha512-IcpW84uEn3N7ETtNZMlxKhfl6Pec8rUNGOTBtWbK1FKhJxIFAptZyVrvVRVBimAJxJCgc3PxepxkdWWG4DVzfA=="],
+
+    "@facile/blob": ["@facile/blob@github:FacileStudio/blob#23a0db0", { "peerDependencies": { "svelte": "^5.29.0" } }, "FacileStudio-blob-23a0db0", "sha512-4h8WaLN/1qTQFaPPODp9Zm4M9d50bmEreHrfZeroucjGkcNX83fIY09o01BS9HUj/b6EU/emrhF5MO89zakDlg=="],
 
     "@facile/client": ["@facile/client@github:FacileStudio/facile-client#83ed82c", { "peerDependencies": { "@sveltejs/kit": "^2.0.0", "svelte": "^5.0.0" } }, "FacileStudio-facile-client-83ed82c", "sha512-o0fSs/BDwnIJHqfK8Y7xTvuJFCH1OmW6orYsukd7gIj53UR9SuURDcSHffx69sDPcRH0qTVX9pvKZyZDRnOUiQ=="],
 
