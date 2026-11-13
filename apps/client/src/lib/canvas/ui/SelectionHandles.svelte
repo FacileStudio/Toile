@@ -5,7 +5,7 @@
 	import { toScreen } from '../camera';
 	import { rotatedBox, union } from '../geometry';
 	import { CORNERS, type Handle } from '../transform';
-	import { ResizeGesture, RotateGesture } from '../tools/handles';
+	import { ResizeGesture } from '../tools/handles';
 	import { ConnectorTool } from '../tools/connector';
 	import { openCard } from '../tools/select';
 	import { EndpointGesture } from '../tools/endpoint';
@@ -91,10 +91,10 @@
 	}
 
 	const OUTWARD: { id: string; label: string; left: string; top: string; anchor: [number, number] }[] = [
-		{ id: 'n', label: 'Connecter (haut)', left: '50%', top: '-14px', anchor: [0.5, 0] },
-		{ id: 'e', label: 'Connecter (droite)', left: 'calc(100% + 14px)', top: '50%', anchor: [1, 0.5] },
-		{ id: 's', label: 'Connecter (bas)', left: '50%', top: 'calc(100% + 14px)', anchor: [0.5, 1] },
-		{ id: 'w', label: 'Connecter (gauche)', left: '-14px', top: '50%', anchor: [0, 0.5] }
+		{ id: 'n', label: 'Connecter (haut)', left: '50%', top: '-22px', anchor: [0.5, 0] },
+		{ id: 'e', label: 'Connecter (droite)', left: 'calc(100% + 22px)', top: '50%', anchor: [1, 0.5] },
+		{ id: 's', label: 'Connecter (bas)', left: '50%', top: 'calc(100% + 22px)', anchor: [0.5, 1] },
+		{ id: 'w', label: 'Connecter (gauche)', left: '-22px', top: '50%', anchor: [0, 0.5] }
 	];
 
 	function point(event: PointerEvent) {
@@ -105,11 +105,6 @@
 	function resize(handle: Handle, event: PointerEvent) {
 		event.stopPropagation();
 		input.startGesture(new ResizeGesture(editor, handle, point(event)), event);
-	}
-
-	function spin(event: PointerEvent) {
-		event.stopPropagation();
-		input.startGesture(new RotateGesture(editor, point(event)), event);
 	}
 
 	function connect(anchor: [number, number], event: PointerEvent) {
@@ -168,7 +163,7 @@
 				aria-label="Redimensionner ({LABEL[handle]})"
 				onpointerdown={(e) => resize(handle, e)}
 			>
-				<span class="size-2.5 rounded-fc-xs bg-fc-page shadow-sm outline-2 outline-fc-info"></span>
+				<span class="size-3 rounded-[3px] bg-fc-info shadow-sm"></span>
 			</button>
 		{/each}
 		{#if single && !frame.locked}
@@ -183,10 +178,8 @@
 					onpointerdown={(e) => connect(c.anchor, e)}
 				>
 					<span
-						class="size-3.5 rounded-fc-pill bg-fc-page shadow-sm outline-2 outline-fc-info flex items-center justify-center group-hover:scale-125 group-hover:bg-fc-info transition-all"
-					>
-						<span class="size-1 rounded-fc-pill bg-fc-info group-hover:bg-fc-page"></span>
-					</span>
+						class="size-3 rounded-fc-pill bg-fc-info shadow-sm transition-transform group-hover:scale-125 motion-reduce:transition-none"
+					></span>
 				</button>
 			{/each}
 		{/if}
@@ -211,16 +204,6 @@
 			{/if}
 
 		{/if}
-		<button
-			type="button"
-			class="handle pointer-events-auto absolute left-1/2 flex -translate-x-1/2 -translate-y-1/2 touch-none items-center justify-center"
-			style:top="-36px"
-			style:cursor="grab"
-			aria-label="Faire pivoter"
-			onpointerdown={spin}
-		>
-			<span class="size-3 rounded-fc-pill bg-fc-page shadow-sm outline-2 outline-fc-info"></span>
-		</button>
 	</div>
 {/if}
 
@@ -235,7 +218,7 @@
 			onpointerdown={(e) => drag(end, e)}
 			data-board-ui
 		>
-			<span class="size-3 rounded-fc-pill bg-fc-page shadow-sm outline-2 outline-fc-info"></span>
+			<span class="size-3 rounded-fc-pill bg-fc-info shadow-sm"></span>
 		</button>
 	{/each}
 {/if}

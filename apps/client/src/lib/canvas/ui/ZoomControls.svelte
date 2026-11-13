@@ -37,7 +37,7 @@
 	<Tooltip text="Revenir à 100 % (⇧ 0)">
 		<button
 			type="button"
-			class="h-11 min-w-14 rounded-fc-pill px-2 text-fc-sm font-medium text-fc-fg tabular-nums hover:bg-fc-surface focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-fc-ring cursor-pointer"
+			class="h-11 min-w-14 whitespace-nowrap rounded-fc-pill px-2 text-fc-sm font-medium text-fc-fg tabular-nums hover:bg-fc-surface focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-fc-ring cursor-pointer"
 			aria-label="Zoom {percent} %, revenir à 100 %"
 			onclick={() => zoomReset(editor)}
 		>
