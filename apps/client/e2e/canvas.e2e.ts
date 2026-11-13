@@ -179,3 +179,20 @@ test('the assistant composer opens above the toolbar and closes with Escape', as
 	await page.keyboard.press('Escape');
 	await composer.waitFor({ state: 'hidden' });
 }, 60_000);
+
+test('grouped tools pick in one click and open their menu on the second', async () => {
+	const page = await open('alice', `/b/${setup.board}`);
+	await page.locator('[data-testid=board][data-editable=true]').waitFor({ timeout: 20_000 });
+	const shapes = page.getByRole('button', { name: /^Formes/ });
+	await shapes.click();
+	expect(await shapes.getAttribute('aria-pressed')).toBe('true');
+	expect(await page.getByRole('menu', { name: 'Formes' }).count()).toBe(0);
+	await shapes.click();
+	await page.getByRole('menuitemradio', { name: /Ellipse/ }).click();
+	await page.getByRole('menu', { name: 'Formes' }).waitFor({ state: 'hidden' });
+	expect(await shapes.getAttribute('aria-label')).toBe('Formes : Ellipse');
+	await page.keyboard.press('Escape');
+	await page.keyboard.press('d');
+	expect(await shapes.getAttribute('aria-label')).toBe('Formes : Losange');
+	expect(await shapes.getAttribute('aria-pressed')).toBe('true');
+}, 60_000);

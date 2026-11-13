@@ -131,18 +131,6 @@
 							<Icon icon={toolIcons.comment} size={20} />
 						</IconButton>
 					</Tooltip>
-					{#if editBoard}
-						<Tooltip text={assistant}>
-							<IconButton
-								variant="ghost"
-								aria-label={assistant}
-								aria-haspopup="dialog"
-								aria-expanded={assisting}
-								data-testid="assistant-trigger"
-								onclick={() => (assisting = !assisting)}><Blob name={assistant} size={22} /></IconButton
-							>
-						</Tooltip>
-					{/if}
 					<span class="hidden md:inline-flex">
 						<Tooltip text="Raccourcis (?)">
 							<IconButton variant="ghost" aria-label="Raccourcis clavier" onclick={() => (help = true)}
@@ -186,7 +174,27 @@
 					<Assistant board={editBoard} {editor} name={assistant} onclose={closeAssistant} />
 				{/if}
 				<StyleBar {editor} {ui} />
-				<Toolbar {editor} onimage={() => picker.click()} />
+				<div class="flex max-w-[calc(100vw-1.5rem)] items-center gap-2">
+					{#if editBoard}
+						<Tooltip text={assistant}>
+							<button
+								type="button"
+								class="toile-rise toile-press pointer-events-auto flex size-14 shrink-0 cursor-pointer items-center justify-center rounded-fc-pill shadow-lg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-fc-ring {assisting
+									? 'bg-fc-surface'
+									: 'bg-fc-component hover:bg-fc-surface'}"
+								aria-label={assistant}
+								aria-haspopup="dialog"
+								aria-expanded={assisting}
+								data-testid="assistant-trigger"
+								data-board-ui
+								onclick={() => (assisting = !assisting)}
+							>
+								<Blob name={assistant} size={32} />
+							</button>
+						</Tooltip>
+					{/if}
+					<div class="min-w-0"><Toolbar {editor} onimage={() => picker.click()} /></div>
+				</div>
 			</div>
 			<div class="flex flex-col items-end gap-2">
 				{#if minimap}<span class="hidden lg:block"><Minimap {editor} /></span>{/if}
