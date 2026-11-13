@@ -4,6 +4,16 @@ All notable changes to Toile. Versions follow SemVer.
 
 ## [Unreleased]
 
+## [0.10.2] - 2026-11-13
+
+### Changed
+
+- Deploy: healthchecks run every 30 s with a 1 s start interval.
+
+### Fixed
+
+- Deploy: the swarm-only `update_config` and `restart_policy` are gone from the compose file. `restart_policy: any` overrode `restart: unless-stopped`, so the containers ran with `always`.
+
 ## [0.10.0] - 2026-11-13
 
 ### Added
