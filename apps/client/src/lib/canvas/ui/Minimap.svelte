@@ -3,6 +3,9 @@
 	import type { Editor } from '../editor.svelte';
 	import { viewport, type Box } from '../camera';
 	import { union } from '../geometry';
+	import { PATH_TYPES, type Shape } from '$lib/board/schema';
+	import { localPoints, routePoints, strokeWidth } from '../bounds';
+	import { CONNECTOR_RADIUS, traceRounded } from '../render/paths';
 	import { fitCanvas } from '../render/renderer';
 
 	let { editor }: { editor: Editor } = $props();
@@ -24,6 +27,20 @@
 		return union(boxes);
 	}
 
+	function trace(ctx: CanvasRenderingContext2D, shape: Shape, scale: number) {
+		const points =
+			shape.type === 'ink'
+				? localPoints(shape).map((p) => ({ x: p.x + shape.x, y: p.y + shape.y }))
+				: routePoints(shape, editor.scene.get);
+		if (points.length < 2) return;
+		ctx.strokeStyle = shape.style.stroke ?? editor.palette.muted;
+		ctx.lineWidth = Math.max(strokeWidth(shape), 1.5 / scale);
+		ctx.lineCap = 'round';
+		ctx.lineJoin = 'round';
+		traceRounded(ctx, points, shape.from || shape.to ? CONNECTOR_RADIUS : 0);
+		ctx.stroke();
+	}
+
 	function draw() {
 		timer = 0;
 		const ctx = canvas?.getContext('2d');
@@ -35,6 +52,10 @@
 		ctx.setTransform(dpr * scale, 0, 0, dpr * scale, -world.x * dpr * scale, -world.y * dpr * scale);
 		ctx.clearRect(world.x, world.y, world.w, world.h);
 		for (const shape of editor.scene.order) {
+			if (PATH_TYPES.has(shape.type)) {
+				trace(ctx, shape, scale);
+				continue;
+			}
 			ctx.fillStyle = shape.style.fill ?? editor.palette.muted;
 			const b = editor.scene.index.box(shape.id);
 			if (!b) continue;

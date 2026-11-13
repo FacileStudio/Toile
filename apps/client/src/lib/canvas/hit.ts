@@ -1,9 +1,17 @@
 import type { Shape } from '$lib/board/schema';
-import { segmentDistance } from './anchors';
 import { localPoints, routePoints, strokeWidth, type Lookup } from './bounds';
 import type { Box, Point } from './camera';
 import { center, contains, intersects, rotate, rotatedBox } from './geometry';
 import type { Scene } from './scene';
+
+/** Distance from `p` to segment `a`-`b`. */
+function segmentDistance(p: Point, a: Point, b: Point): number {
+	const dx = b.x - a.x;
+	const dy = b.y - a.y;
+	const length = dx * dx + dy * dy;
+	const t = length ? Math.max(0, Math.min(1, ((p.x - a.x) * dx + (p.y - a.y) * dy) / length)) : 0;
+	return Math.hypot(p.x - (a.x + t * dx), p.y - (a.y + t * dy));
+}
 
 /** The height of a frame's name label above its box, in world units. */
 export const FRAME_LABEL = 24;

@@ -2,15 +2,6 @@ import type { Shape } from '$lib/board/schema';
 import type { Box, Point } from './camera';
 import { boxOf, center, rotate, rotatedBox } from './geometry';
 
-/** Distance from `p` to segment `a`-`b`. */
-export function segmentDistance(p: Point, a: Point, b: Point): number {
-	const dx = b.x - a.x;
-	const dy = b.y - a.y;
-	const length = dx * dx + dy * dy;
-	const t = length ? Math.max(0, Math.min(1, ((p.x - a.x) * dx + (p.y - a.y) * dy) / length)) : 0;
-	return Math.hypot(p.x - (a.x + t * dx), p.y - (a.y + t * dy));
-}
-
 /** The world point of a fractional anchor on a shape's box, rotation applied. */
 export function anchorPoint(shape: Pick<Shape, 'x' | 'y' | 'w' | 'h' | 'rot'>, anchor: [number, number]): Point {
 	const p = { x: shape.x + anchor[0] * shape.w, y: shape.y + anchor[1] * shape.h };
@@ -80,8 +71,26 @@ function cost(route: Point[], boxes: (Box | undefined)[]): number {
 	return total;
 }
 
-/** A connector's orthogonal route from `a` to `b`: a stub out of each end, then the cheapest path of one or two bends that avoids both shapes. */
-export function elbow(a: End, b: End): Point[] {
+function surface(end: End, other: Point): End {
+	const centred = !!end.anchor && Math.abs(end.anchor[0] - 0.5) < 0.05 && Math.abs(end.anchor[1] - 0.5) < 0.05;
+	if (!centred || !end.shape) return end;
+	const box = rotatedBox(end.shape);
+	const c = center(box);
+	const e = axis(other.x - c.x, other.y - c.y);
+	return {
+		point: { x: c.x + (e.x * box.w) / 2, y: c.y + (e.y * box.h) / 2 },
+		shape: end.shape,
+		anchor: [0.5 + e.x / 2, 0.5 + e.y / 2]
+	};
+}
+
+/**
+ * A connector's orthogonal route from `a` to `b`. An end bound at its shape's centre (the AI and MCP default) starts on
+ * the side facing the other end instead, so the line never runs over the shape.
+ */
+export function elbow(from: End, to: End): Point[] {
+	const a = surface(from, to.shape ? center(rotatedBox(to.shape)) : to.point);
+	const b = surface(to, from.shape ? center(rotatedBox(from.shape)) : from.point);
 	const da = exitDirection(a, b.point);
 	const db = exitDirection(b, a.point);
 	const ea = axis(da.x, da.y);

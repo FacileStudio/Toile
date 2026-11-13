@@ -108,3 +108,21 @@ describe('connector elbow', () => {
 		}
 	});
 });
+
+describe('elbow from centre anchors', () => {
+	const sticky = (x: number, y: number) => ({ x, y, w: 200, h: 200, rot: 0 });
+	const at = (s: ReturnType<typeof sticky>) => ({ point: { x: s.x + 100, y: s.y + 100 }, shape: s, anchor: [0.5, 0.5] as [number, number] });
+
+	it('leaves side by side stickies from their facing edges', () => {
+		const route = elbow(at(sticky(0, 0)), at(sticky(400, 0)));
+		expect(route[0]).toEqual({ x: 200, y: 100 });
+		expect(route[route.length - 1]).toEqual({ x: 400, y: 100 });
+	});
+
+	it('joins stacked stickies edge to edge', () => {
+		expect(elbow(at(sticky(0, 0)), at(sticky(0, 300)))).toEqual([
+			{ x: 100, y: 200 },
+			{ x: 100, y: 300 }
+		]);
+	});
+});
