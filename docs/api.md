@@ -232,13 +232,14 @@ account. Metadata: `/.well-known/oauth-protected-resource/mcp`.
 | `toile_update_board` | write | `{board_id, name?, move_to?}`: renames (editor) and moves to a space id or `personal` (owner, and editor in the destination). A move closes the room so clients reconnect under their new access; a board moved to personal becomes the caller's |
 | `toile_trash_board` | write | `{board_id}`: to the trash (owner), closing the room; trashing a trashed board answers it again |
 | `toile_restore_board` | write | `{board_id}`: out of the trash (owner); a live board answers as it is |
-| `toile_list_comments` | read | `{board_id, status?: open\|resolved\|all, limit?, cursor?}`: threads (open by default) with their replies and anchors, 50 a page |
+| `toile_list_comments` | read | `{board_id, status?: open\|resolved\|all, limit?, cursor?}`: threads (open by default) with their replies and anchors, 50 a page; a page stops early at the result budget (`next_cursor` resumes there), and a thread too long for one answer lists its oldest replies with `replies_truncated: true` |
 | `toile_comment` | write | `{board_id, body, shape_id? \| x?, y? \| reply_to?}`, signed by the caller |
 | `toile_resolve_comment` | write | `{board_id, comment_id, resolved?}`: resolves a thread, or reopens it with `resolved: false`; open clients refetch live |
 
 Annotations: reads are read-only and idempotent; `toile_update_shapes`, `toile_update_board` and
-`toile_trash_board` are destructive and idempotent; `toile_delete_shapes` is destructive;
-`toile_restore_board` and `toile_resolve_comment` are idempotent. Every tool is closed-world.
+`toile_trash_board` are destructive and idempotent; `toile_resolve_comment` is destructive (it
+hides a thread, and reopening clears who resolved it) and idempotent; `toile_delete_shapes` is
+destructive; `toile_restore_board` is idempotent. Every tool is closed-world.
 
 Every shape write runs in the board's room (`Hub::write`): open clients see it live and schema 1
 checks it like any client update. Comment writes broadcast `comments_changed` to the room. Access is the caller's own: viewers read, commenters comment, editors

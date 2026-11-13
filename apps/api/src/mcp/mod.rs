@@ -15,8 +15,10 @@ use std::collections::HashMap;
 use std::sync::Arc;
 
 use axum::Router;
+use serde::Serialize;
 use tronc::mcp::{
     Call, ConfirmConfig, Confirmations, Options, PostgresPending, ToolError, decode_cursor, encode_cursor,
+    encoded_size, fit_count,
 };
 use uuid::Uuid;
 
@@ -39,17 +41,21 @@ pub const PAGE: usize = 50;
 /// The most items a list answers in one call.
 pub const MAX_PAGE: usize = 200;
 
-/// One page of `items` from the opaque `cursor` a previous page gave, at most `limit` long, and
-/// the cursor of the next page when more remain.
-pub fn page<T>(
+/// One page of `items` from the opaque `cursor` a previous page gave, at most `limit` long and
+/// within the result budget (never empty while items remain), and the cursor of the next page
+/// when more remain.
+pub fn page<T: Serialize>(
     items: Vec<T>,
     cursor: Option<&str>,
     limit: Option<usize>,
 ) -> Result<(Vec<T>, Option<String>), ToolError> {
     let start: usize = cursor.map(decode_cursor).transpose()?.flatten().unwrap_or(0);
     let limit = limit.unwrap_or(PAGE).clamp(1, MAX_PAGE);
-    let next = (items.len() > start + limit).then(|| encode_cursor(&(start + limit)));
-    Ok((items.into_iter().skip(start).take(limit).collect(), next))
+    let mut rest: Vec<T> = items.into_iter().skip(start).collect();
+    let fitted = fit_count(rest.len().min(limit), |n| encoded_size(&rest[..n])).max(1).min(rest.len());
+    let next = (rest.len() > fitted).then(|| encode_cursor(&(start + fitted)));
+    rest.truncate(fitted);
+    Ok((rest, next))
 }
 
 /// The origin of `resource`, `https://toile.facile.studio` for `https://toile.facile.studio/mcp`.
@@ -98,11 +104,18 @@ mod tests {
     }
 
     #[test]
-    fn pages_follow_their_cursor_and_the_last_one_has_none() {
+    fn pages_follow_their_cursor_stop_at_the_budget_and_the_last_one_has_none() {
         let (first, next) = super::page((0..5).collect(), None, Some(2)).unwrap();
         let (second, next) = super::page((0..5).collect(), next.as_deref(), Some(2)).unwrap();
         let (last, next) = super::page((0..5).collect(), next.as_deref(), Some(2)).unwrap();
         assert_eq!((first, second, last, next), (vec![0, 1], vec![2, 3], vec![4], None));
         assert!(super::page(vec![1], Some("x"), None).unwrap_err().0.contains("cursor"));
+        let big = "x".repeat(tronc::mcp::RESULT_BUDGET / 3);
+        let (first, next) = super::page(vec![big.clone(); 5], None, None).unwrap();
+        assert_eq!(first.len(), 2);
+        let (second, _) = super::page(vec![big.clone(); 5], next.as_deref(), None).unwrap();
+        assert_eq!(second.len(), 2);
+        let (alone, next) = super::page(vec![big.repeat(4), big], None, None).unwrap();
+        assert_eq!((alone.len(), next.is_some()), (1, true));
     }
 }

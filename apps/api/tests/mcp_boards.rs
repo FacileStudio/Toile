@@ -27,7 +27,7 @@ async fn every_tool_is_annotated_honestly() {
     assert_eq!(hint("toile_delete_shapes"), (false, true, false, false));
     assert_eq!(hint("toile_create_board"), (false, false, false, false));
     assert_eq!(hint("toile_restore_board"), (false, false, true, false));
-    assert_eq!(hint("toile_resolve_comment"), (false, false, true, false));
+    assert_eq!(hint("toile_resolve_comment"), (false, true, true, false));
     assert_eq!(tools.len(), 12);
 }
 
@@ -116,4 +116,31 @@ async fn agents_list_open_threads_and_resolve_them_live() {
     assert!(refused(&theirs, "toile_list_comments", json!({"board_id": id})).await.contains("not found"));
     let bad = json!({"board_id": id, "comment_id": "nope"});
     assert!(refused(&client, "toile_resolve_comment", bad).await.contains("toile_list_comments"));
+}
+
+#[tokio::test]
+async fn long_threads_page_within_the_result_budget() {
+    let Some(served) = served("toile_mcp_budget").await else { return };
+    let id = served.board("Long").await;
+    let client = connect(&served.url, &served.token(), ClientOptions::default()).await;
+    let body = "é".repeat(4_500);
+    let mut threads = Vec::new();
+    for n in 0..10 {
+        let note = json!({"board_id": id, "body": body, "x": n as f64 * 100.0, "y": 0});
+        threads.push(decoded(&client, "toile_comment", note).await["id"].clone());
+    }
+    for _ in 0..9 {
+        decoded(&client, "toile_comment", json!({"board_id": id, "body": body, "reply_to": threads[0]})).await;
+    }
+    let raw = call(&client, "toile_list_comments", args(json!({"board_id": id}))).await;
+    assert!(tronc::mcptest::text(&raw).len() <= tronc::mcp::RESULT_BUDGET + 1_000);
+    let open: Value = decode(&raw);
+    let replies = open["threads"][0]["replies"].as_array().unwrap().len();
+    assert!(replies < 9 && open["threads"][0]["replies_truncated"] == json!(true));
+    let shown = open["threads"].as_array().unwrap().len();
+    assert!(shown < 10);
+    let cursor = open["next_cursor"].as_str().expect("a cut page names where to resume");
+    let rest = decoded(&client, "toile_list_comments", json!({"board_id": id, "cursor": cursor, "limit": 200})).await;
+    assert_eq!(rest["threads"][0]["replies_truncated"], Value::Null);
+    assert_eq!(rest["threads"][0]["body"], json!(body));
 }

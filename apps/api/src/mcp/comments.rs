@@ -1,7 +1,7 @@
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use time::format_description::well_known::Rfc3339;
-use tronc::mcp::{Answer, Call, ToolError, failure};
+use tronc::mcp::{Answer, Call, ToolError, encoded_size, failure, fit_count};
 
 use super::{board, page, user};
 use crate::extract::id as parse_id;
@@ -57,6 +57,9 @@ pub struct Thread {
     pub y: f64,
     pub resolved: bool,
     pub replies: Vec<Note>,
+    /// True when the thread has more replies than fit in one answer; the oldest ones are listed.
+    #[serde(skip_serializing_if = "std::ops::Not::not")]
+    pub replies_truncated: bool,
 }
 
 /// What `toile_list_comments` answers, oldest thread first.
@@ -77,16 +80,23 @@ fn note(comment: &Comment) -> Note {
 }
 
 fn thread(top: &Comment, all: &[Comment]) -> Thread {
-    let replies = all.iter().filter(|c| c.parent == Some(top.id)).map(note).collect();
+    let mut replies: Vec<Note> = all.iter().filter(|c| c.parent == Some(top.id)).map(note).collect();
     let anchor = &top.anchor.0;
-    Thread {
+    let mut thread = Thread {
         comment: note(top),
         shape_id: anchor.shape.clone(),
         x: anchor.x,
         y: anchor.y,
         resolved: top.resolved_at.is_some(),
-        replies,
-    }
+        replies: Vec::new(),
+        replies_truncated: false,
+    };
+    let base = encoded_size(&thread);
+    let fitted = fit_count(replies.len(), |n| base + encoded_size(&replies[..n]));
+    thread.replies_truncated = fitted < replies.len();
+    replies.truncate(fitted);
+    thread.replies = replies;
+    thread
 }
 
 /// `toile_list_comments`: the threads of a board with their replies, a page at a time.
