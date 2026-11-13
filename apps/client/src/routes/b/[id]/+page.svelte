@@ -12,6 +12,7 @@
 	let board = $state<BoardInfo | null>(null);
 	let missing = $state(false);
 	let open = $state<BoardSession | null>(null);
+	const embed = $derived(page.url.searchParams.get('embed') === '1');
 
 	$effect(() => {
 		const id = page.params.id ?? '';
@@ -39,7 +40,7 @@
 <svelte:head><title>{board?.name ?? 'Tableau'} · Toile</title></svelte:head>
 
 {#if open && board}
-	<BoardView session={open} name={board.name} back="/boards" />
+	<BoardView session={open} name={board.name} back={embed ? undefined : '/boards'} {embed} />
 {:else if missing}
 	<div class="flex h-dvh items-center justify-center bg-fc-page p-6">
 		<EmptyState

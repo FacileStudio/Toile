@@ -204,6 +204,16 @@ OPTIONS`, headers `content-type, x-facile-csrf` (`apps/api/src/cors.rs`, `MEETIN
 wraps the app outside tronc's layers, so tronc's own CORS list does not affect it. The `share.url`
 origin comes from `OIDC_REDIRECT_URL`.
 
+## Embedding a board
+
+`/b/<id>?embed=1` shows the board without the app chrome: no back button, title, sharing or
+toolbar buttons at the top, only who is on the board and an "Ouvrir dans Toile" link to
+`/b/<id>` in a new tab. The canvas, the drawing toolbar, comments and zoom stay. Every response
+sends `Content-Security-Policy: frame-ancestors 'self' https://docs.facile.studio` (plus
+`http://localhost:*` outside production) and no `X-Frame-Options`, so Docs may frame it. The
+session cookie is `SameSite=Lax`, and docs.facile.studio is same-site with toile.facile.studio, so a
+signed-in person stays signed in inside the frame.
+
 ## MCP
 
 `/mcp` (outside `/api`) is the remote MCP server: Streamable HTTP, stateless (spec

@@ -211,3 +211,17 @@ test('renaming a board keeps the title box exactly where and as big as it was', 
 	await field.press('Escape');
 	expect(await title.boundingBox()).toEqual(before);
 }, 60_000);
+
+test('embed mode keeps only the canvas, presence and a link out, and docs may frame it', async () => {
+	const page = await open('alice', `/b/${setup.board}?embed=1`);
+	await page.locator('[data-testid=board][data-editable=true]').waitFor({ timeout: 20_000 });
+	const out = page.getByRole('link', { name: 'Ouvrir dans Toile' });
+	expect([await out.getAttribute('href'), await out.getAttribute('target')]).toEqual([`/b/${setup.board}`, '_blank']);
+	expect(await page.getByRole('button', { name: /Retour aux tableaux|Partager/ }).count()).toBe(0);
+	await addSticky(page, 'Depuis Docs', { x: 500, y: 400 });
+	await find(page, 'Depuis Docs');
+	if (process.env.CANVAS_E2E_FAKE) return;
+	const headers = (await fetch(`${setup.base}/b/${setup.board}?embed=1`)).headers;
+	expect(headers.get('content-security-policy') ?? '').toContain("frame-ancestors 'self' https://docs.facile.studio");
+	expect(headers.get('x-frame-options')).toBeNull();
+}, 60_000);

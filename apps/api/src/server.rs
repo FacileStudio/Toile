@@ -107,7 +107,7 @@ async fn serve(config: Config, pool: PgPool) -> Result<(), BootError> {
     let mcp = mcp_options(&config, &kits, &mut state)?;
     spawn_loops(&kits, &state, &token);
     let mut http = tronc::http::Config::from_core(&config.core);
-    http.security = crate::security::config(http.security, &tronc::spa::dir_from_env());
+    http.security = crate::security::config(http.security, &tronc::spa::dir_from_env(), config.core.is_production());
     http.cors = crate::security::cors(http.cors);
     let layers = tronc::http::layers(http)?;
     let app = crate::router::build_router(state, &kits, mcp)?
