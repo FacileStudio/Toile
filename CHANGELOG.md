@@ -4,6 +4,24 @@ All notable changes to Toile. Versions follow SemVer.
 
 ## [Unreleased]
 
+## [0.7.0] - 2026-11-13
+
+### Added
+
+- Board cards in the grid show a real preview of the board: an editor's open board stores its thumbnail 3 s after the last change (`PUT /api/boards/{id}/thumbnail.png`, PNG up to 512 KiB, editors only)
+- Hover and keyboard-focus tooltips on the zoom buttons, colour and width swatches, back button, board name and AI menu
+
+### Changed
+
+- The floating Ouvrir/Copier pill above a selected card is gone; the same actions stay in the style bar
+- The board grid's placeholder sketch draws solid stickies without outlines or transparency
+- Minimap shapes, its viewport frame and shapes far zoomed out draw with rounded corners
+- Read-only viewers see the board name as a heading instead of a disabled button
+
+### Fixed
+
+- Double-clicking a sticky, shape, text or frame opens it for editing again: browsers report no click count on `pointerdown`, so the board counts clicks itself
+
 ## [0.6.2] - 2026-11-13
 
 ### Fixed
