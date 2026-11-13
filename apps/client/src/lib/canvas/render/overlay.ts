@@ -6,7 +6,7 @@ import { toScreen } from '../camera';
 import { corners } from '../geometry';
 import type { Scene } from '../scene';
 import { fitCanvas } from './renderer';
-import { CONNECTOR_RADIUS, inkPath, strokePolyline } from './paths';
+import { CONNECTOR_RADIUS, inkPath, strokePolyline, traceRounded } from './paths';
 import type { Palette } from './palette';
 
 /** A peer as the overlay draws them. */
@@ -30,10 +30,11 @@ export type OverlayState = {
 };
 
 function outlineShape(ctx: CanvasRenderingContext2D, shape: Shape, scene: Scene, camera: Camera): void {
-	const points = shape.type === 'line' || shape.type === 'arrow' ? routePoints(shape, scene.get) : corners(shape);
-	ctx.beginPath();
-	points.map((p) => toScreen(camera, p)).forEach((p, i) => (i === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y)));
-	if (shape.type !== 'line' && shape.type !== 'arrow') ctx.closePath();
+	const path = shape.type === 'line' || shape.type === 'arrow';
+	const points = (path ? routePoints(shape, scene.get) : corners(shape)).map((p) => toScreen(camera, p));
+	const bound = path && !!(shape.from || shape.to);
+	traceRounded(ctx, points, bound ? CONNECTOR_RADIUS * camera.z : 0);
+	if (!path) ctx.closePath();
 	ctx.stroke();
 }
 

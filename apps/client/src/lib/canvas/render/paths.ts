@@ -48,6 +48,20 @@ function head(ctx: CanvasRenderingContext2D, tip: Point, tail: Point, size: numb
 /** The corner radius of a connector bound to a shape, in world units. */
 export const CONNECTOR_RADIUS = 12;
 
+/** Adds `points` to a new path, each interior corner rounded to at most `radius` and half its shorter segment. */
+export function traceRounded(ctx: CanvasRenderingContext2D, points: Point[], radius: number): void {
+	ctx.beginPath();
+	if (!points.length) return;
+	ctx.moveTo(points[0].x, points[0].y);
+	for (let i = 1; i < points.length - 1; i += 1) {
+		const [p, c, n] = [points[i - 1], points[i], points[i + 1]];
+		const r = Math.min(radius, Math.hypot(c.x - p.x, c.y - p.y) / 2, Math.hypot(n.x - c.x, n.y - c.y) / 2);
+		ctx.arcTo(c.x, c.y, n.x, n.y, r);
+	}
+	const last = points[points.length - 1];
+	ctx.lineTo(last.x, last.y);
+}
+
 /** Strokes a polyline with optional heads, in world space; interior corners round by up to `radius`. */
 export function strokePolyline(
 	ctx: CanvasRenderingContext2D,
@@ -60,16 +74,9 @@ export function strokePolyline(
 	ctx.lineWidth = width;
 	ctx.lineCap = 'round';
 	ctx.lineJoin = 'round';
-	ctx.beginPath();
-	ctx.moveTo(points[0].x, points[0].y);
-	for (let i = 1; i < points.length - 1; i += 1) {
-		const [p, c, n] = [points[i - 1], points[i], points[i + 1]];
-		const r = Math.min(radius, Math.hypot(c.x - p.x, c.y - p.y) / 2, Math.hypot(n.x - c.x, n.y - c.y) / 2);
-		ctx.arcTo(c.x, c.y, n.x, n.y, r);
-	}
-	const last = points[points.length - 1];
-	ctx.lineTo(last.x, last.y);
+	traceRounded(ctx, points, radius);
 	ctx.stroke();
+	const last = points[points.length - 1];
 	const size = 8 + width * 2;
 	if (heads !== 'none') head(ctx, last, points[points.length - 2], size);
 	if (heads === 'both') head(ctx, points[0], points[1], size);
