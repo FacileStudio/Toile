@@ -4,6 +4,16 @@ All notable changes to Toile. Versions follow SemVer.
 
 ## [Unreleased]
 
+## [0.6.2] - 2026-11-13
+
+### Fixed
+
+- Pasting a YouTube link, or copied cards with link previews, no longer stops the board: the server now accepts the card preview fields (image, description, favicon, site)
+- YouTube cards play in place with the privacy-enhanced player (youtube-nocookie.com) instead of opening a new tab
+- YouTube links with share parameters (`list=`, `t=`, `si=`), Shorts, live and embed URLs all become playable cards, with their thumbnail at once
+- The stop banner says why the server closed the board (access removed, board deleted, or the refused change)
+- A damaged Toile clipboard payload is refused with a message instead of being pasted as text
+
 ## [0.6.1] - 2026-11-12
 
 ### Fixed
