@@ -123,3 +123,21 @@ test('a guest with a view link sees the board but cannot edit it', async () => {
 	await alice.getByText('Aucun résultat.').waitFor();
 	expect(await guest.getByRole('textbox', { name: 'Texte' }).count()).toBe(0);
 }, 90_000);
+
+test('a pasted youtube link becomes a card that plays in place and the server keeps it', async () => {
+	const alice = await open('alice', `/b/${setup.board}`);
+	await alice.locator('[data-testid=board][data-editable=true]').waitFor({ timeout: 20_000 });
+	await alice.evaluate(() => {
+		const data = new DataTransfer();
+		data.setData('text/plain', 'https://youtu.be/PAy5EBTnV6Q?list=RDERCkf0j8pPM');
+		window.dispatchEvent(new ClipboardEvent('paste', { clipboardData: data }));
+	});
+	await alice.getByRole('button', { name: 'Lire la vidéo' }).click({ timeout: 10_000 });
+	const player = alice.locator('[data-testid=video-player] iframe');
+	await player.waitFor({ timeout: 10_000 });
+	expect(await player.getAttribute('src')).toBe('https://www.youtube-nocookie.com/embed/PAy5EBTnV6Q?autoplay=1&rel=0');
+	expect(await player.getAttribute('referrerpolicy')).toBe('strict-origin-when-cross-origin');
+	await alice.waitForTimeout(1_500);
+	expect(await alice.getByText('En ligne').count()).toBe(1);
+	expect(await alice.locator('[data-testid=board][data-editable=true]').count()).toBe(1);
+}, 60_000);

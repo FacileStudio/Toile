@@ -7,12 +7,15 @@ use tronc::http::{CorsConfig, SecurityConfig, Sources};
 pub const NATIVE_ORIGINS: [&str; 4] =
     ["https://localhost", "capacitor://localhost", "tauri://localhost", "http://tauri.localhost"];
 
+/// The origin of the embedded YouTube player.
+pub const PLAYER: &str = "https://www.youtube-nocookie.com";
+
 /// The origin of the suite plan catalog.
 pub const CATALOG: &str = "https://api-ardoise.facile.studio";
 
 /// The CSP sources Toile's client needs on top of tronc's policy: the inline scripts
-/// adapter-static writes, hashed from the build the binary serves, and the suite plan catalog
-/// muse's `PricingPlans` fetches.
+/// adapter-static writes, hashed from the build the binary serves, the suite plan catalog
+/// muse's `PricingPlans` fetches, and the YouTube player link cards embed.
 pub fn sources(client_dir: &Path) -> Sources {
     let mut scripts = Vec::new();
     if tronc::spa::available(client_dir) {
@@ -21,7 +24,11 @@ pub fn sources(client_dir: &Path) -> Sources {
             Err(error) => tracing::error!(%error, "failed to hash the client's inline scripts"),
         }
     }
-    Sources::from([("script-src".to_owned(), scripts), ("connect-src".to_owned(), vec![CATALOG.to_owned()])])
+    Sources::from([
+        ("script-src".to_owned(), scripts),
+        ("connect-src".to_owned(), vec![CATALOG.to_owned()]),
+        ("frame-src".to_owned(), vec![PLAYER.to_owned()]),
+    ])
 }
 
 /// tronc's security configuration with [`sources`].
@@ -44,6 +51,13 @@ pub fn cors(base: CorsConfig) -> CorsConfig {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn the_policy_frames_only_the_youtube_player() {
+        let sources = sources(Path::new("/nonexistent"));
+        assert_eq!(sources.get("frame-src"), Some(&vec![PLAYER.to_owned()]));
+        assert!(!sources.contains_key("frame-ancestors"));
+    }
 
     #[test]
     fn native_origins_are_added_once() {

@@ -4,7 +4,7 @@
 	import { Alert, Icon, IconButton, Spinner, Tooltip, icons, toast, type PlanLimitError } from '@facile/muse';
 	import { aiError, aiPlanLimit, summarizeBoard } from '$lib/api/ai';
 	import { boardApi, canEdit } from '$lib/board/api';
-	import { STOP_TEXT, type BoardSession } from '$lib/board/session.svelte';
+	import type { BoardSession } from '$lib/board/session.svelte';
 	import type { CommandUi } from '../commands';
 	import { toolIcons } from '../icons';
 	import type { Input } from '../input';
@@ -197,7 +197,7 @@
 		</div>
 
 		{#if session.stop}
-			<Alert tone="danger" class="pointer-events-auto mx-auto max-w-md">{STOP_TEXT[session.stop]}</Alert>
+			<Alert tone="danger" class="pointer-events-auto mx-auto max-w-md">{session.stopText}</Alert>
 		{:else if !canEdit(session.role)}
 			<p
 				class="pointer-events-auto mx-auto rounded-fc-pill bg-fc-component px-4 py-2 text-fc-xs text-fc-fg-muted shadow-lg"

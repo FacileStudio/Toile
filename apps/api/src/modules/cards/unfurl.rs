@@ -7,22 +7,26 @@ use super::og;
 /// The most of a page an unfurl reads.
 pub const MAX_BYTES: usize = 1 << 20;
 
+fn video_id(raw: &str) -> Option<String> {
+    let valid = raw.len() == 11 && raw.bytes().all(|b| b.is_ascii_alphanumeric() || b == b'-' || b == b'_');
+    valid.then(|| raw.to_owned())
+}
+
+/// The id of the YouTube video `url` points at: `youtu.be/<id>`, `watch?v=<id>`, `/shorts/`,
+/// `/embed/`, `/live/` or `/v/` on youtube.com, its subdomains and youtube-nocookie.com.
 fn youtube_id(url: &Url) -> Option<String> {
-    let host = url.host_str()?;
-    let yt_be = host == "youtu.be" || host.ends_with(".youtu.be");
-    let yt = host == "youtube.com" || host.ends_with(".youtube.com");
-    if !yt && !yt_be {
+    let host = url.host_str()?.trim_start_matches("www.").trim_start_matches("m.");
+    let parts: Vec<&str> = url.path_segments().map(|p| p.filter(|s| !s.is_empty()).collect()).unwrap_or_default();
+    if host == "youtu.be" {
+        return parts.first().and_then(|id| video_id(id));
+    }
+    let yt = host == "youtube.com" || host.ends_with(".youtube.com") || host == "youtube-nocookie.com";
+    if !yt {
         return None;
     }
-    let parts: Vec<&str> = url.path_segments().map(|p| p.filter(|s| !s.is_empty()).collect()).unwrap_or_default();
-    if yt_be {
-        return parts.first().map(|id| (*id).to_owned());
-    }
-    if parts.first() == Some(&"watch") {
-        return url.query_pairs().find(|(k, _)| k == "v").map(|(_, v)| v.into_owned()).filter(|id| !id.is_empty());
-    }
     match parts.as_slice() {
-        ["shorts", id, ..] | ["embed", id, ..] => Some((*id).to_owned()),
+        ["watch", ..] => url.query_pairs().find(|(k, _)| k == "v").and_then(|(_, v)| video_id(&v)),
+        ["shorts" | "embed" | "live" | "v", id, ..] => video_id(id),
         _ => None,
     }
 }
@@ -101,6 +105,26 @@ pub async fn unfurl(http: &reqwest::Client, url: &Url) -> Card {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn youtube_ids_survive_share_params_and_refuse_junk() {
+        let cases = [
+            ("https://youtu.be/PAy5EBTnV6Q?list=RDERCkf0j8pPM", Some("PAy5EBTnV6Q")),
+            ("https://youtu.be/PAy5EBTnV6Q?t=42", Some("PAy5EBTnV6Q")),
+            ("https://www.youtube.com/watch?v=PAy5EBTnV6Q&list=RDERCkf0j8pPM&index=2", Some("PAy5EBTnV6Q")),
+            ("https://m.youtube.com/watch?feature=share&v=PAy5EBTnV6Q&t=1m2s", Some("PAy5EBTnV6Q")),
+            ("https://music.youtube.com/watch?v=PAy5EBTnV6Q", Some("PAy5EBTnV6Q")),
+            ("https://www.youtube.com/live/PAy5EBTnV6Q?si=abc", Some("PAy5EBTnV6Q")),
+            ("https://www.youtube-nocookie.com/embed/PAy5EBTnV6Q", Some("PAy5EBTnV6Q")),
+            ("https://youtu.be/", None),
+            ("https://youtu.be/../../admin", None),
+            ("https://www.youtube.com/watch?v=short", None),
+            ("https://notyoutube.com/watch?v=PAy5EBTnV6Q", None),
+        ];
+        for (raw, id) in cases {
+            assert_eq!(youtube_id(&Url::parse(raw).unwrap()).as_deref(), id, "{raw}");
+        }
+    }
 
     #[test]
     fn youtube_and_relative_urls() {

@@ -11,6 +11,7 @@
 	import { canvasMenuItems, elementMenuItems } from '../contextmenu';
 	import SelectionHandles from './SelectionHandles.svelte';
 	import TextEditor from './TextEditor.svelte';
+	import VideoPlayer from './VideoPlayer.svelte';
 
 	let { editor, ui, input = $bindable() }: { editor: Editor; ui: CommandUi; input?: Input } = $props();
 
@@ -107,6 +108,7 @@
 		<SelectionHandles {editor} {input} />
 	{/if}
 	<TextEditor {editor} />
+	<VideoPlayer {editor} />
 	{#if contextMenu}
 		<ContextMenu x={contextMenu.x} y={contextMenu.y} items={contextMenu.items} onclose={() => (contextMenu = null)} />
 	{/if}

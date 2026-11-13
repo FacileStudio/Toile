@@ -1,8 +1,10 @@
+import { toast } from '@facile/muse';
 import { resolveCard } from '$lib/api/cards';
 import { deleteSelection, createShape } from './actions';
 import type { Point } from './camera';
 import { insertShapes, parseClip, serialize } from './clipboard';
 import type { Editor } from './editor.svelte';
+import { youtubeId, youtubeThumbnail } from './youtube';
 
 /** Writes the selection to the clipboard; `cut` also deletes it. Returns whether anything was copied. */
 export function copyOut(editor: Editor, data: DataTransfer, cut: boolean): boolean {
@@ -12,6 +14,8 @@ export function copyOut(editor: Editor, data: DataTransfer, cut: boolean): boole
 	if (cut) deleteSelection(editor);
 	return true;
 }
+
+const CLIP = /^\s*\{\s*"type"\s*:\s*"toile\/shapes"/;
 
 function viewCentre(editor: Editor): Point {
 	return editor.world({ x: editor.size.width / 2, y: editor.size.height / 2 });
@@ -33,20 +37,21 @@ async function fillCard(editor: Editor, id: string, url: string): Promise<void> 
 	const shape = editor.scene.shapes.get(id);
 	if (!shape) return;
 	const h = card.image && shape.h < 180 ? 180 : undefined;
-	const kind = shape.kind === 'youtube' ? 'youtube' : card.kind;
+	const youtube = shape.kind === 'youtube';
 	editor.doc.update(id, {
-		title: card.title,
-		kind,
-		image: card.image,
+		title: youtube ? shape.title : card.title,
+		kind: youtube ? 'youtube' : card.kind,
+		image: card.image ?? shape.image,
 		description: card.subtitle,
 		favicon: card.favicon,
-		site: card.site,
+		site: card.site ?? shape.site,
 		...(h !== undefined ? { h } : {})
 	});
 }
 
 function addLink(editor: Editor, trimmed: string, at: Point): string | null {
-	if (/(?:youtube\.com|youtu\.be)/i.test(trimmed)) {
+	const video = youtubeId(trimmed);
+	if (video) {
 		return createShape(editor, 'card', {
 			x: at.x - 160,
 			y: at.y - 100,
@@ -54,7 +59,9 @@ function addLink(editor: Editor, trimmed: string, at: Point): string | null {
 			h: 200,
 			kind: 'youtube',
 			url: trimmed,
-			title: 'YouTube Video'
+			title: 'Vidéo YouTube',
+			image: youtubeThumbnail(video),
+			site: 'YouTube'
 		});
 	}
 	let hostname = trimmed;
@@ -101,6 +108,10 @@ export async function pasteInto(editor: Editor, data: DataTransfer, at: Point | 
 	}
 	const text = data.getData('text/plain');
 	const shapes = parseClip(text);
+	if (!shapes && CLIP.test(text)) {
+		toast.danger('Ces éléments copiés sont illisibles : copiez-les à nouveau.');
+		return;
+	}
 	if (!shapes) return addText(editor, text, point);
 	const local = shapes.every((shape) => editor.scene.shapes.has(shape.id));
 	insertShapes(editor, shapes, local && !at ? undefined : point);

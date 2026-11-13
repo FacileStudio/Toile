@@ -8,6 +8,7 @@
 	import { CORNERS, type Handle } from '../transform';
 	import { ResizeGesture, RotateGesture } from '../tools/handles';
 	import { ConnectorTool } from '../tools/connector';
+	import { openCard } from '../tools/select';
 	import { EndpointGesture } from '../tools/endpoint';
 	import { pathPoints } from '../bounds';
 
@@ -200,10 +201,10 @@
 					style:width="{Math.min(48, topH * 0.6)}px"
 					style:height="{Math.min(48, topH * 0.6)}px"
 					aria-label="Lire la vidéo"
-					title="Ouvrir sur YouTube"
+					title="Lire la vidéo"
 					onclick={(e) => {
 						e.stopPropagation();
-						window.open(single.url, '_blank', 'noopener');
+						openCard(editor, single);
 					}}
 				>
 					<span class="sr-only">Lire la vidéo</span>

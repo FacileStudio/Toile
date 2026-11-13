@@ -111,7 +111,8 @@ describe('card shape and tools', () => {
 		expect(shapes).toHaveLength(1);
 		expect(shapes[0].type).toBe('card');
 		expect(shapes[0].kind).toBe('youtube');
-		expect(shapes[0].title).toBe('YouTube Video');
+		expect(shapes[0].title).toBe('Vidéo YouTube');
+		expect(shapes[0].image).toBe('https://img.youtube.com/vi/dQw4w9WgXcQ/hqdefault.jpg');
 		expect(shapes[0].w).toBe(320);
 		expect(shapes[0].h).toBe(200);
 	});

@@ -35,9 +35,11 @@ export const toolIcons = {
   dots: "toile:dots",
   cut: "toile:cut",
   paste: "toile:paste",
+  play: "toile:play",
 } as const;
 
 registerIcons({
+  [toolIcons.play]: line('<circle cx="12" cy="12" r="9"/><path d="M10 8.5v7l5.5-3.5z"/>'),
   [toolIcons.cut]: line(
     '<circle cx="6" cy="18" r="3"/><circle cx="6" cy="6" r="3"/><path d="M8.2 8.2L20 20M8.2 15.8L20 4"/>',
   ),
