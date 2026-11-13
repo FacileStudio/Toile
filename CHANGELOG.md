@@ -4,9 +4,25 @@ All notable changes to Toile. Versions follow SemVer.
 
 ## [Unreleased]
 
+## [0.8.0] - 2026-11-13
+
+### Added
+
+- Your Bulle assistant lives in Toile: its blob and name sit in the top bar and open one floating composer above the toolbar, where you draw, summarize the board or sort selected post-its
+- `GET /api/boards/{id}/ai/assistant` answers the caller's Bulle assistant name (editors; never plan-gated, "Bulle" when it cannot be read)
+- `accent` (`#rrggbb`) on `POST /api/boards/{id}/ai/generate` colours flowchart decisions; the composer sends your assistant blob's colour
+
 ### Changed
 
+- AI drawings are all coloured post-its joined by arrows: mind maps colour each branch, flowcharts colour start and end, steps and decisions
 - Connectors bound to a shape route as orthogonal elbows with rounded corners, Miro style, instead of Bezier curves; stored points stay the two endpoints
+- A connector bound at a shape's centre (AI and MCP arrows) now starts on the side facing the other shape instead of running over it
+- The minimap draws lines, arrows and ink as strokes instead of filled blocks
+- The selection outline of a connector follows its rounded corners
+
+### Removed
+
+- The AI dropdown menu, the generate dialog and the separate summary panel, replaced by the composer
 
 ## [0.7.0] - 2026-11-13
 
