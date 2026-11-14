@@ -1,6 +1,7 @@
+import { ApiError } from '@facile/client';
 import { api } from '$lib/backend';
 
-/** An agent action waiting for the person, as `GET /api/mcp/actions` answers it. */
+/** An agent action waiting for the person, one of `GET /api/mcp/pending`'s `actions`. */
 export type PendingAction = {
 	id: string;
 	kind: string;
@@ -29,11 +30,28 @@ export function targetBoard(action: Pick<PendingAction, 'target'>): string | nul
 	}
 }
 
-const path = (id: string, verb: string) => `/mcp/actions/${encodeURIComponent(id)}/${verb}`;
+/** tronc's refusal of anything but the person's own browser session on the confirm page. */
+export const OWN_SESSION_REFUSAL = "only the person's own session can confirm actions";
+
+/**
+ * Whether `error` is the confirm page's refusal of a session that is not the person's own browser
+ * login: a cookie from before the upgrade, a CLI or API token, or the mobile or desktop app.
+ * Signing in again in the browser fixes it.
+ */
+export function notOwnSession(error: unknown): boolean {
+	return (
+		error instanceof ApiError &&
+		error.status === 403 &&
+		error.code === 'permission_denied' &&
+		error.message === OWN_SESSION_REFUSAL
+	);
+}
+
+const path = (id: string, verb: string) => `/mcp/pending/${encodeURIComponent(id)}/${verb}`;
 
 /** The confirm page's calls. */
 export const pending = {
-	list: () => api<PendingAction[]>('/mcp/actions'),
+	list: () => api<{ actions: PendingAction[]; truncated?: boolean }>('/mcp/pending').then((r) => r.actions),
 	confirm: (id: string) => api<{ status: string }>(path(id, 'confirm'), { method: 'POST' }),
-	dismiss: (id: string) => api<void>(path(id, 'dismiss'), { method: 'POST' })
+	dismiss: (id: string) => api<{ status: string }>(path(id, 'dismiss'), { method: 'POST' })
 };

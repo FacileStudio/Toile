@@ -2,6 +2,7 @@ mod common;
 
 use std::sync::Arc;
 
+use common::http::{browser_cookie, with_cookie};
 use common::mcp::{Served, args, served, shapes, sticky};
 use serde_json::{Value, json};
 use tronc::mcptest::{self, ClientOptions, ConfirmCase, Target, call, connect, decode};
@@ -47,9 +48,59 @@ async fn a_delete_waits_for_the_person_on_the_pending_page() {
     assert_eq!(pending["status"], json!("pending_confirmation"));
     assert_eq!(shapes(&served.app.state, &id).await, std::slice::from_ref(&shape));
     let action = pending["confirm_url"].as_str().unwrap().rsplit('=').next().unwrap().to_owned();
-    let list = served.app.call("GET", "/api/mcp/actions", Some(&served.person), None).await.json();
-    assert_eq!(list[0]["id"], json!(action));
-    let done = served.app.call("POST", &format!("/api/mcp/actions/{action}/confirm"), Some(&served.person), None).await;
+    let cookie = browser_cookie(&served.app.kits.sessions, served.person.user_id).await;
+    let list = with_cookie(&served.app.router, "GET", "/api/mcp/pending", &cookie).await.json();
+    assert_eq!(list["actions"][0]["id"], json!(action));
+    assert_eq!(list["actions"][0]["state"], json!("ready"));
+    assert!(list["actions"][0]["target"].as_str().unwrap().contains(&id));
+    let path = format!("/api/mcp/pending/{action}/confirm");
+    let done = with_cookie(&served.app.router, "POST", &path, &cookie).await;
+    assert_eq!(done.json(), json!({"status": "done"}), "{}", done.text());
+    assert!(shapes(&served.app.state, &id).await.is_empty());
+}
+
+async fn plain_session(served: &Served, token: String) -> String {
+    sqlx::query(
+        "INSERT INTO porte_sessions (token_hash, user_id, expires_at) VALUES ($1, $2, now() + interval '1 hour')",
+    )
+    .bind(porte::hash_token(&token))
+    .bind(served.person.user_id)
+    .execute(&served.app.pool)
+    .await
+    .unwrap();
+    token
+}
+
+#[tokio::test]
+async fn only_a_browser_login_confirms_never_a_cli_api_or_old_cookie() {
+    let Some(served) = served("toile_mcp_own").await else { return };
+    let id = served.board("Guarded").await;
+    let shape = sticky(&served.app.state, &id).await;
+    let client = connect(&served.url, &served.token(), ClientOptions::default()).await;
+    let pending: Value =
+        decode(&call(&client, "toile_delete_shapes", args(json!({"board_id": id, "ids": [shape]}))).await);
+    let action = pending["confirm_url"].as_str().unwrap().rsplit('=').next().unwrap().to_owned();
+    let confirm = format!("/api/mcp/pending/{action}/confirm");
+    let browser = browser_cookie(&served.app.kits.sessions, served.person.user_id).await;
+    let name = browser.split_once('=').unwrap().0;
+    let (cli, _) = served.app.kits.sessions.issue(served.person.user_id, "").await.unwrap();
+    let refused = [
+        served.person.token.clone(),
+        cli,
+        plain_session(&served, format!("b-{}", porte::new_token().unwrap())).await,
+        plain_session(&served, porte::new_token().unwrap()).await,
+    ];
+    for token in &refused {
+        let cookie = &format!("{name}={token}");
+        let answer = with_cookie(&served.app.router, "POST", &confirm, cookie).await;
+        assert_eq!(answer.status, 403, "{cookie}: {}", answer.text());
+        assert_eq!(answer.json()["error"]["message"], json!(tronc::mcp::DELEGATED));
+        let listed = with_cookie(&served.app.router, "GET", "/api/mcp/pending", cookie).await;
+        assert_eq!(listed.status, 403, "{cookie}");
+    }
+    assert_eq!(served.app.call("POST", &confirm, Some(&served.person), None).await.status, 403);
+    assert_eq!(shapes(&served.app.state, &id).await, std::slice::from_ref(&shape));
+    let done = with_cookie(&served.app.router, "POST", &confirm, &browser).await;
     assert_eq!(done.json(), json!({"status": "done"}), "{}", done.text());
     assert!(shapes(&served.app.state, &id).await.is_empty());
 }

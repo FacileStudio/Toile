@@ -14,6 +14,8 @@ mod summarize;
 
 use axum::Router;
 
+pub use bulle::TIMEOUT;
+
 use crate::state::AppState;
 
 /// The AI routes and the assistant name route, behind `require_auth`.

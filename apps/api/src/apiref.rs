@@ -68,9 +68,6 @@ const ROUTES: &[Row] = &[
     ),
     ("GET", "/me/entitlements", "suite", "The plan values of the personal scope or of a space", "200"),
     ("POST", "/boards/meeting", "meetings", "The board and edit link of an Echo room, made on first call", "200"),
-    ("GET", "/mcp/actions", "mcp", "The caller's agent actions awaiting confirmation", "200"),
-    ("POST", "/mcp/actions/{id}/confirm", "mcp", "Confirms an agent action and runs it", "200"),
-    ("POST", "/mcp/actions/{id}/dismiss", "mcp", "Refuses an agent action", "204"),
 ];
 
 fn method(name: &str) -> HttpMethod {
@@ -83,9 +80,11 @@ fn method(name: &str) -> HttpMethod {
     }
 }
 
-/// The OpenAPI document of every route in [`ROUTES`].
+/// The OpenAPI document of every route in [`ROUTES`], plus the confirm page's
+/// [`tronc::mcp::PENDING_ROUTES`].
 pub fn document() -> OpenApi {
-    let paths = ROUTES.iter().fold(PathsBuilder::new(), |paths, (verb, path, tag, summary, status)| {
+    let pending = tronc::mcp::PENDING_ROUTES.map(|(verb, path, summary, status)| (verb, path, "mcp", summary, status));
+    let paths = ROUTES.iter().chain(&pending).fold(PathsBuilder::new(), |paths, (verb, path, tag, summary, status)| {
         let operation = OperationBuilder::new()
             .tag(*tag)
             .summary(Some(*summary))

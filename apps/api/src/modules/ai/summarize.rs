@@ -1,6 +1,6 @@
 use uuid::Uuid;
 
-use super::bulle::{self, Ask, Refusal};
+use super::bulle::{self, Ask};
 use crate::scene::{self, read::Shape, text};
 use crate::state::AppState;
 
@@ -14,14 +14,14 @@ fn worded(shape: &Shape) -> bool {
 }
 
 /// The Markdown summary of board `board`'s live content, written by Bulle for `user_id`.
-pub async fn summarize(state: &AppState, user_id: i64, board: Uuid) -> Result<String, Refusal> {
+pub async fn summarize(state: &AppState, user_id: i64, board: Uuid) -> tronc::Result<String> {
     let shapes = scene::load(state, board).await?;
     if !shapes.iter().any(worded) {
-        return Err(tronc::Error::invalid("the board has no text to summarize").into());
+        return Err(tronc::Error::invalid("the board has no text to summarize"));
     }
     let ask = Ask { prompt: PROMPT.to_owned(), input: text::render(&shapes), schema: None, max_tokens: 1500 };
     match bulle::complete(state, user_id, ask).await? {
         serde_json::Value::String(markdown) => Ok(markdown.trim().to_owned()),
-        _ => Err(tronc::Error::unavailable("Bulle answered no summary").into()),
+        _ => Err(tronc::Error::unavailable("Bulle answered no summary")),
     }
 }

@@ -5,7 +5,7 @@ use serde_json::{Value, json};
 use uuid::Uuid;
 use yrs::{MapRef, TransactionMut};
 
-use super::bulle::{self, Ask, Refusal};
+use super::bulle::{self, Ask};
 use super::shapes;
 use crate::scene::input::{NewShape, Placed};
 use crate::scene::layout::{GAP, bounds};
@@ -120,15 +120,10 @@ pub struct Request<'a> {
 
 /// Asks Bulle to draft `request.draw` from `request.prompt`, then lays it out right of the
 /// board's content and writes it through the room.
-pub async fn generate(
-    state: &AppState,
-    user_id: i64,
-    board: Uuid,
-    request: Request<'_>,
-) -> Result<Vec<Placed>, Refusal> {
+pub async fn generate(state: &AppState, user_id: i64, board: Uuid, request: Request<'_>) -> tronc::Result<Vec<Placed>> {
     let (prompt, draw) = (request.prompt.trim(), request.draw);
     if prompt.is_empty() || prompt.chars().count() > MAX_PROMPT {
-        return Err(tronc::Error::invalid(format!("prompt is required and at most {MAX_PROMPT} characters")).into());
+        return Err(tronc::Error::invalid(format!("prompt is required and at most {MAX_PROMPT} characters")));
     }
     let (instructions, schema) = match draw {
         Draw::Mindmap => mindmap(),

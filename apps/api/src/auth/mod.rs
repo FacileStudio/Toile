@@ -99,11 +99,21 @@ fn suite(cfg: &Config, pool: &PgPool, store: &pg::Store) -> Result<Suite, BootEr
     let plans = Plans::new(pool.clone(), &cfg.porte.issuer);
     Ok(Suite {
         exchanger,
+        bulle: bulle(&cfg.apps.bulle),
         plans,
         apps: cfg.apps.clone(),
         http: crate::modules::suite::client(),
         cards: Default::default(),
     })
+}
+
+fn bulle(app: &crate::modules::suite::App) -> Option<tronc::bulle::Client> {
+    if !app.enabled() {
+        return None;
+    }
+    tronc::bulle::Client::with_timeout(&app.url, crate::modules::ai::TIMEOUT)
+        .inspect_err(|error| tracing::warn!(%error, "ai: Bulle is off"))
+        .ok()
 }
 
 async fn mcp_verifier(cfg: &Config, store: &pg::Store, oidc: &Kit) -> Result<mcpauth::Verifier, BootError> {

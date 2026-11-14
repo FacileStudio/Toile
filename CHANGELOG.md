@@ -4,6 +4,18 @@ All notable changes to Toile. Versions follow SemVer.
 
 ## [Unreleased]
 
+### Changed
+
+- API: `tronc` (tronc-rs) v0.5.0 and `porte` (porte-rs) v0.8.0. `/mcp` is built by `tronc::mcp::App` (120 calls a minute per person), tool annotations use tronc's presets, list pages use tronc's pager, an erasure drops pending actions with `erase_pending`, and closed actions older than 30 days are pruned every hour.
+- MCP: the confirm page API moves to tronc's `PendingPage` on the suite paths: `GET /api/mcp/pending` answers `{"actions": [...]}`, confirm and dismiss answer 200 JSON. The client reads the new shape.
+- MCP: the confirmation state key is derived with `tronc::mcp::state_key("toile", MCP_STATE_KEY)`, as the Go apps do. A confirmation an agent was holding during the deploy must be asked again.
+- AI: one pooled Bulle client (90 s timeout, never follows a redirect) and porte's `Exchanger::bound` token source replace Toile's own copies; a plan refusal keeps `key: ai.access`.
+
+### Fixed
+
+- MCP: only the person's own browser login confirms an agent action. A CLI, device or named API token sent as the session cookie, any bearer (the mobile and desktop apps included) and a cookie from before this release get 403; the confirm page then asks to sign in again in the browser and comes back to the request.
+- Security: the confirm page and its API send `frame-ancestors 'none'`, so no other site can frame the confirm button. Docs may still frame the other client pages; `/api` is no longer framable.
+
 ## [0.12.1] - 2026-11-14
 
 ### Changed

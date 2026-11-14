@@ -42,6 +42,27 @@ pub async fn send(
     raw(router, request.body(body).unwrap()).await
 }
 
+/// A browser login's cookie for `user_id`, `name=token`, as the OIDC callback sets it.
+pub async fn browser_cookie(sessions: &porte::session::Manager, user_id: i64) -> String {
+    let template = porte::Session { user_id, ..porte::Session::default() };
+    let (token, _, cookie) = sessions.issue_cookie_for(&Request::new(()), template).await.unwrap();
+    let name = cookie.to_str().unwrap().split_once('=').unwrap().0.to_owned();
+    format!("{name}={token}")
+}
+
+/// `method path` with `cookie` (`name=token`) and the CSRF header, as the browser client sends.
+pub async fn with_cookie(router: &Router, method: &str, path: &str, cookie: &str) -> Answer {
+    let request = Request::builder()
+        .method(method)
+        .uri(path)
+        .header(header::HOST, "toile.test")
+        .header(header::COOKIE, cookie)
+        .header(porte::CSRF_HEADER_NAME, "1")
+        .body(Body::empty())
+        .unwrap();
+    raw(router, request).await
+}
+
 pub async fn raw(router: &Router, request: Request<Body>) -> Answer {
     let response = router.clone().oneshot(request).await.unwrap();
     let status = response.status();

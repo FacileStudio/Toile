@@ -12,13 +12,13 @@ mod shapes;
 mod tools;
 
 use std::collections::HashMap;
-use std::sync::Arc;
 
 use axum::Router;
+use porte::mcpauth::require_own_session;
 use serde::Serialize;
 use tronc::mcp::{
-    Call, ConfirmConfig, Confirmations, Options, PostgresPending, ToolError, decode_cursor, encode_cursor,
-    encoded_size, fit_count,
+    App, AppConfig, AppSpec, Call, Confirmations, PendingItem, PendingPage, ToolError, cursor, encoded_size, fit_count,
+    offset,
 };
 use uuid::Uuid;
 
@@ -41,65 +41,69 @@ pub const PAGE: usize = 50;
 /// The most items a list answers in one call.
 pub const MAX_PAGE: usize = 200;
 
-/// One page of `items` from the opaque `cursor` a previous page gave, at most `limit` long and
+/// One page of `items` from the opaque cursor `at` a previous page gave, at most `limit` long and
 /// within the result budget (never empty while items remain), and the cursor of the next page
 /// when more remain.
 pub fn page<T: Serialize>(
     items: Vec<T>,
-    cursor: Option<&str>,
+    at: Option<&str>,
     limit: Option<usize>,
 ) -> Result<(Vec<T>, Option<String>), ToolError> {
-    let start: usize = cursor.map(decode_cursor).transpose()?.flatten().unwrap_or(0);
+    let total = items.len();
+    let start = offset(at.unwrap_or_default())?.min(total);
     let limit = limit.unwrap_or(PAGE).clamp(1, MAX_PAGE);
     let mut rest: Vec<T> = items.into_iter().skip(start).collect();
     let fitted = fit_count(rest.len().min(limit), |n| encoded_size(&rest[..n])).max(1).min(rest.len());
-    let next = (rest.len() > fitted).then(|| encode_cursor(&(start + fitted)));
+    let next = cursor(start + fitted, total);
     rest.truncate(fitted);
-    Ok((rest, next))
+    Ok((rest, (!next.is_empty()).then_some(next)))
 }
 
-/// The origin of `resource`, `https://toile.facile.studio` for `https://toile.facile.studio/mcp`.
-pub fn origin(resource: &str) -> &str {
-    resource.strip_suffix("/mcp").unwrap_or(resource)
-}
+const INSTRUCTIONS: &str = "Toile holds whiteboards: stickies, text, boxes, arrows and frames on an infinite canvas, \
+    a list per space. Call toile_list_boards for ids, then toile_read_board before you change a board: it lists every \
+    shape with its id, grouped by frame. Writes show up live for everyone on the board. toile_list_comments shows the \
+    open threads to answer with toile_comment or close with toile_resolve_comment.";
 
-/// The confirmation flow: actions in `mcp_actions`, confirmed on the client's `/pending` page.
-pub fn confirmations(state: &AppState, resource: &str, key: &[u8]) -> Result<Confirmations, String> {
-    Confirmations::new(ConfirmConfig {
-        store: Arc::new(PostgresPending::new(state.pool.clone())),
-        key: key.to_vec(),
-        confirm_url: format!("{}/pending", origin(resource)),
+/// Toile's MCP server from the deployment `config`: the curated tools, `toile_delete_shapes`
+/// behind a confirmation on the client's `/pending` page. It sets `state.confirmations`, which
+/// the confirm page's API reads.
+pub fn app(state: &mut AppState, config: AppConfig) -> Result<App, String> {
+    let spec = AppSpec {
+        name: "toile".to_owned(),
+        title: "Toile".to_owned(),
+        instructions: INSTRUCTIONS.to_owned(),
         kinds: HashMap::from([(KIND.to_owned(), delete::kind(state))]),
-        pending_ttl: std::time::Duration::ZERO,
-        ask_ttl: std::time::Duration::ZERO,
-    })
+        ..AppSpec::default()
+    };
+    let mut app = App::new(AppConfig { version: crate::version::VERSION.to_owned(), ..config }, spec)?;
+    let confirmations = app.confirmations.clone().ok_or("mcp: toile_delete_shapes needs confirmations")?;
+    app.options.tools = tools::all(state, &confirmations, &app.url);
+    state.confirmations = Some(confirmations);
+    Ok(app)
 }
 
-/// Mounts `/mcp` and its metadata on `router`, outside `/api` and outside the CSRF rule.
-pub fn mount(
-    router: Router,
-    state: &AppState,
-    options: Options,
-    confirmations: Confirmations,
-) -> Result<Router, String> {
-    let mut options = options;
-    let origin = origin(&options.resource).to_owned();
-    options.title = "Toile".to_owned();
-    options.version = crate::version::VERSION.to_owned();
-    options.instructions = "Toile holds whiteboards: stickies, text, boxes, arrows and frames on an infinite canvas, \
-        a list per space. Call toile_list_boards for ids, then toile_read_board before you change a board: it lists \
-        every shape with its id, grouped by frame. Writes show up live for everyone on the board. \
-        toile_list_comments shows the open threads to answer with toile_comment or close with toile_resolve_comment."
-        .to_owned();
-    options.tools = tools::all(state, &confirmations, &origin);
-    tronc::mcp::mount(router, options)
+/// A confirm page entry: the action and what it targets, `{"board_id", "ids"}`.
+#[derive(Serialize)]
+struct Pending {
+    #[serde(flatten)]
+    item: PendingItem,
+    target: String,
+}
+
+/// `GET /mcp/pending`, `POST /mcp/pending/{id}/confirm|dismiss`, for `/api` behind
+/// `require_auth`. Only the person's own browser session confirms; `None` answers 404.
+pub fn pending(confirmations: Option<Confirmations>) -> Router<AppState> {
+    PendingPage::new(confirmations, "toile-web", |parts: http::request::Parts| async move {
+        require_own_session(&parts).map(|identity| identity.user_id.to_string())
+    })
+    .describe(|item, action| async move { Pending { item, target: action.target } })
+    .routes()
 }
 
 #[cfg(test)]
 mod tests {
     #[test]
-    fn the_origin_drops_the_mcp_path_and_board_ids_must_be_uuids() {
-        assert_eq!(super::origin("https://toile.facile.studio/mcp"), "https://toile.facile.studio");
+    fn board_ids_must_be_uuids() {
         assert!(super::board("nope").unwrap_err().0.contains("toile_list_boards"));
     }
 

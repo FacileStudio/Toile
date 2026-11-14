@@ -9,6 +9,7 @@ use porte::pg::TokenSealer;
 use sqlx::PgPool;
 use sqlx::postgres::PgPoolOptions;
 use tokio_util::sync::CancellationToken;
+use tronc::mcp::{App, AppConfig, PostgresPending, keep_pruned};
 
 use crate::auth::Kits;
 use crate::env::Config;
@@ -62,15 +63,24 @@ pub fn state(config: &Config, pool: PgPool, kits: &Kits, hub: Hub) -> AppState {
     }
 }
 
-fn mcp_options(config: &Config, kits: &Kits, state: &mut AppState) -> Result<Option<tronc::mcp::Options>, BootError> {
+fn mcp_app(config: &Config, kits: &Kits, state: &mut AppState) -> Result<Option<App>, BootError> {
     let Some(verifier) = kits.mcp.clone() else { return Ok(None) };
-    let resource = config.mcp_resource.clone();
-    state.confirmations = Some(crate::mcp::confirmations(state, &resource, config.mcp_state_key.as_bytes())?);
-    Ok(Some(tronc::mcp::Options::new("toile", resource, config.porte.issuer.clone(), verifier)))
+    let mut mcp = AppConfig::new(config.mcp_resource.clone(), config.porte.issuer.clone(), verifier);
+    mcp.state_key = tronc::mcp::state_key("toile", &config.mcp_state_key);
+    mcp.pending = Some(Arc::new(PostgresPending::new(state.pool.clone())));
+    Ok(Some(crate::mcp::app(state, mcp)?))
 }
 
 fn spawn_loops(kits: &Kits, state: &AppState, token: &CancellationToken) {
     tokio::spawn(crate::modules::boards::trash::run(state.clone(), token.clone()));
+    if state.confirmations.is_some() {
+        let pruner = keep_pruned(PostgresPending::new(state.pool.clone()), Duration::ZERO, Duration::ZERO);
+        let token = token.clone();
+        tokio::spawn(async move {
+            token.cancelled().await;
+            pruner.abort();
+        });
+    }
     if let Some(syncer) = kits.syncer.clone() {
         let token = token.clone();
         tokio::spawn(async move { syncer.run(token).await });
@@ -104,13 +114,13 @@ async fn serve(config: Config, pool: PgPool) -> Result<(), BootError> {
     kits.suite.plans.restore().await?;
     let token = CancellationToken::new();
     let mut state = state(&config, pool, &kits, hub.clone());
-    let mcp = mcp_options(&config, &kits, &mut state)?;
+    let mcp = mcp_app(&config, &kits, &mut state)?;
     spawn_loops(&kits, &state, &token);
     let mut http = tronc::http::Config::from_core(&config.core);
-    http.security = crate::security::config(http.security, &tronc::spa::dir_from_env(), config.core.is_production());
+    http.security = crate::security::config(http.security, &tronc::spa::dir_from_env());
     http.cors = crate::security::cors(http.cors);
     let layers = tronc::http::layers(http)?;
-    let app = crate::router::build_router(state, &kits, mcp)?
+    let app = crate::router::build_router(state, &kits, mcp, config.core.is_production())?
         .layer(axum::middleware::from_fn(crate::socket::ws_bearer))
         .layer(layers);
     let app = crate::cors::meetings(app);

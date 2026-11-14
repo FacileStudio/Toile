@@ -62,6 +62,10 @@ pub async fn app_from(pool: PgPool, vars: &[(&str, &str)], apps: api::modules::s
     let mut kits = Kits::new(&config, &pool, &hub).await.unwrap();
     let registre = Arc::new(registre::Registre::default());
     kits.suite.exchanger = Some(registre.exchanger(&pool));
+    kits.suite.bulle = apps
+        .bulle
+        .enabled()
+        .then(|| tronc::bulle::Client::with_timeout(&apps.bulle.url, api::modules::ai::TIMEOUT).unwrap());
     kits.suite.apps = apps;
     let state = AppState {
         pool: pool.clone(),
@@ -74,7 +78,7 @@ pub async fn app_from(pool: PgPool, vars: &[(&str, &str)], apps: api::modules::s
         sealer: None,
         public_url: Arc::from("https://toile.test"),
     };
-    let router = api::router::build_router(state.clone(), &kits, None).unwrap();
+    let router = api::router::build_router(state.clone(), &kits, None, false).unwrap();
     App { router, state, kits, pool, registre }
 }
 

@@ -6,7 +6,7 @@ use serde_json::{Value, json};
 use uuid::Uuid;
 use yrs::{Map, MapRef, Out, TransactionMut};
 
-use super::bulle::{self, Ask, Refusal};
+use super::bulle::{self, Ask};
 use crate::scene::change::{self, Change};
 use crate::scene::input::{Kind, NewShape};
 use crate::scene::layout::{FRAME_TOP, GAP, ROW, Shelf, after, bounds};
@@ -157,22 +157,23 @@ fn apply(txn: &mut TransactionMut, shapes: &MapRef, groups: &[Group]) -> Result<
 
 /// Asks Bulle to sort the selected stickies of `board` by theme, then frames each theme and
 /// moves its stickies into the frame, in one room write.
-pub async fn cluster(state: &AppState, user_id: i64, board: Uuid, ids: &[String]) -> Result<Vec<Framed>, Refusal> {
+pub async fn cluster(state: &AppState, user_id: i64, board: Uuid, ids: &[String]) -> tronc::Result<Vec<Framed>> {
     if ids.len() > MAX_SHAPES {
-        return Err(tronc::Error::invalid(format!("cluster at most {MAX_SHAPES} shapes at once")).into());
+        return Err(tronc::Error::invalid(format!("cluster at most {MAX_SHAPES} shapes at once")));
     }
     let notes = stickies(&scene::load(state, board).await?, ids);
     if notes.len() < 2 {
-        return Err(tronc::Error::invalid("select at least two stickies with text").into());
+        return Err(tronc::Error::invalid("select at least two stickies with text"));
     }
-    let input: Vec<Value> = notes.iter().map(|s| json!({"id": s.id, "text": bulle::clip(&s.text, 500)})).collect();
+    let input: Vec<Value> =
+        notes.iter().map(|s| json!({"id": s.id, "text": tronc::mcp::clip(&s.text, 500).0})).collect();
     let input = input.iter().map(Value::to_string).collect::<Vec<_>>().join("\n");
     let ask = Ask { prompt: PROMPT.to_owned(), input, schema: Some(schema()), max_tokens: 4096 };
     let answer: Groups = serde_json::from_value(bulle::complete(state, user_id, ask).await?)
         .map_err(|_| tronc::Error::unavailable("Bulle answered no groups"))?;
     let groups = clean(answer.groups, &notes);
     if groups.is_empty() {
-        return Err(tronc::Error::unavailable("Bulle found no group for these stickies").into());
+        return Err(tronc::Error::unavailable("Bulle found no group for these stickies"));
     }
     let out = Arc::new(Mutex::new(Vec::new()));
     let sink = out.clone();

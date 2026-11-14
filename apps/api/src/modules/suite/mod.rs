@@ -22,6 +22,8 @@ use crate::state::AppState;
 pub struct Suite {
     /// Mints the person's tokens for other apps; `None` without Registre.
     pub exchanger: Option<Exchanger>,
+    /// The pooled Bulle client; `None` while Bulle is not configured.
+    pub bulle: Option<tronc::bulle::Client>,
     /// The plan values from the directory snapshot.
     pub plans: Plans,
     /// The suite apps Toile calls.

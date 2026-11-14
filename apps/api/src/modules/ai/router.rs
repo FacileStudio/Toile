@@ -5,7 +5,7 @@ use porte::Identity;
 use serde::{Deserialize, Serialize};
 use tronc::json::Json;
 
-use super::bulle::{Refusal, gate};
+use super::bulle::gate;
 use super::cluster::{self, Framed};
 use super::generate::{self, Draw, Request};
 use super::summarize;
@@ -47,7 +47,7 @@ async fn summarize(
     State(state): State<AppState>,
     who: Identity,
     Path(board): Path<String>,
-) -> Result<Json<Summary>, Refusal> {
+) -> tronc::Result<Json<Summary>> {
     let board = id(&board)?;
     gate(&state, who.user_id, board).await?;
     Ok(Json(Summary { markdown: summarize::summarize(&state, who.user_id, board).await? }))
@@ -58,7 +58,7 @@ async fn cluster(
     who: Identity,
     Path(board): Path<String>,
     Json(body): Json<ClusterIn>,
-) -> Result<Json<ClusterOut>, Refusal> {
+) -> tronc::Result<Json<ClusterOut>> {
     let board = id(&board)?;
     gate(&state, who.user_id, board).await?;
     Ok(Json(ClusterOut { frames: cluster::cluster(&state, who.user_id, board, &body.shapes).await? }))
@@ -69,7 +69,7 @@ async fn generate(
     who: Identity,
     Path(board): Path<String>,
     Json(body): Json<GenerateIn>,
-) -> Result<Json<GenerateOut>, Refusal> {
+) -> tronc::Result<Json<GenerateOut>> {
     let board = id(&board)?;
     gate(&state, who.user_id, board).await?;
     let request = Request { prompt: &body.prompt, draw: body.kind, accent: body.accent.as_deref() };
