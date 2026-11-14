@@ -4,6 +4,13 @@ All notable changes to Toile. Versions follow SemVer.
 
 ## [Unreleased]
 
+## [0.16.1] - 2026-11-14
+
+### Changed
+
+- Landing: the feature list sits between the "works with" row and the pricing block, so two card grids no longer follow each other.
+- muse v0.25.1. New og-image.png and site.webmanifest description from the muse brand catalog.
+
 ## [0.16.0] - 2026-11-14
 
 ### Added
