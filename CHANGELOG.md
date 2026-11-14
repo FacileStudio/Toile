@@ -4,6 +4,15 @@ All notable changes to Toile. Versions follow SemVer.
 
 ## [Unreleased]
 
+### Changed
+
+- Client: `@facile/muse` v0.23.0 and `@facile/mise-en-scene` v0.2.2
+
+### Removed
+
+- Landing: the download section, the "Télécharger l'app" button and the Applications link. No release carries installers yet, so every `releases/latest/download/...` link returned 404. The hero's secondary button now scrolls to the features
+- README: the installer table, for the same reason
+
 ## [0.12.0] - 2026-11-14
 
 ### Changed

@@ -40,20 +40,9 @@ dev`. The API reference is at <http://localhost:4000/docs>.
 
 ## Downloads
 
-The apps come from the [latest release](https://github.com/FacileStudio/Toile/releases/latest).
-The links stay the same from one version to the next:
-
-| Platform | Download |
-|---|---|
-| macOS, Apple silicon | [Toile-macos-arm64.dmg](https://github.com/FacileStudio/Toile/releases/latest/download/Toile-macos-arm64.dmg) |
-| macOS, Intel | [Toile-macos-x64.dmg](https://github.com/FacileStudio/Toile/releases/latest/download/Toile-macos-x64.dmg) |
-| Linux, Debian and Ubuntu | [Toile-linux-x64.deb](https://github.com/FacileStudio/Toile/releases/latest/download/Toile-linux-x64.deb) |
-| Linux, any distribution | [Toile-linux-x64.AppImage](https://github.com/FacileStudio/Toile/releases/latest/download/Toile-linux-x64.AppImage) |
-| Windows | [Toile-windows-x64.msi](https://github.com/FacileStudio/Toile/releases/latest/download/Toile-windows-x64.msi) |
-| Android | [Toile-android.apk](https://github.com/FacileStudio/Toile/releases/latest/download/Toile-android.apk) |
-
-The macOS app is not notarized: right-click it and choose Open the first time. iOS is not built
-yet.
+No installers are published yet: every [release](https://github.com/FacileStudio/Toile/releases)
+so far ships without assets. Use Toile in the browser at https://toile.facile.studio. Once the
+release workflow uploads its builds, they land at fixed names under `releases/latest/download/`.
 
 ## Configuration
 

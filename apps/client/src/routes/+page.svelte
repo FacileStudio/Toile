@@ -1,16 +1,12 @@
 <script lang="ts">
-	import { Button, DownloadSection, LandingFooter, LandingHeader, SignInWithFacile, TextElevate, icons } from '@facile/muse';
+	import { Button, LandingFooter, LandingHeader, SignInWithFacile, TextElevate, icons } from '@facile/muse';
 	import { backend } from '$lib/backend';
 	import { logoIcon } from '$lib/brand';
-	import { DOWNLOADS, RELEASES } from '$lib/downloads';
 	import FeatureCard from '$lib/components/landing/FeatureCard.svelte';
 	import HeroBoard from '$lib/components/landing/HeroBoard.svelte';
 	import { FEATURES, SUITE } from '$lib/components/landing/content';
 
-	const links = [
-		{ href: '#features', label: 'Fonctionnalités' },
-		{ href: '#apps', label: 'Applications' }
-	];
+	const links = [{ href: '#features', label: 'Fonctionnalités' }];
 
 	const columns = [
 		{ title: 'Toile', links },
@@ -44,7 +40,7 @@
 				<p class="text-fc-md text-balance text-fc-fg-muted">Post-it, formes et flèches, à plusieurs et en direct.</p>
 				<div class="flex flex-wrap items-center justify-center gap-3">
 					<SignInWithFacile href={backend.loginUrl()} size="lg" />
-					<Button href="#apps" variant="secondary" size="lg" icon={icons.download}>Télécharger l'app</Button>
+					<Button href="#features" variant="secondary" size="lg" icon={icons.chevronDown}>Découvrir</Button>
 				</div>
 			</div>
 			<HeroBoard />
@@ -57,14 +53,6 @@
 					<li><FeatureCard {feature} /></li>
 				{/each}
 			</ul>
-		</section>
-
-		<section id="apps" aria-labelledby="apps-title" class="mx-auto flex w-full max-w-fc-xl flex-col gap-8 px-4 sm:px-6">
-			<div class="flex flex-col gap-2">
-				<h2 id="apps-title" class="font-fc-title text-fc-2xl font-bold">Sur le bureau et le mobile</h2>
-				<p class="max-w-fc-md text-fc-md text-fc-fg-muted">Toile marche dans le navigateur. Les applications ajoutent le stylet et les gestes tactiles.</p>
-			</div>
-			<DownloadSection downloads={DOWNLOADS} releasesHref={RELEASES} headingLevel={3} />
 		</section>
 
 		<section class="mx-auto flex w-full max-w-fc-md flex-col items-center gap-6 px-4 text-center sm:px-6">

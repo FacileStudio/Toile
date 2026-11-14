@@ -27,8 +27,7 @@ test('a signed-out visitor gets the landing with a sign-in link', async () => {
 	const page = await pageAs(null, '/');
 	await page.getByRole('heading', { name: 'Le tableau blanc infini de Facile', level: 1 }).waitFor();
 	expect(await page.locator('a[href^="/api/auth/oidc"]').count()).toBeGreaterThan(0);
-	const release = 'https://github.com/FacileStudio/Toile/releases/latest/download/';
-	expect(await page.locator(`a[href^="${release}"]`).count()).toBe(6);
+	expect(await page.locator('a[href*="/releases/"]').count()).toBe(0);
 });
 
 test('a member creates a board and lands on the list after sign-in', async () => {
