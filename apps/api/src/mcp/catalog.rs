@@ -64,7 +64,9 @@ fn listing(state: &AppState) -> Tool {
             "toile_list_comments",
             "List comments",
             "Call to see what people said on a board: its threads with replies, where each is pinned, open ones by \
-             default (status: open, resolved, all), a page at a time (limit, cursor).",
+             default (status: open, resolved, all), a page at a time (limit, cursor). A page stops early when the \
+             next thread would not fit; a thread too long to fit lists its oldest replies and flags \
+             replies_truncated.",
             reading(),
         ),
         move |call, input| comments::list(a.clone(), call, input),
@@ -92,7 +94,7 @@ pub fn comments(state: &AppState) -> Vec<Tool> {
                 "Resolve a comment",
                 "Call once a thread is dealt with: marks it resolved, or reopens it with resolved false. Everyone on \
                  the board sees it live.",
-                writing(false, true),
+                writing(true, true),
             ),
             move |call, input| comments::resolve(b.clone(), call, input),
         ),

@@ -4,6 +4,16 @@ All notable changes to Toile. Versions follow SemVer.
 
 ## [Unreleased]
 
+### Changed
+
+- API: `porte` (porte-rs) moves from v0.6.1 to v0.7.1.
+- MCP: `toile_resolve_comment` is annotated destructive: resolving hides a thread and reopening clears when it was resolved.
+
+### Fixed
+
+- Auth: an erased person can no longer come back. The deletion loop asks `porte_identities` about every subject it already erased (`Deletions::with_holds`) and erases a re-created account again, and the sign-in kit refuses an erased subject (`Kit::with_erased`), so a token minted before the erasure gets 401 at `/mcp` instead of a fresh account.
+- MCP: `toile_list_comments` and `toile_list_boards` stop a page at the result budget (about 25,000 tokens) and resume from `next_cursor`; a thread too long for one answer lists its oldest replies and sets `replies_truncated`.
+
 ## [0.11.0] - 2026-11-14
 
 ### Changed

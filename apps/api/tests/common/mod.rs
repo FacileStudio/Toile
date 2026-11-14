@@ -51,7 +51,13 @@ pub async fn app(pool: PgPool) -> App {
 }
 
 pub async fn app_with(pool: PgPool, apps: api::modules::suite::Apps) -> App {
-    let config = Config::from_vars(&Vars::from_pairs(vec![("DATABASE_URL", "postgres://unused/x")])).unwrap();
+    app_from(pool, &[], apps).await
+}
+
+pub async fn app_from(pool: PgPool, vars: &[(&str, &str)], apps: api::modules::suite::Apps) -> App {
+    let mut pairs = vec![("DATABASE_URL", "postgres://unused/x")];
+    pairs.extend_from_slice(vars);
+    let config = Config::from_vars(&Vars::from_pairs(pairs)).unwrap();
     let hub = api::modules::rooms::Hub::default();
     let mut kits = Kits::new(&config, &pool, &hub).await.unwrap();
     let registre = Arc::new(registre::Registre::default());
