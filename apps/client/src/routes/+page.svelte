@@ -2,8 +2,11 @@
 	import { Button, LandingFooter, LandingHeader, SignInWithFacile, TextElevate, icons } from '@facile/muse';
 	import { backend } from '$lib/backend';
 	import { logoIcon } from '$lib/brand';
+	import ClusterTile from '$lib/components/landing/ClusterTile.svelte';
+	import CommentTile from '$lib/components/landing/CommentTile.svelte';
 	import FeatureCard from '$lib/components/landing/FeatureCard.svelte';
 	import HeroBoard from '$lib/components/landing/HeroBoard.svelte';
+	import ShareTile from '$lib/components/landing/ShareTile.svelte';
 	import { FEATURES, SUITE } from '$lib/components/landing/content';
 
 	const links = [{ href: '#features', label: 'Fonctionnalités' }];
@@ -44,6 +47,17 @@
 				</div>
 			</div>
 			<HeroBoard />
+		</section>
+
+		<section aria-labelledby="demos-title" class="mx-auto w-full max-w-fc-xl px-4 sm:px-6">
+			<h2 id="demos-title" class="mb-10 text-center font-fc-title text-2xl font-bold tracking-tight text-fc-fg sm:text-3xl">
+				Tout ce qu’il faut pour avancer ensemble
+			</h2>
+			<div class="grid gap-6 md:grid-cols-3">
+				<CommentTile />
+				<ClusterTile />
+				<ShareTile />
+			</div>
 		</section>
 
 		<section id="features" aria-labelledby="features-title" class="mx-auto flex w-full max-w-fc-xl flex-col gap-8 px-4 sm:px-6">
