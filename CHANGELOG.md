@@ -4,6 +4,12 @@ All notable changes to Toile. Versions follow SemVer.
 
 ## [Unreleased]
 
+## [0.16.3] - 2026-11-14
+
+### Fixed
+
+- Landing pricing: "Commencer gratuitement" and every "Choisir" button open the Facile sign-up page in the landing's language (`https://sso.facile.studio/signup?lang=…`) instead of the Spaces page, which asked a signed-out visitor to sign in. muse v0.26.0.
+
 ## [0.16.2] - 2026-11-14
 
 ### Changed
