@@ -7,7 +7,7 @@ All notable changes to Toile. Versions follow SemVer.
 ### Changed
 
 - API: `porte` (porte-rs) moves from v0.6.1 to v0.7.1.
-- MCP: `toile_resolve_comment` is annotated destructive: resolving hides a thread and reopening clears who resolved it.
+- MCP: `toile_resolve_comment` is annotated destructive: resolving hides a thread and reopening clears when it was resolved.
 
 ### Fixed
 

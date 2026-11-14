@@ -238,7 +238,7 @@ account. Metadata: `/.well-known/oauth-protected-resource/mcp`.
 
 Annotations: reads are read-only and idempotent; `toile_update_shapes`, `toile_update_board` and
 `toile_trash_board` are destructive and idempotent; `toile_resolve_comment` is destructive (it
-hides a thread, and reopening clears who resolved it) and idempotent; `toile_delete_shapes` is
+hides a thread, and reopening clears when it was resolved) and idempotent; `toile_delete_shapes` is
 destructive; `toile_restore_board` is idempotent. Every tool is closed-world.
 
 Every shape write runs in the board's room (`Hub::write`): open clients see it live and schema 1

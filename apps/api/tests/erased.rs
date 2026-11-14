@@ -87,7 +87,7 @@ async fn an_erased_subject_cannot_come_back_through_mcp() {
         ("MCP_STATE_KEY", "test-state-key"),
     ];
     let app = common::app_from(pool, &vars, Default::default()).await;
-    assert!(app.kits.mcp.is_some(), "the MCP verifier provisions through this kit");
+    assert!(app.kits.mcp.is_some(), "the MCP verifier is wired, and it shares this kit");
     let deletions = app.kits.deletions.clone().expect("the deletion loop is wired");
     account(&app, &issuer, &subject).await;
     deletions.poll().await.unwrap();
