@@ -4,6 +4,13 @@ All notable changes to Toile. Versions follow SemVer.
 
 ## [Unreleased]
 
+## [0.15.1] - 2026-11-14
+
+### Fixed
+
+- Landing: the "Réfléchir à plusieurs" section is now a two-column split (heading on one side, a list of the four features with icons on the other) instead of a second card grid right after the demo tiles.
+- Landing: the comment demo tile gives its post-it an even inset and keeps the whole thread, reply included, in one aligned block like the board's comment panel.
+
 ## [0.15.0] - 2026-11-14
 
 ### Changed
