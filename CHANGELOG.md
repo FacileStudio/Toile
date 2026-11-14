@@ -4,6 +4,12 @@ All notable changes to Toile. Versions follow SemVer.
 
 ## [Unreleased]
 
+## [0.16.2] - 2026-11-14
+
+### Changed
+
+- Landing: the "works with" block is a compact row (icon, name and one line per app, no cards), so it no longer reads as a second card grid under the demo tiles.
+
 ## [0.16.1] - 2026-11-14
 
 ### Changed
