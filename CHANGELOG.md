@@ -4,6 +4,12 @@ All notable changes to Toile. Versions follow SemVer.
 
 ## [Unreleased]
 
+## [0.14.0] - 2026-11-14
+
+### Added
+
+- Landing: a section of three looping demo tiles after the hero: comments on the board, Bulle sorting post-it into frames, guest share links.
+
 ## [0.13.0] - 2026-11-14
 
 ### Changed
