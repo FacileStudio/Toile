@@ -1,30 +1,66 @@
 <script lang="ts">
-	import { Button, LandingFooter, LandingHeader, SignInWithFacile, TextElevate, icons } from '@facile/muse';
+	import {
+		FeatureSplit,
+		LANDING_HEADING,
+		LandingCta,
+		LandingFooter,
+		LandingHeader,
+		PricingPlans,
+		SignInWithFacile,
+		TextElevate,
+		WorksWith,
+		icons,
+		type FeatureItem,
+		type WorksWithApp
+	} from '@facile/muse';
 	import { backend } from '$lib/backend';
 	import { logoIcon } from '$lib/brand';
 	import ClusterTile from '$lib/components/landing/ClusterTile.svelte';
 	import CommentTile from '$lib/components/landing/CommentTile.svelte';
-	import FeatureRow from '$lib/components/landing/FeatureRow.svelte';
 	import HeroBoard from '$lib/components/landing/HeroBoard.svelte';
-	import ShareTile from '$lib/components/landing/ShareTile.svelte';
-	import { FEATURES, SUITE } from '$lib/components/landing/content';
+	import OpusTile from '$lib/components/landing/OpusTile.svelte';
+	import { rememberLocale, t } from '$lib/i18n/index.svelte';
+	import { suiteIcons } from '$lib/suiteIcons';
 
-	const links = [{ href: '#features', label: 'Fonctionnalités' }];
+	const WIDTH = 'mx-auto w-full max-w-fc-xl px-4 sm:px-6';
 
-	const columns = [
+	const links = $derived([
+		{ href: '#features', label: t('landing.nav.features') },
+		{ href: '#pricing', label: t('landing.nav.pricing') }
+	]);
+
+	const features = $derived<FeatureItem[]>([
+		{ icon: icons.compass, title: t('landing.feature.canvas.title'), text: t('landing.feature.canvas.text') },
+		{ icon: icons.usersGroup, title: t('landing.feature.live.title'), text: t('landing.feature.live.text') },
+		{ icon: icons.globe, title: t('landing.feature.guests.title'), text: t('landing.feature.guests.text') },
+		{ icon: icons.download, title: t('landing.feature.export.title'), text: t('landing.feature.export.text') }
+	]);
+
+	const apps = $derived<WorksWithApp[]>([
+		{ name: 'Opus', icon: suiteIcons.opus, line: t('with.opus'), href: 'https://opus.facile.studio' },
+		{ name: 'Docs', icon: suiteIcons.docs, line: t('with.docs'), href: 'https://docs.facile.studio' },
+		{ name: 'Nuage', icon: suiteIcons.nuage, line: t('with.nuage'), href: 'https://nuage.facile.studio' },
+		{ name: 'Bulle', icon: suiteIcons.bulle, line: t('with.bulle'), href: 'https://bulle.facile.studio' }
+	]);
+
+	const columns = $derived([
 		{ title: 'Toile', links },
 		{
 			title: 'Facile',
 			links: [
-				...SUITE.map((app) => ({ href: app.href, label: app.title, external: true })),
-				{ href: 'https://sso.facile.studio/signup', label: 'Créer un compte', external: true }
+				...apps.map((app) => ({ href: app.href ?? '', label: app.name, external: true })),
+				{ href: 'https://suite.facile.studio', label: 'Suite', external: true }
 			]
 		}
-	];
+	]);
+
+	$effect(() => {
+		document.querySelector('meta[name="description"]')?.setAttribute('content', t('landing.meta'));
+	});
 </script>
 
 <svelte:head>
-	<title>Toile · Le tableau blanc infini de Facile</title>
+	<title>{t('landing.title')}</title>
 </svelte:head>
 
 <div class="min-h-dvh bg-fc-page text-fc-fg">
@@ -35,58 +71,59 @@
 	</LandingHeader>
 
 	<main id="main" class="flex flex-col gap-24 pb-24">
-		<section class="mx-auto flex w-full max-w-fc-xl flex-col items-center gap-10 px-4 pt-12 sm:px-6 md:pt-20">
+		<section class="{WIDTH} flex flex-col items-center gap-10 pt-12 md:pt-20">
 			<div class="flex max-w-fc-md flex-col items-center gap-6 text-center">
 				<h1 class="font-fc-title text-fc-3xl font-bold text-balance">
-					<TextElevate text="Le tableau blanc infini de Facile" delay={0.1} />
+					{#key t('landing.slogan')}<TextElevate text={t('landing.slogan')} delay={0.1} />{/key}
 				</h1>
-				<p class="text-fc-md text-balance text-fc-fg-muted">Post-it, formes et flèches, à plusieurs et en direct.</p>
-				<div class="flex flex-wrap items-center justify-center gap-3">
-					<SignInWithFacile href={backend.loginUrl()} size="lg" />
-					<Button href="#features" variant="secondary" size="lg" icon={icons.chevronDown}>Découvrir</Button>
-				</div>
+				<p class="text-fc-md text-balance text-fc-fg-muted">{t('landing.subtitle')}</p>
+				<LandingCta signInHref={backend.loginUrl()} align="center" />
 			</div>
 			<HeroBoard />
 		</section>
 
-		<section aria-labelledby="demos-title" class="mx-auto w-full max-w-fc-xl px-4 sm:px-6">
-			<h2 id="demos-title" class="mb-10 text-center font-fc-title text-2xl font-bold tracking-tight text-fc-fg sm:text-3xl">
-				Tout ce qu’il faut pour avancer ensemble
-			</h2>
+		<section aria-labelledby="demos-title" class={WIDTH}>
+			<h2 id="demos-title" class="mb-10 text-center {LANDING_HEADING}">{t('landing.demos.title')}</h2>
 			<div class="grid gap-6 md:grid-cols-3">
 				<CommentTile />
 				<ClusterTile />
-				<ShareTile />
+				<OpusTile />
 			</div>
 		</section>
 
-		<section
+		<FeatureSplit
 			id="features"
-			aria-labelledby="features-title"
-			class="mx-auto grid w-full max-w-fc-xl gap-10 px-4 sm:px-6 md:grid-cols-[2fr_3fr] md:gap-16"
-		>
-			<div class="flex flex-col gap-3">
-				<h2 id="features-title" class="font-fc-title text-fc-2xl font-bold">Réfléchir à plusieurs</h2>
-				<p class="text-fc-md text-fc-fg-muted">Un seul tableau pour toute l’équipe, du premier post-it à l’export.</p>
-			</div>
-			<ul class="flex flex-col gap-8">
-				{#each FEATURES as feature (feature.title)}
-					<li><FeatureRow {feature} /></li>
-				{/each}
-			</ul>
-		</section>
+			class="{WIDTH} scroll-mt-20"
+			title={t('landing.features.title')}
+			description={t('landing.features.line')}
+			{features}
+		/>
+
+		<WorksWith class={WIDTH} {apps} description={t('with.line')} />
+
+		<PricingPlans
+			id="pricing"
+			class="{WIDTH} scroll-mt-20"
+			title={t('landing.pricing.title')}
+			headingClass={LANDING_HEADING}
+			highlight={['ai.access']}
+			highlightOnly
+			notes={{ solo: t('landing.plan.free'), '*': t('landing.plan.paid') }}
+			recommended="pro"
+			suiteHref="https://suite.facile.studio/#tarifs"
+		/>
 
 		<section class="mx-auto flex w-full max-w-fc-md flex-col items-center gap-6 px-4 text-center sm:px-6">
-			<h2 class="font-fc-title text-fc-2xl font-bold">Votre prochain atelier commence ici</h2>
-			<SignInWithFacile href={backend.loginUrl()} size="lg" />
+			<h2 class={LANDING_HEADING}>{t('landing.cta.title')}</h2>
+			<LandingCta signInHref={backend.loginUrl()} align="center" />
 		</section>
 	</main>
 
 	<LandingFooter
 		appName="Toile"
 		icon={logoIcon}
-		tagline="Le tableau blanc infini de Facile."
+		tagline={t('landing.tagline')}
 		{columns}
-		legal={{ hideLocaleSwitch: true }}
+		legal={{ onLocaleChange: rememberLocale }}
 	/>
 </div>

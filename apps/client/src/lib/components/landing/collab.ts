@@ -1,5 +1,5 @@
 import type { Act } from '@facile/mise-en-scene';
-import { COPY, GRIP, clear, type BoardNodes, type BoardState, type HeroLayout, type StickyId } from './hero';
+import { GRIP, copy, clear, type BoardNodes, type BoardState, type HeroLayout, type StickyId } from './hero';
 
 function cue(): { wait: Promise<void>; go: () => void } {
 	let go = () => {};
@@ -11,6 +11,7 @@ function cue(): { wait: Promise<void>; go: () => void } {
 export async function perform(act: Act, board: BoardState, nodes: BoardNodes, layout: HeroLayout): Promise<void> {
 	const { you, lea, malik } = board.cursors;
 	const at = (id: StickyId, [fx, fy]: readonly [number, number]) => act.point(nodes.stickies[id], fx, fy);
+	const words = copy();
 	const typed = cue();
 	const handed = cue();
 	Object.assign(you, act.point(nodes.canvas, 0.84, 0.9));
@@ -24,7 +25,7 @@ export async function perform(act: Act, board: BoardState, nodes: BoardNodes, la
 		await act.click(you, () => (board.tool = 'sticky'));
 		await act.move(you, at('beta', [0.35, 0.4]));
 		await act.click(you, () => Object.assign(board, { placed: true, tool: 'select', picks: { ...board.picks, you: 'beta' } }));
-		await act.type(COPY.beta, (value) => (board.beta = value), 55);
+		await act.type(words.beta, (value) => (board.beta = value), 55);
 		typed.go();
 		await act.move(you, act.point(nodes.tool('arrow'), 0.6, 0.6));
 		await act.click(you, () => Object.assign(board, { tool: 'arrow', picks: { ...board.picks, you: null } }));
@@ -50,14 +51,14 @@ export async function perform(act: Act, board: BoardState, nodes: BoardNodes, la
 		await act.move(lea, at('beta', GRIP.note));
 		await act.click(lea, () => (board.picks.lea = 'beta'));
 		handed.go();
-		await act.type(COPY.note, (value) => (board.note = value), 60);
+		await act.type(words.note, (value) => (board.note = value), 60);
 	};
 
 	const malikTrack = async () => {
 		await act.wait(500);
 		await act.move(malik, at('export', GRIP.malik));
 		await act.click(malik, () => (board.picks.malik = 'export'));
-		await act.type(COPY.line, (value) => (board.line = value), 80);
+		await act.type(words.line, (value) => (board.line = value), 80);
 		await handed.wait;
 		await act.move(malik, at('onboarding', [0.5, 0.75]));
 		await act.click(malik, () => (board.picks.malik = 'onboarding'));

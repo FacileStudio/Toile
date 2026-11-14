@@ -1,6 +1,7 @@
 import { USER_COLORS } from '@facile/muse';
 import { cursorAt, type CursorState } from '@facile/mise-en-scene';
 import { toolIcons } from '$lib/canvas/icons';
+import { t } from '$lib/i18n/index.svelte';
 
 /** A rectangle on the faux board, in the window body's design pixels. */
 export type Box = { x: number; y: number; w: number; h: number };
@@ -133,8 +134,10 @@ export type BoardNodes = {
 	tool: (id: string) => Element | undefined;
 };
 
-/** The strings the three people type. */
-export const COPY = { beta: 'Lancer la bêta', note: 'pour vendredi', line: '+ PNG et SVG' } as const;
+/** The strings the three people type, in the landing's locale. */
+export function copy(): { beta: string; note: string; line: string } {
+	return { beta: t('hero.beta'), note: t('hero.note'), line: t('hero.line') };
+}
 
 /** A fresh board: nobody has done anything and every cursor is hidden. */
 export function blank(): BoardState {
@@ -159,11 +162,12 @@ export function clear(board: BoardState): void {
 
 /** The poster frame: Léa mid-drag, Malik mid-sentence, the visitor finishing an arrow. */
 export function posed(board: BoardState): void {
+	const words = copy();
 	Object.assign(board, {
 		tool: 'arrow',
 		placed: true,
-		beta: COPY.beta,
-		line: COPY.line.slice(0, 8),
+		beta: words.beta,
+		line: words.line.slice(0, 8),
 		linked: true,
 		moved: true,
 		picks: { you: null, lea: 'onboarding', malik: 'export' }

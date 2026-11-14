@@ -2,10 +2,9 @@
 	import { Icon, USER_COLORS } from '@facile/muse';
 	import { Bar, Stage, Tile, grow, type Act } from '@facile/mise-en-scene';
 	import { toolIcons } from '$lib/canvas/icons';
+	import { t } from '$lib/i18n/index.svelte';
 	import Sticky from './Sticky.svelte';
 
-	const QUESTION = 'On garde ce titre ?';
-	const ANSWER = 'Oui, validé.';
 
 	let pinned = $state(false);
 	let asked = $state('');
@@ -19,7 +18,7 @@
 
 	function poster() {
 		pinned = true;
-		asked = QUESTION;
+		asked = t('comment.question');
 		replied = true;
 	}
 
@@ -27,7 +26,7 @@
 		await act.wait(700);
 		pinned = true;
 		await act.wait(450);
-		await act.type(QUESTION, (value) => (asked = value), 55);
+		await act.type(t('comment.question'), (value) => (asked = value), 55);
 		await act.wait(1100);
 		replied = true;
 		await act.wait(2600);
@@ -36,12 +35,12 @@
 	}
 </script>
 
-<Tile title="Commentez sur place" body="Un fil de discussion posé sur le tableau, là où se trouve l’idée.">
+<Tile title={t('comment.title')} body={t('comment.body')}>
 	<Stage width={320} height={240} {script} {reset} {poster}>
 		{#snippet children()}
 			<div class="board absolute top-5 right-5 bottom-5 left-5 overflow-hidden rounded-fc-lg bg-fc-page">
 				<Sticky box={{ x: 12, y: 40, w: 100, h: 96 }} color={USER_COLORS[0]}>
-					Nouveau logo<Bar w="80%" /><Bar w="55%" />
+					{t('comment.sticky')}<Bar w="80%" /><Bar w="55%" />
 				</Sticky>
 				<Sticky box={{ x: 28, y: 150, w: 84, h: 32 }} color={USER_COLORS[4]}><Bar w="70%" /></Sticky>
 				<span
@@ -54,7 +53,7 @@
 					class="panel absolute top-12 right-2.5 flex w-[150px] flex-col gap-2 rounded-fc-lg bg-fc-component p-3 shadow-lg"
 					class:shown={pinned}
 				>
-					<span class="text-fc-xs font-semibold text-fc-fg">Commentaires</span>
+					<span class="text-fc-xs font-semibold text-fc-fg">{t('comment.panel')}</span>
 					<div class="flex flex-col gap-2 rounded-fc-md bg-fc-surface p-2">
 						<div class="flex flex-col gap-0.5">
 							<span class="text-[10px] leading-3 font-medium text-fc-fg">Léa</span>
@@ -63,7 +62,7 @@
 						{#if replied}
 							<div class="flex flex-col gap-0.5 pl-3" transition:grow={{ duration: 300 }}>
 								<span class="text-[10px] leading-3 font-medium text-fc-fg">Malik</span>
-								<p class="text-fc-xs leading-4 text-fc-fg">{ANSWER}</p>
+								<p class="text-fc-xs leading-4 text-fc-fg">{t('comment.answer')}</p>
 							</div>
 						{:else}
 							<div class="flex h-[30px] items-center pl-3"><Bar w="60%" /></div>

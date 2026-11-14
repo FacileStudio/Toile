@@ -23,10 +23,11 @@ async function pageAs(who: Person | null, path: string): Promise<Page> {
 	return page;
 }
 
-test('a signed-out visitor gets the landing with a sign-in link', async () => {
+test('a signed-out visitor gets the landing with sign-up and sign-in links', async () => {
 	const page = await pageAs(null, '/');
-	await page.getByRole('heading', { name: 'Le tableau blanc infini de Facile', level: 1 }).waitFor();
+	await page.getByRole('heading', { name: 'Un tableau blanc infini à partager', level: 1 }).waitFor();
 	expect(await page.locator('a[href^="/api/auth/oidc"]').count()).toBeGreaterThan(0);
+	expect(await page.locator('a[href^="https://sso.facile.studio/signup"]').count()).toBeGreaterThan(0);
 	expect(await page.locator('a[href*="/releases/"]').count()).toBe(0);
 });
 

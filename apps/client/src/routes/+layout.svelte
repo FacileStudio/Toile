@@ -15,6 +15,7 @@
 		type UserMenuOptions
 	} from '@facile/muse';
 	import { backend } from '$lib/backend';
+	import { bindLocale, localeSource } from '$lib/i18n/index.svelte';
 	import { boardIcon, logoIcon } from '$lib/brand';
 	import { reconnect } from '$lib/reconnect.svelte';
 	import { takeReturn } from '$lib/returnTo';
@@ -32,7 +33,8 @@
 	const landing = $derived(path === '/');
 	const fullscreen = $derived(path.startsWith('/s/') || (path.startsWith('/b/') && !!session.user));
 
-	provideLocale(() => 'fr');
+	const i18n = provideLocale(() => (landing && !session.user ? localeSource() : 'fr'));
+	bindLocale(() => i18n.locale);
 	theme.restore();
 
 	$effect(() => {

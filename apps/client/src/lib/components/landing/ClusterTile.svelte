@@ -1,7 +1,8 @@
 <script lang="ts">
 	import { Blob, thinking } from '@facile/blob';
-	import { Button, USER_COLORS } from '@facile/muse';
+	import { Badge, Button, USER_COLORS } from '@facile/muse';
 	import { Bar, Stage, Tile, type Act } from '@facile/mise-en-scene';
+	import { t } from '$lib/i18n/index.svelte';
 	import Sticky from './Sticky.svelte';
 
 	const NOTES = [
@@ -10,7 +11,7 @@
 		{ box: { x: 156, y: 54, w: 50, h: 42 }, from: [-118, 44], color: USER_COLORS[4] },
 		{ box: { x: 214, y: 54, w: 50, h: 42 }, from: [-38, -14], color: USER_COLORS[4] }
 	];
-	const THEMES = ['Accueil', 'Paiement'];
+	const themes = $derived([t('cluster.welcome'), t('cluster.payment')]);
 
 	let sorted = $state(false);
 	let busy = $state(false);
@@ -36,11 +37,12 @@
 	}
 </script>
 
-<Tile title="Bulle range vos idées" body="Sélectionnez des post-it, l’IA les regroupe par thème dans des cadres.">
+<Tile title={t('cluster.title')} body={t('cluster.body')}>
+	{#snippet badge()}<Badge class="shrink-0">{t('cluster.badge')}</Badge>{/snippet}
 	<Stage width={320} height={240} {script} {reset} {poster}>
 		{#snippet children()}
 			<div class="board absolute top-5 right-5 bottom-5 left-5 overflow-hidden rounded-fc-lg bg-fc-page">
-				{#each THEMES as theme, at (theme)}
+				{#each themes as theme, at (at)}
 					<div class="frame absolute top-[38px] h-[72px] w-[124px] rounded-fc-lg bg-fc-surface" class:shown={sorted} style:left="{14 + at * 132}px">
 						<span class="absolute -top-5 left-1 text-fc-xs font-medium text-fc-fg-muted">{theme}</span>
 					</div>
@@ -52,7 +54,7 @@
 				{/each}
 				<div class="absolute bottom-3 left-1/2 flex -translate-x-1/2 items-center gap-2 rounded-fc-pill bg-fc-component p-1.5 pl-2 shadow-lg">
 					<Blob name="Bulle" size={24} animate={busy ? 'always' : undefined} expression={busy ? thinking : undefined} />
-					<Button variant="secondary" size="sm" class="whitespace-nowrap {busy ? 'opacity-70' : ''}">Ranger 4 post-it</Button>
+					<Button variant="secondary" size="sm" class="whitespace-nowrap {busy ? 'opacity-70' : ''}">{t('cluster.button')}</Button>
 				</div>
 			</div>
 		{/snippet}

@@ -3,10 +3,11 @@
 	import { Bar, Cursor, Stage, Window, type Act, type CursorState } from '@facile/mise-en-scene';
 	import LiveCursor from './LiveCursor.svelte';
 	import Sticky from './Sticky.svelte';
+	import { t } from '$lib/i18n/index.svelte';
 	import { perform } from './collab';
 	import { COLORS, COMPACT, TOOLS, WIDE, blank, clear, pose, posed, type BoardNodes, type HeroLayout, type StickyId, type Who } from './hero';
 
-	const FRAMES = ['Idées', 'À faire'];
+	const frames = $derived([t('hero.ideas'), t('hero.todo')]);
 	const INK: Record<Who, string> = { you: 'var(--color-fc-info)', lea: COLORS.lea, malik: COLORS.malik };
 
 	let board = $state(blank());
@@ -50,11 +51,11 @@
 	{script}
 	{reset}
 	{poster}
-	label="Démonstration : trois personnes travaillent en même temps sur le même tableau. Léa déplace un post-it, Malik écrit dans un autre, vous tracez une flèche."
+	label={t('hero.label')}
 >
 	{#snippet children({ compact })}
 		{@const current = compact ? COMPACT : WIDE}
-		<Window title={compact ? undefined : 'Rétro du sprint'} style={current.window}>
+		<Window title={compact ? undefined : t('hero.window')} style={current.window}>
 			{#snippet trailing()}
 				<span class="flex items-center gap-2">
 					<span class="flex">
@@ -62,7 +63,7 @@
 							<span class="size-5 rounded-fc-full {at > 0 ? '-ms-1.5' : ''}" style:background={color}></span>
 						{/each}
 					</span>
-					<span class="rounded-fc-pill bg-fc-accent px-2.5 py-1 text-fc-xs font-medium text-fc-accent-fg">Partager</span>
+					<span class="rounded-fc-pill bg-fc-accent px-2.5 py-1 text-fc-xs font-medium text-fc-accent-fg">{t('hero.share')}</span>
 				</span>
 			{/snippet}
 			<div bind:this={nodes.canvas} class="board relative flex-1 overflow-hidden">
@@ -74,7 +75,7 @@
 						style:width="{frame.w}px"
 						style:height="{frame.h}px"
 					>
-						<span class="absolute -top-5 left-1 text-fc-xs font-medium text-fc-fg-muted">{FRAMES[at]}</span>
+						<span class="absolute -top-5 left-1 text-fc-xs font-medium text-fc-fg-muted">{frames[at]}</span>
 					</div>
 				{/each}
 				{#each current.extra as box, at (at)}
@@ -87,7 +88,7 @@
 					own={owner('export') === 'you'}
 					bind:node={nodes.stickies.export}
 				>
-					Export PDF<span class="min-h-5">{board.line}</span><Bar w="45%" />
+					{t('hero.export')}<span class="min-h-5">{board.line}</span><Bar w="45%" />
 				</Sticky>
 				<Sticky
 					box={current.beta}
@@ -107,7 +108,7 @@
 					own={owner('onboarding') === 'you'}
 					bind:node={nodes.stickies.onboarding}
 				>
-					Onboarding<Bar w="80%" /><Bar w="55%" />
+					{t('hero.onboarding')}<Bar w="80%" /><Bar w="55%" />
 				</Sticky>
 				<svg class="pointer-events-none absolute inset-0 size-full" aria-hidden="true">
 					<path d={current.arrow} pathLength="1" class="arrow" class:drawn={board.linked} />
