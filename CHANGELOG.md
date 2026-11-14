@@ -4,6 +4,8 @@ All notable changes to Toile. Versions follow SemVer.
 
 ## [Unreleased]
 
+## [0.12.1] - 2026-11-14
+
 ### Changed
 
 - Client: `@facile/muse` v0.23.0 and `@facile/mise-en-scene` v0.2.2
