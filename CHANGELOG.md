@@ -4,6 +4,12 @@ All notable changes to Toile. Versions follow SemVer.
 
 ## [Unreleased]
 
+## [0.15.0] - 2026-11-14
+
+### Changed
+
+- Landing: the hero board shows three people working at once. Léa drags a post-it, Malik types into another, the visitor adds a post-it and draws an arrow, and Léa writes in the post-it the visitor just made. Cursors, name pills and selection outlines copy the board overlay; the toolbar uses the app's tool icons.
+
 ## [0.14.0] - 2026-11-14
 
 ### Added
