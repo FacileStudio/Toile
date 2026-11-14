@@ -4,6 +4,8 @@ All notable changes to Toile. Versions follow SemVer.
 
 ## [Unreleased]
 
+## [0.13.0] - 2026-11-14
+
 ### Changed
 
 - API: `tronc` (tronc-rs) v0.5.1 and `porte` (porte-rs) v0.8.1. `/mcp` is built by `tronc::mcp::App` (120 calls a minute per person), tool annotations use tronc's presets, list pages use tronc's pager, an erasure drops pending actions with `erase_pending`, and closed actions older than 30 days are pruned every hour.
