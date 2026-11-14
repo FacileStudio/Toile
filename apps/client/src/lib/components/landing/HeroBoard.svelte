@@ -1,64 +1,45 @@
 <script lang="ts">
 	import { Icon } from '@facile/muse';
-	import { Bar, Cursor, Stage, Window, cursorAt, type Act } from '@facile/mise-en-scene';
+	import { Bar, Cursor, Stage, Window, type Act, type CursorState } from '@facile/mise-en-scene';
 	import LiveCursor from './LiveCursor.svelte';
 	import Sticky from './Sticky.svelte';
-	import { COLORS, COMPACT, TOOLS, WIDE } from './hero';
+	import { perform } from './collab';
+	import { COLORS, COMPACT, TOOLS, WIDE, blank, clear, pose, posed, type BoardNodes, type HeroLayout, type StickyId, type Who } from './hero';
 
-	const BETA = 'Lancer la bêta';
 	const FRAMES = ['Idées', 'À faire'];
+	const INK: Record<Who, string> = { you: 'var(--color-fc-info)', lea: COLORS.lea, malik: COLORS.malik };
 
-	let tool = $state<string>('select');
-	let placed = $state(false);
-	let text = $state('');
-	let linked = $state(false);
-	let lea = $state(0);
-	let malik = $state(0);
-	let cursor = $state(cursorAt());
-	let canvas = $state<HTMLElement>();
-	let beta = $state<HTMLElement>();
+	let board = $state(blank());
+	let still = $state(false);
+	let nodes = $state<BoardNodes>({ stickies: {}, tool: () => undefined });
+
+	nodes.tool = (id) => nodes.canvas?.querySelector(`[data-tool="${id}"]`) ?? undefined;
+
+	function owner(id: StickyId): Who | undefined {
+		return (Object.keys(board.picks) as Who[]).find((who) => board.picks[who] === id);
+	}
+
+	function ink(id: StickyId): string | null {
+		const who = owner(id);
+		return who ? INK[who] : null;
+	}
+
+	function shown(who: Who, current: HeroLayout): CursorState {
+		return still ? { ...pose(current)[who], visible: true, down: who !== 'malik' } : board.cursors[who];
+	}
 
 	function reset() {
-		tool = 'select';
-		placed = false;
-		text = '';
-		linked = false;
-		lea = 0;
-		malik = 0;
-		cursor.visible = false;
+		still = false;
+		clear(board);
 	}
 
 	function poster() {
-		placed = true;
-		text = BETA;
-		linked = true;
-		lea = 1;
-		malik = 2;
+		still = true;
+		posed(board);
 	}
 
 	async function script(act: Act) {
-		Object.assign(cursor, act.point(canvas, 0.86, 0.9));
-		await act.wait(700);
-		cursor.visible = true;
-		lea = 1;
-		const stickyTool = canvas?.querySelector('[data-tool="sticky"]') ?? undefined;
-		await act.move(cursor, act.point(stickyTool, 0.6, 0.6));
-		await act.click(cursor, () => (tool = 'sticky'));
-		await act.move(cursor, act.point(beta, 0.35, 0.4));
-		await act.click(cursor, () => (placed = true));
-		tool = 'select';
-		await act.wait(250);
-		await act.type(BETA, (value) => (text = value), 55);
-		await act.move(cursor, act.point(beta, 0.9, 1.25), 500);
-		malik = 1;
-		await act.wait(950);
-		linked = true;
-		malik = 2;
-		await act.wait(2600);
-		placed = false;
-		linked = false;
-		cursor.visible = false;
-		await act.wait(700);
+		await perform(act, board, nodes, (nodes.canvas?.offsetWidth ?? 0) < 500 ? COMPACT : WIDE);
 	}
 </script>
 
@@ -69,23 +50,23 @@
 	{script}
 	{reset}
 	{poster}
-	label="Démonstration : trois personnes ajoutent des post-it et une flèche sur le même tableau, en direct."
+	label="Démonstration : trois personnes travaillent en même temps sur le même tableau. Léa déplace un post-it, Malik écrit dans un autre, vous tracez une flèche."
 >
 	{#snippet children({ compact })}
-		{@const layout = compact ? COMPACT : WIDE}
-		<Window title={compact ? undefined : 'Rétro du sprint'} style={layout.window}>
+		{@const current = compact ? COMPACT : WIDE}
+		<Window title={compact ? undefined : 'Rétro du sprint'} style={current.window}>
 			{#snippet trailing()}
 				<span class="flex items-center gap-2">
-					<span class="flex gap-1">
-						{#each [COLORS.lea, COLORS.malik, COLORS.beta] as color, at (at)}
-							<span class="size-5 rounded-fc-full" style:background={color}></span>
+					<span class="flex">
+						{#each [COLORS.lea, COLORS.malik] as color, at (at)}
+							<span class="size-5 rounded-fc-full {at > 0 ? '-ms-1.5' : ''}" style:background={color}></span>
 						{/each}
 					</span>
 					<span class="rounded-fc-pill bg-fc-accent px-2.5 py-1 text-fc-xs font-medium text-fc-accent-fg">Partager</span>
 				</span>
 			{/snippet}
-			<div bind:this={canvas} class="board relative flex-1 overflow-hidden">
-				{#each layout.frames as frame, at (at)}
+			<div bind:this={nodes.canvas} class="board relative flex-1 overflow-hidden">
+				{#each current.frames as frame, at (at)}
 					<div
 						class="absolute rounded-fc-lg bg-fc-surface"
 						style:left="{frame.x}px"
@@ -96,29 +77,49 @@
 						<span class="absolute -top-5 left-1 text-fc-xs font-medium text-fc-fg-muted">{FRAMES[at]}</span>
 					</div>
 				{/each}
-				{#each layout.extra as box, at (at)}
+				{#each current.extra as box, at (at)}
 					<Sticky {box} color={COLORS.extra[at]}><Bar w="75%" /><Bar w="50%" /><Bar w="62%" /></Sticky>
 				{/each}
-				<Sticky box={layout.stickies[0]} color={COLORS.ideas}>
+				<Sticky
+					box={current.export}
+					color={COLORS.export}
+					selected={ink('export')}
+					own={owner('export') === 'you'}
+					bind:node={nodes.stickies.export}
+				>
+					Export PDF<span class="min-h-5">{board.line}</span><Bar w="45%" />
+				</Sticky>
+				<Sticky
+					box={current.beta}
+					color={COLORS.beta}
+					shown={board.placed}
+					selected={ink('beta')}
+					own={owner('beta') === 'you'}
+					bind:node={nodes.stickies.beta}
+				>
+					<span class="min-h-5">{board.beta}</span><span class="min-h-5">{board.note}</span>
+				</Sticky>
+				<Sticky
+					box={current.onboarding}
+					color={COLORS.ideas}
+					shift={board.moved ? current.drag : undefined}
+					selected={ink('onboarding')}
+					own={owner('onboarding') === 'you'}
+					bind:node={nodes.stickies.onboarding}
+				>
 					Onboarding<Bar w="80%" /><Bar w="55%" />
 				</Sticky>
-				<Sticky box={layout.stickies[1]} color={COLORS.export}>
-					Export PDF<Bar w="70%" /><Bar w="45%" />
-				</Sticky>
-				<Sticky box={layout.stickies[2]} color={COLORS.beta} shown={placed} bind:node={beta}>
-					<span class="min-h-5">{text}</span>
-				</Sticky>
 				<svg class="pointer-events-none absolute inset-0 size-full" aria-hidden="true">
-					<path d={layout.arrow} pathLength="1" class="arrow" class:drawn={linked} />
-					<path d={layout.head} class="head" class:drawn={linked} />
+					<path d={current.arrow} pathLength="1" class="arrow" class:drawn={board.linked} />
+					<path d={current.head} class="head" class:drawn={board.linked} />
 				</svg>
 				<div
 					class="toolbar absolute flex gap-1 rounded-fc-pill bg-fc-component p-1 shadow-sm"
-					class:column={layout.toolbar === 'column'}
+					class:column={current.toolbar === 'column'}
 				>
 					{#each TOOLS as item (item.id)}
 						<span
-							class="flex size-9 items-center justify-center rounded-fc-full {tool === item.id
+							class="flex size-9 items-center justify-center rounded-fc-full {board.tool === item.id
 								? 'bg-fc-accent text-fc-accent-fg'
 								: 'text-fc-fg-muted'}"
 							data-tool={item.id}
@@ -127,11 +128,11 @@
 						</span>
 					{/each}
 				</div>
-				<LiveCursor {...layout.lea[lea]} color={COLORS.lea} name="Léa" />
-				<LiveCursor {...layout.malik[malik]} color={COLORS.malik} name="Malik" />
 			</div>
 		</Window>
-		<Cursor {cursor} />
+		<LiveCursor cursor={shown('lea', current)} color={COLORS.lea} name="Léa" />
+		<LiveCursor cursor={shown('malik', current)} color={COLORS.malik} name="Malik" />
+		<Cursor cursor={shown('you', current)} />
 	{/snippet}
 </Stage>
 

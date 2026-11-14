@@ -1,18 +1,27 @@
 <script lang="ts">
-	let { x, y, color, name }: { x: number; y: number; color: string; name: string } = $props();
+	import type { CursorState } from '@facile/mise-en-scene';
+
+	let { cursor, color, name }: { cursor: CursorState; color: string; name: string } = $props();
 </script>
 
 <!--
 @component
-A collaborator's live cursor on the faux board: a coloured arrow and a name tag. It travels on the
-same curve as the kit's cursor.
+A collaborator's live cursor, drawn the way the board overlay draws a peer: an arrow and a name pill
+filled with their colour, the name in black. Move it with `act.move` like the kit's cursor; it travels
+on the same curve.
 -->
 
-<span class="live" style:translate="{x}px {y}px" style:--who={color}>
-	<svg width="16" height="20" viewBox="0 0 16 20" aria-hidden="true">
-		<path d="M1 1l13.5 8.2-6.3 1.4L5 18.5Z" fill="var(--who)" />
+<span
+	class="live"
+	style:translate="{cursor.x}px {cursor.y}px"
+	style:opacity={cursor.visible ? 1 : 0}
+	style:scale={cursor.down ? 0.88 : 1}
+	style:--who={color}
+>
+	<svg width="16" height="17" viewBox="0 0 16 17" aria-hidden="true">
+		<path d="M0 0L4 16L8 10L15 9Z" fill="var(--who)" />
 	</svg>
-	<span class="tag rounded-fc-pill px-2 py-0.5 text-fc-xs font-medium text-fc-fg">{name}</span>
+	<span class="tag rounded-fc-pill text-fc-xs font-medium">{name}</span>
 </span>
 
 <style>
@@ -20,17 +29,32 @@ same curve as the kit's cursor.
 		position: absolute;
 		top: 0;
 		left: 0;
-		z-index: 20;
-		display: flex;
-		align-items: flex-start;
+		z-index: 25;
 		pointer-events: none;
-		filter: drop-shadow(0 1px 2px color-mix(in oklch, var(--color-fc-scrim) 36%, transparent));
-		transition: translate 0.9s cubic-bezier(0.45, 0, 0.1, 1);
+		transform-origin: 0 0;
+		filter: drop-shadow(0 1px 2px color-mix(in oklch, var(--color-fc-scrim) 30%, transparent));
+		transition:
+			translate 0.9s cubic-bezier(0.45, 0, 0.1, 1),
+			opacity 0.3s ease,
+			scale 0.12s ease;
+	}
+	svg {
+		display: block;
 	}
 	.tag {
-		margin-top: 14px;
-		margin-left: -4px;
+		position: absolute;
+		top: 16px;
+		left: 12px;
+		height: 20px;
+		padding: 0 6px;
+		line-height: 20px;
 		white-space: nowrap;
-		background: color-mix(in oklch, var(--who) 70%, var(--color-fc-page));
+		color: black;
+		background: var(--who);
+	}
+	@media (prefers-reduced-motion: reduce) {
+		.live {
+			transition: none;
+		}
 	}
 </style>
