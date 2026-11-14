@@ -6,15 +6,17 @@ All notable changes to Toile. Versions follow SemVer.
 
 ### Changed
 
-- API: `tronc` (tronc-rs) v0.5.0 and `porte` (porte-rs) v0.8.0. `/mcp` is built by `tronc::mcp::App` (120 calls a minute per person), tool annotations use tronc's presets, list pages use tronc's pager, an erasure drops pending actions with `erase_pending`, and closed actions older than 30 days are pruned every hour.
+- API: `tronc` (tronc-rs) v0.5.1 and `porte` (porte-rs) v0.8.1. `/mcp` is built by `tronc::mcp::App` (120 calls a minute per person), tool annotations use tronc's presets, list pages use tronc's pager, an erasure drops pending actions with `erase_pending`, and closed actions older than 30 days are pruned every hour.
 - MCP: the confirm page API moves to tronc's `PendingPage` on the suite paths: `GET /api/mcp/pending` answers `{"actions": [...]}`, confirm and dismiss answer 200 JSON. The client reads the new shape.
-- MCP: the confirmation state key is derived with `tronc::mcp::state_key("toile", MCP_STATE_KEY)`, as the Go apps do. A confirmation an agent was holding during the deploy must be asked again.
-- AI: one pooled Bulle client (90 s timeout, never follows a redirect) and porte's `Exchanger::bound` token source replace Toile's own copies; a plan refusal keeps `key: ai.access`.
+- MCP: the confirmation state key is derived with `tronc::mcp::state_key("toile", MCP_STATE_KEY)`, as the Go apps do. Every confirmation an agent was holding during the deploy is lost and must be asked again.
+- AI: one pooled Bulle client (90 s timeout, never follows a redirect, ignores proxy variables) and porte's `Exchanger::bound` token source replace Toile's own copies; a plan refusal keeps `key: ai.access`.
+- AI: a board's AI runs when the person's own plan or the board's space plan has `ai.access`, the way Bulle v3.55.0 grants it, and a space board's requests send its `space_id` to Bulle. Before, a space board looked only at the space plan.
 
 ### Fixed
 
-- MCP: only the person's own browser login confirms an agent action. A CLI, device or named API token sent as the session cookie, any bearer (the mobile and desktop apps included) and a cookie from before this release get 403; the confirm page then asks to sign in again in the browser and comes back to the request.
-- Security: the confirm page and its API send `frame-ancestors 'none'`, so no other site can frame the confirm button. Docs may still frame the other client pages; `/api` is no longer framable.
+- MCP: only the person's own browser login confirms an agent action. A CLI, device or named API token sent as the session cookie, any bearer (the mobile and desktop apps included) and a cookie from before this release get 403. After the deploy, sign in again in the browser once to confirm: the confirm page asks for it and comes back to the request.
+- MCP: a pending action is reused only for the same OAuth client (tronc-rs v0.5.1), so consent given to one agent never lets another agent of the same person collect the result.
+- Security: Docs may frame only a board (`/b/<id>`) and a shared board (`/s/<token>`), decided on the decoded path. Every other page, the confirm page in any spelling (`/pending/`, `/pend%69ng`) included, plus `/settings`, `/boards`, `/api`, `/mcp` and `/docs`, sends `frame-ancestors 'none'` and `X-Frame-Options: DENY`, so no other site can frame the confirm button.
 
 ## [0.12.1] - 2026-11-14
 

@@ -131,7 +131,7 @@ pub async fn generate(state: &AppState, user_id: i64, board: Uuid, request: Requ
         Draw::Stickies => stickies(),
     };
     let ask = Ask { prompt: instructions, input: prompt.to_owned(), schema: Some(schema), max_tokens: 3000 };
-    let answer = bulle::complete(state, user_id, ask).await?;
+    let answer = bulle::complete(state, user_id, board, ask).await?;
     let shapes =
         convert(draw, request.accent, answer).map_err(|_| tronc::Error::unavailable("Bulle answered no drawing"))?;
     let out = Arc::new(Mutex::new(Vec::new()));

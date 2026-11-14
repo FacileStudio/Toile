@@ -1,6 +1,7 @@
 #![allow(dead_code)]
 
 pub mod board;
+pub mod bulle;
 pub mod directory;
 pub mod fakes;
 pub mod fixture;

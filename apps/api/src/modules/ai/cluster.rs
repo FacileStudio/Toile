@@ -169,7 +169,7 @@ pub async fn cluster(state: &AppState, user_id: i64, board: Uuid, ids: &[String]
         notes.iter().map(|s| json!({"id": s.id, "text": tronc::mcp::clip(&s.text, 500).0})).collect();
     let input = input.iter().map(Value::to_string).collect::<Vec<_>>().join("\n");
     let ask = Ask { prompt: PROMPT.to_owned(), input, schema: Some(schema()), max_tokens: 4096 };
-    let answer: Groups = serde_json::from_value(bulle::complete(state, user_id, ask).await?)
+    let answer: Groups = serde_json::from_value(bulle::complete(state, user_id, board, ask).await?)
         .map_err(|_| tronc::Error::unavailable("Bulle answered no groups"))?;
     let groups = clean(answer.groups, &notes);
     if groups.is_empty() {

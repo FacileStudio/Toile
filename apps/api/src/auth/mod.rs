@@ -111,7 +111,13 @@ fn bulle(app: &crate::modules::suite::App) -> Option<tronc::bulle::Client> {
     if !app.enabled() {
         return None;
     }
-    tronc::bulle::Client::with_timeout(&app.url, crate::modules::ai::TIMEOUT)
+    reqwest::Client::builder()
+        .timeout(crate::modules::ai::TIMEOUT)
+        .redirect(reqwest::redirect::Policy::none())
+        .no_proxy()
+        .build()
+        .map_err(|error| format!("bulle: building the HTTP client: {error}"))
+        .and_then(|http| tronc::bulle::Client::with_http(&app.url, http))
         .inspect_err(|error| tracing::warn!(%error, "ai: Bulle is off"))
         .ok()
 }

@@ -20,7 +20,7 @@ pub async fn summarize(state: &AppState, user_id: i64, board: Uuid) -> tronc::Re
         return Err(tronc::Error::invalid("the board has no text to summarize"));
     }
     let ask = Ask { prompt: PROMPT.to_owned(), input: text::render(&shapes), schema: None, max_tokens: 1500 };
-    match bulle::complete(state, user_id, ask).await? {
+    match bulle::complete(state, user_id, board, ask).await? {
         serde_json::Value::String(markdown) => Ok(markdown.trim().to_owned()),
         _ => Err(tronc::Error::unavailable("Bulle answered no summary")),
     }

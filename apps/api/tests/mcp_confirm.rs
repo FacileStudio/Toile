@@ -2,7 +2,8 @@ mod common;
 
 use std::sync::Arc;
 
-use common::http::{browser_cookie, with_cookie};
+use axum::body::Body;
+use common::http::{browser_cookie, raw, with_cookie};
 use common::mcp::{Served, args, served, shapes, sticky};
 use serde_json::{Value, json};
 use tronc::mcptest::{self, ClientOptions, ConfirmCase, Target, call, connect, decode};
@@ -103,4 +104,25 @@ async fn only_a_browser_login_confirms_never_a_cli_api_or_old_cookie() {
     let done = with_cookie(&served.app.router, "POST", &confirm, &browser).await;
     assert_eq!(done.json(), json!({"status": "done"}), "{}", done.text());
     assert!(shapes(&served.app.state, &id).await.is_empty());
+}
+
+#[tokio::test]
+async fn a_cookie_confirm_without_the_csrf_header_is_refused() {
+    let Some(served) = served("toile_mcp_csrf").await else { return };
+    let id = served.board("Forged").await;
+    let shape = sticky(&served.app.state, &id).await;
+    let client = connect(&served.url, &served.token(), ClientOptions::default()).await;
+    let pending: Value =
+        decode(&call(&client, "toile_delete_shapes", args(json!({"board_id": id, "ids": [shape]}))).await);
+    let action = pending["confirm_url"].as_str().unwrap().rsplit('=').next().unwrap().to_owned();
+    let browser = browser_cookie(&served.app.kits.sessions, served.person.user_id).await;
+    let forged = http::Request::post(format!("/api/mcp/pending/{action}/confirm"))
+        .header(http::header::HOST, "toile.test")
+        .header(http::header::COOKIE, &browser)
+        .body(Body::empty())
+        .unwrap();
+    let forged = raw(&served.app.router, forged).await;
+    assert_eq!(forged.status, 403, "{}", forged.text());
+    assert!(forged.text().contains(porte::CSRF_HEADER_NAME), "{}", forged.text());
+    assert_eq!(shapes(&served.app.state, &id).await, std::slice::from_ref(&shape));
 }
