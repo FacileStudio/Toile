@@ -4,6 +4,8 @@ All notable changes to Toile. Versions follow SemVer.
 
 ## [Unreleased]
 
+## [0.12.0] - 2026-11-14
+
 ### Changed
 
 - API: `porte` (porte-rs) moves from v0.6.1 to v0.7.1.
