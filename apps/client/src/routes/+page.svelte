@@ -91,6 +91,8 @@
 			</div>
 		</section>
 
+		<WorksWith class={WIDTH} {apps} description={t('with.line')} />
+
 		<FeatureSplit
 			id="features"
 			class="{WIDTH} scroll-mt-20"
@@ -98,8 +100,6 @@
 			description={t('landing.features.line')}
 			{features}
 		/>
-
-		<WorksWith class={WIDTH} {apps} description={t('with.line')} />
 
 		<PricingPlans
 			id="pricing"
