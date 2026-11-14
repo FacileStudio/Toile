@@ -4,6 +4,22 @@ All notable changes to Toile. Versions follow SemVer.
 
 ## [Unreleased]
 
+## [0.16.0] - 2026-11-14
+
+### Added
+
+- Landing in English, Spanish and German besides French. The landing follows the `fc_locale` cookie, then the browser language; the footer switch picks and remembers it. Signed-in pages stay in French.
+- Landing: "Créer un compte gratuit" is the main button in the hero and the closing call to action, with "Se connecter avec Facile" beside it (muse `LandingCta`).
+- Landing: a pricing block with the live Facile plans: Toile is in every plan, Bulle needs Pro, one subscription covers every app, with a link to the Suite pricing.
+- Landing: a "works with" block for Opus, Docs, Nuage and Bulle (muse `WorksWith`), with their suite marks registered locally.
+- Landing: a demo tile in which a pasted Opus task link becomes a card on the board. It replaces the share tile; guest links move to the feature list.
+
+### Changed
+
+- Landing slogan "Un tableau blanc infini à partager", new subtitle, title, meta description and footer tagline.
+- Landing: the feature list uses muse `FeatureSplit`; export reads "Exportez en image ou PDF"; the Bulle tile carries an "Offre Pro" badge.
+- `@facile/muse` v0.24.0.
+
 ## [0.15.1] - 2026-11-14
 
 ### Fixed
