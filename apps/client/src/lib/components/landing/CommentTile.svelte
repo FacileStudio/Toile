@@ -40,33 +40,35 @@
 	<Stage width={320} height={240} {script} {reset} {poster}>
 		{#snippet children()}
 			<div class="board absolute top-5 right-5 bottom-5 left-5 overflow-hidden rounded-fc-lg bg-fc-page">
-				<Sticky box={{ x: 14, y: 48, w: 104, h: 88 }} color={USER_COLORS[0]}>
+				<Sticky box={{ x: 12, y: 40, w: 100, h: 96 }} color={USER_COLORS[0]}>
 					Nouveau logo<Bar w="80%" /><Bar w="55%" />
 				</Sticky>
-				<Sticky box={{ x: 30, y: 150, w: 88, h: 36 }} color={USER_COLORS[4]}><Bar w="70%" /></Sticky>
+				<Sticky box={{ x: 28, y: 150, w: 84, h: 32 }} color={USER_COLORS[4]}><Bar w="70%" /></Sticky>
 				<span
-					class="pin absolute top-[48px] left-[104px] flex h-9 min-w-9 items-center gap-1 rounded-fc-pill rounded-bl-fc-xs bg-fc-accent px-2 text-fc-xs font-medium text-fc-accent-fg shadow-lg"
+					class="pin absolute top-[40px] left-[100px] flex h-9 min-w-9 items-center gap-1 rounded-fc-pill rounded-bl-fc-xs bg-fc-accent px-2 text-fc-xs font-medium text-fc-accent-fg shadow-lg"
 					class:shown={pinned}
 				>
 					<Icon icon={toolIcons.comment} size={16} />{replied ? 2 : 1}
 				</span>
 				<div
-					class="panel absolute top-14 right-3 flex w-[136px] flex-col gap-2 rounded-fc-lg bg-fc-component p-3 shadow-lg"
+					class="panel absolute top-12 right-2.5 flex w-[150px] flex-col gap-2 rounded-fc-lg bg-fc-component p-3 shadow-lg"
 					class:shown={pinned}
 				>
 					<span class="text-fc-xs font-semibold text-fc-fg">Commentaires</span>
-					<div class="flex flex-col gap-0.5 rounded-fc-md bg-fc-surface p-2">
-						<span class="text-[10px] leading-3 font-medium text-fc-fg">Léa</span>
-						<p class="min-h-4 text-fc-xs leading-4 text-fc-fg">{asked}</p>
-					</div>
-					{#if replied}
-						<div class="flex flex-col gap-0.5 pl-3" transition:grow={{ duration: 300 }}>
-							<span class="text-[10px] leading-3 font-medium text-fc-fg">Malik</span>
-							<p class="text-fc-xs leading-4 text-fc-fg">{ANSWER}</p>
+					<div class="flex flex-col gap-2 rounded-fc-md bg-fc-surface p-2">
+						<div class="flex flex-col gap-0.5">
+							<span class="text-[10px] leading-3 font-medium text-fc-fg">Léa</span>
+							<p class="min-h-4 text-fc-xs leading-4 whitespace-nowrap text-fc-fg">{asked}</p>
 						</div>
-					{:else}
-						<div class="pl-3"><Bar w="60%" /></div>
-					{/if}
+						{#if replied}
+							<div class="flex flex-col gap-0.5 pl-3" transition:grow={{ duration: 300 }}>
+								<span class="text-[10px] leading-3 font-medium text-fc-fg">Malik</span>
+								<p class="text-fc-xs leading-4 text-fc-fg">{ANSWER}</p>
+							</div>
+						{:else}
+							<div class="flex h-[30px] items-center pl-3"><Bar w="60%" /></div>
+						{/if}
+					</div>
 				</div>
 			</div>
 		{/snippet}

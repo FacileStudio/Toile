@@ -4,7 +4,7 @@
 	import { logoIcon } from '$lib/brand';
 	import ClusterTile from '$lib/components/landing/ClusterTile.svelte';
 	import CommentTile from '$lib/components/landing/CommentTile.svelte';
-	import FeatureCard from '$lib/components/landing/FeatureCard.svelte';
+	import FeatureRow from '$lib/components/landing/FeatureRow.svelte';
 	import HeroBoard from '$lib/components/landing/HeroBoard.svelte';
 	import ShareTile from '$lib/components/landing/ShareTile.svelte';
 	import { FEATURES, SUITE } from '$lib/components/landing/content';
@@ -60,11 +60,18 @@
 			</div>
 		</section>
 
-		<section id="features" aria-labelledby="features-title" class="mx-auto flex w-full max-w-fc-xl flex-col gap-8 px-4 sm:px-6">
-			<h2 id="features-title" class="font-fc-title text-fc-2xl font-bold">Réfléchir à plusieurs</h2>
-			<ul class="grid gap-4 md:grid-cols-2">
+		<section
+			id="features"
+			aria-labelledby="features-title"
+			class="mx-auto grid w-full max-w-fc-xl gap-10 px-4 sm:px-6 md:grid-cols-[2fr_3fr] md:gap-16"
+		>
+			<div class="flex flex-col gap-3">
+				<h2 id="features-title" class="font-fc-title text-fc-2xl font-bold">Réfléchir à plusieurs</h2>
+				<p class="text-fc-md text-fc-fg-muted">Un seul tableau pour toute l’équipe, du premier post-it à l’export.</p>
+			</div>
+			<ul class="flex flex-col gap-8">
 				{#each FEATURES as feature (feature.title)}
-					<li><FeatureCard {feature} /></li>
+					<li><FeatureRow {feature} /></li>
 				{/each}
 			</ul>
 		</section>
