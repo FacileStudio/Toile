@@ -8,7 +8,6 @@
 		PricingPlans,
 		SignInWithFacile,
 		TextElevate,
-		WorksWith,
 		icons,
 		type FeatureItem,
 		type WorksWithApp
@@ -19,6 +18,7 @@
 	import CommentTile from '$lib/components/landing/CommentTile.svelte';
 	import HeroBoard from '$lib/components/landing/HeroBoard.svelte';
 	import OpusTile from '$lib/components/landing/OpusTile.svelte';
+	import WorksWithRow from '$lib/components/landing/WorksWithRow.svelte';
 	import { rememberLocale, t } from '$lib/i18n/index.svelte';
 	import { suiteIcons } from '$lib/suiteIcons';
 
@@ -91,7 +91,7 @@
 			</div>
 		</section>
 
-		<WorksWith class={WIDTH} {apps} description={t('with.line')} />
+		<WorksWithRow class={WIDTH} {apps} description={t('with.line')} />
 
 		<FeatureSplit
 			id="features"
