@@ -5,7 +5,7 @@ use serde_json::{Value, json};
 use uuid::Uuid;
 use yrs::{MapRef, TransactionMut};
 
-use super::bulle::{self, Ask, Refusal};
+use super::bulle::{self, Ask};
 use super::shapes;
 use crate::scene::input::{NewShape, Placed};
 use crate::scene::layout::{GAP, bounds};
@@ -120,15 +120,10 @@ pub struct Request<'a> {
 
 /// Asks Bulle to draft `request.draw` from `request.prompt`, then lays it out right of the
 /// board's content and writes it through the room.
-pub async fn generate(
-    state: &AppState,
-    user_id: i64,
-    board: Uuid,
-    request: Request<'_>,
-) -> Result<Vec<Placed>, Refusal> {
+pub async fn generate(state: &AppState, user_id: i64, board: Uuid, request: Request<'_>) -> tronc::Result<Vec<Placed>> {
     let (prompt, draw) = (request.prompt.trim(), request.draw);
     if prompt.is_empty() || prompt.chars().count() > MAX_PROMPT {
-        return Err(tronc::Error::invalid(format!("prompt is required and at most {MAX_PROMPT} characters")).into());
+        return Err(tronc::Error::invalid(format!("prompt is required and at most {MAX_PROMPT} characters")));
     }
     let (instructions, schema) = match draw {
         Draw::Mindmap => mindmap(),
@@ -136,7 +131,7 @@ pub async fn generate(
         Draw::Stickies => stickies(),
     };
     let ask = Ask { prompt: instructions, input: prompt.to_owned(), schema: Some(schema), max_tokens: 3000 };
-    let answer = bulle::complete(state, user_id, ask).await?;
+    let answer = bulle::complete(state, user_id, board, ask).await?;
     let shapes =
         convert(draw, request.accent, answer).map_err(|_| tronc::Error::unavailable("Bulle answered no drawing"))?;
     let out = Arc::new(Mutex::new(Vec::new()));

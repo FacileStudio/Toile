@@ -1,6 +1,11 @@
-use std::path::Path;
+use std::path::{Path, PathBuf};
+use std::sync::Arc;
 
-use tronc::http::{CorsConfig, SecurityConfig, Sources};
+use axum::Router;
+use axum::extract::{Request, State};
+use axum::middleware::Next;
+use axum::response::Response;
+use tronc::http::{CorsConfig, SecurityConfig, SecurityOverride, SecurityOverrideConfig, Sources, security_override};
 
 /// The origins the installed apps load the client from: Capacitor on Android and iOS, then
 /// Tauri on macOS and Linux, then Tauri on Windows.
@@ -17,7 +22,7 @@ pub const CATALOG: &str = "https://api-ardoise.facile.studio";
 /// pixels are https images, which tronc's default `img-src` already allows.
 pub const ANALYTICS: &str = "https://vision.facile.studio";
 
-/// The pages that may frame a board in embed mode (`/b/<id>?embed=1`): Toile itself and Docs.
+/// The pages that may frame a client page Docs embeds ([`embeddable`]): Toile itself and Docs.
 pub const FRAMERS: [&str; 2] = ["'self'", "https://docs.facile.studio"];
 
 /// The extra framer outside production, for a Docs dev server.
@@ -25,10 +30,9 @@ pub const DEV_FRAMER: &str = "http://localhost:*";
 
 /// The CSP sources Toile's client needs on top of tronc's policy: the inline scripts
 /// adapter-static writes, hashed from the build the binary serves, the Vision tracker, the suite
-/// plan catalog muse's `PricingPlans` fetches, the YouTube player link cards embed, and the
-/// [`FRAMERS`] (plus [`DEV_FRAMER`] outside production). Opening `frame-ancestors` drops
-/// `X-Frame-Options`.
-pub fn sources(client_dir: &Path, production: bool) -> Sources {
+/// plan catalog muse's `PricingPlans` fetches and the YouTube player link cards embed. Every
+/// response keeps tronc's `frame-ancestors 'none'`; [`spa`] opens it for the client's pages.
+pub fn sources(client_dir: &Path) -> Sources {
     let mut scripts = vec![ANALYTICS.to_owned()];
     if tronc::spa::available(client_dir) {
         match tronc::spa::inline_script_hashes(client_dir) {
@@ -36,12 +40,7 @@ pub fn sources(client_dir: &Path, production: bool) -> Sources {
             Err(error) => tracing::error!(%error, "failed to hash the client's inline scripts"),
         }
     }
-    let mut framers: Vec<String> = FRAMERS.iter().map(|s| (*s).to_owned()).collect();
-    if !production {
-        framers.push(DEV_FRAMER.to_owned());
-    }
     Sources::from([
-        ("frame-ancestors".to_owned(), framers),
         ("script-src".to_owned(), scripts),
         ("connect-src".to_owned(), vec![CATALOG.to_owned()]),
         ("frame-src".to_owned(), vec![PLAYER.to_owned()]),
@@ -49,8 +48,45 @@ pub fn sources(client_dir: &Path, production: bool) -> Sources {
 }
 
 /// tronc's security configuration with [`sources`].
-pub fn config(base: SecurityConfig, client_dir: &Path, production: bool) -> SecurityConfig {
-    SecurityConfig { csp_sources: sources(client_dir, production), ..base }
+pub fn config(base: SecurityConfig, client_dir: &Path) -> SecurityConfig {
+    SecurityConfig { csp_sources: sources(client_dir), ..base }
+}
+
+/// Whether `path` is a client page Docs embeds: a board (`/b/<id>`) or a shared board
+/// (`/s/<token>`), decided on the percent-decoded path with at most one trailing slash. Every
+/// other page, the MCP confirm page first, keeps `frame-ancestors 'none'`.
+pub fn embeddable(path: &str) -> bool {
+    let decoded = percent_encoding::percent_decode_str(path).decode_utf8_lossy();
+    let path = decoded.strip_suffix('/').unwrap_or(&decoded);
+    let segments: Vec<&str> = path.split('/').collect();
+    matches!(segments.as_slice(), ["", "b" | "s", id] if !id.is_empty() && *id != "." && *id != "..")
+}
+
+async fn frame_embeds(State(framing): State<Arc<SecurityOverride>>, request: Request, next: Next) -> Response {
+    if embeddable(request.uri().path()) {
+        security_override(State(framing), request, next).await
+    } else {
+        next.run(request).await
+    }
+}
+
+/// The built client at `dir`, answering every path the other routes leave. Only the
+/// [`embeddable`] pages are framable, by the [`FRAMERS`] (plus [`DEV_FRAMER`] outside
+/// production); every other page, the MCP confirm page included, keeps `frame-ancestors 'none'`
+/// so no framing page can trick a click on its buttons.
+pub fn spa(dir: PathBuf, production: bool) -> Result<Router, String> {
+    let mut framers: Vec<String> = FRAMERS.iter().map(|s| (*s).to_owned()).collect();
+    if !production {
+        framers.push(DEV_FRAMER.to_owned());
+    }
+    let framing = SecurityOverride::new(SecurityOverrideConfig {
+        csp_sources: Sources::from([("frame-ancestors".to_owned(), framers)]),
+        ..SecurityOverrideConfig::default()
+    })?;
+    let handler = tronc::spa::handler(tronc::spa::Config { dir, ..Default::default() });
+    Ok(Router::new()
+        .fallback_service(handler)
+        .layer(axum::middleware::from_fn_with_state(Arc::new(framing), frame_embeds)))
 }
 
 /// `base` with [`NATIVE_ORIGINS`] appended once. The apps send a bearer token and no cookie, so
@@ -66,30 +102,4 @@ pub fn cors(base: CorsConfig) -> CorsConfig {
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn the_policy_frames_only_the_youtube_player_and_only_docs_may_frame_toile() {
-        let sources = sources(Path::new("/nonexistent"), true);
-        assert_eq!(sources.get("frame-src"), Some(&vec![PLAYER.to_owned()]));
-        let framers = vec!["'self'".to_owned(), "https://docs.facile.studio".to_owned()];
-        assert_eq!(sources.get("frame-ancestors"), Some(&framers));
-        let dev = super::sources(Path::new("/nonexistent"), false);
-        assert!(dev["frame-ancestors"].contains(&DEV_FRAMER.to_owned()));
-    }
-
-    #[test]
-    fn the_policy_loads_the_vision_tracker() {
-        let sources = sources(Path::new("/nonexistent"), true);
-        assert_eq!(sources.get("script-src"), Some(&vec![ANALYTICS.to_owned()]));
-    }
-
-    #[test]
-    fn native_origins_are_added_once() {
-        let base = CorsConfig { allowed_origins: vec!["https://localhost".to_owned()], ..CorsConfig::default() };
-        let origins = cors(base).allowed_origins;
-        assert_eq!(origins.len(), NATIVE_ORIGINS.len());
-        assert!(NATIVE_ORIGINS.iter().all(|origin| origins.iter().any(|o| o == origin)));
-    }
-}
+mod tests;

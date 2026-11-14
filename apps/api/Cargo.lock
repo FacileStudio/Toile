@@ -78,6 +78,7 @@ dependencies = [
  "http",
  "http-body-util",
  "imagesize",
+ "percent-encoding",
  "porte",
  "reqwest",
  "schemars",
@@ -1640,8 +1641,8 @@ dependencies = [
 
 [[package]]
 name = "porte"
-version = "0.7.1"
-source = "git+https://github.com/FacileStudio/porte-rs?tag=v0.7.1#f28754c0c0d42ad955ba51fe14bddd1e7f0f53be"
+version = "0.8.1"
+source = "git+https://github.com/FacileStudio/porte-rs?tag=v0.8.1#00eb1224a0a32bea79bb37f8cf8f6df8923f16b1"
 dependencies = [
  "aes-gcm",
  "async-trait",
@@ -2970,8 +2971,8 @@ dependencies = [
 
 [[package]]
 name = "tronc"
-version = "0.4.0"
-source = "git+https://github.com/FacileStudio/tronc-rs?tag=v0.4.0#7335b6bcf1956b4907f2a0f8e59d7ab8d9f73a41"
+version = "0.5.1"
+source = "git+https://github.com/FacileStudio/tronc-rs?tag=v0.5.1#9b249086e6c122e8a22b1927bb9c2f8bb8d2cc96"
 dependencies = [
  "axum",
  "base64 0.23.1",
@@ -2981,6 +2982,7 @@ dependencies = [
  "hmac",
  "http",
  "http-body-util",
+ "httpdate",
  "ipnet",
  "percent-encoding",
  "reqwest",

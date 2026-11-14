@@ -1,6 +1,7 @@
 //! AI on a board, through Bulle: summarize it, sort selected stickies into framed themes, and
 //! draft a mind map, a flowchart or stickies from a prompt. Every route needs editor access and
-//! a plan with `ai.access`; a plan without it answers `402` before Bulle is called. Writes go
+//! `ai.access` on the person's own plan or on the board's space plan; without either it answers
+//! `402` before Bulle is called. A space board's requests name the space to Bulle. Writes go
 //! through the board's room, so open clients see them live. The caller's assistant name needs
 //! editor access only.
 
@@ -13,6 +14,8 @@ mod shapes;
 mod summarize;
 
 use axum::Router;
+
+pub use bulle::TIMEOUT;
 
 use crate::state::AppState;
 

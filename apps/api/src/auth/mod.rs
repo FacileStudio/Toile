@@ -99,11 +99,27 @@ fn suite(cfg: &Config, pool: &PgPool, store: &pg::Store) -> Result<Suite, BootEr
     let plans = Plans::new(pool.clone(), &cfg.porte.issuer);
     Ok(Suite {
         exchanger,
+        bulle: bulle(&cfg.apps.bulle),
         plans,
         apps: cfg.apps.clone(),
         http: crate::modules::suite::client(),
         cards: Default::default(),
     })
+}
+
+fn bulle(app: &crate::modules::suite::App) -> Option<tronc::bulle::Client> {
+    if !app.enabled() {
+        return None;
+    }
+    reqwest::Client::builder()
+        .timeout(crate::modules::ai::TIMEOUT)
+        .redirect(reqwest::redirect::Policy::none())
+        .no_proxy()
+        .build()
+        .map_err(|error| format!("bulle: building the HTTP client: {error}"))
+        .and_then(|http| tronc::bulle::Client::with_http(&app.url, http))
+        .inspect_err(|error| tracing::warn!(%error, "ai: Bulle is off"))
+        .ok()
 }
 
 async fn mcp_verifier(cfg: &Config, store: &pg::Store, oidc: &Kit) -> Result<mcpauth::Verifier, BootError> {

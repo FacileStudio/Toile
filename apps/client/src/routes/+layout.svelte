@@ -17,6 +17,7 @@
 	import { backend } from '$lib/backend';
 	import { boardIcon, logoIcon } from '$lib/brand';
 	import { reconnect } from '$lib/reconnect.svelte';
+	import { takeReturn } from '$lib/returnTo';
 	import NativeGate from '$lib/components/native/NativeGate.svelte';
 	import { isApp } from '$lib/platform';
 	import { session } from '$lib/session.svelte';
@@ -39,7 +40,7 @@
 	});
 
 	$effect(() => {
-		if (session.ready && session.user && landing) void goto('/boards', { replaceState: true });
+		if (session.ready && session.user && landing) void goto(takeReturn() ?? '/boards', { replaceState: true });
 	});
 
 	const pages = $derived([

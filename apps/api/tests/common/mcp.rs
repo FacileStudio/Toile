@@ -5,7 +5,7 @@ use std::time::{Duration, SystemTime};
 
 use http::request::Parts;
 use serde_json::Value;
-use tronc::mcp::{Options, TokenInfo, Verifier, VerifyError, VerifyFuture};
+use tronc::mcp::{AppConfig, PostgresPending, TokenInfo, Verifier, VerifyError, VerifyFuture};
 
 use super::{App, Person};
 
@@ -42,9 +42,11 @@ pub async fn served(prefix: &str) -> Option<Served> {
     let mut app = super::app(pool).await;
     let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
     let url = format!("http://{}/mcp", listener.local_addr().unwrap());
-    app.state.confirmations = Some(api::mcp::confirmations(&app.state, &url, b"test-state-key").unwrap());
-    let options = Options::new("toile", url.clone(), "https://sso.test", Arc::new(Tokens));
-    app.router = api::router::build_router(app.state.clone(), &app.kits, Some(options)).unwrap();
+    let mut config = AppConfig::new(url.clone(), "https://sso.test", Arc::new(Tokens));
+    config.state_key = tronc::mcp::state_key("toile", "test-state-key");
+    config.pending = Some(Arc::new(PostgresPending::new(app.state.pool.clone())));
+    let mcp = api::mcp::app(&mut app.state, config).unwrap();
+    app.router = api::router::build_router(app.state.clone(), &app.kits, Some(mcp), false).unwrap();
     let router = app.router.clone().into_make_service_with_connect_info::<SocketAddr>();
     tokio::spawn(async move { axum::serve(listener, router).await.unwrap() });
     let person = app.person("agent-owner").await;

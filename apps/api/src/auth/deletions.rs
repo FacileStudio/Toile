@@ -20,20 +20,25 @@ impl AppData {
     }
 }
 
-fn failed(error: sqlx::Error) -> DirectoryError {
+fn failed(error: impl std::fmt::Display) -> DirectoryError {
     DirectoryError::Failed(error.to_string())
 }
 
-async fn erase(tx: &mut PgConnection, users: &[i64], subject: &str) -> Result<Vec<Uuid>, sqlx::Error> {
+async fn erase(tx: &mut PgConnection, users: &[i64], subject: &str) -> Result<Vec<Uuid>, DirectoryError> {
     let boards: Vec<Uuid> =
         sqlx::query_scalar("DELETE FROM boards WHERE space_id IS NULL AND owner_user_id = ANY($1) RETURNING id")
             .bind(users)
             .fetch_all(&mut *tx)
-            .await?;
+            .await
+            .map_err(failed)?;
     let names: Vec<String> = users.iter().map(i64::to_string).collect();
-    sqlx::query("DELETE FROM mcp_actions WHERE user_id = ANY($1)").bind(&names).execute(&mut *tx).await?;
-    sqlx::query("DELETE FROM space_members WHERE subject = $1").bind(subject).execute(&mut *tx).await?;
-    sqlx::query("DELETE FROM porte_users WHERE id = ANY($1)").bind(users).execute(&mut *tx).await?;
+    tronc::mcp::erase_pending(&mut *tx, &names).await.map_err(failed)?;
+    sqlx::query("DELETE FROM space_members WHERE subject = $1")
+        .bind(subject)
+        .execute(&mut *tx)
+        .await
+        .map_err(failed)?;
+    sqlx::query("DELETE FROM porte_users WHERE id = ANY($1)").bind(users).execute(&mut *tx).await.map_err(failed)?;
     Ok(boards)
 }
 
@@ -48,7 +53,7 @@ impl PersonDeleted for AppData {
                 .fetch_all(&mut *tx)
                 .await
                 .map_err(failed)?;
-        let boards = erase(&mut tx, &users, subject).await.map_err(failed)?;
+        let boards = erase(&mut tx, &users, subject).await?;
         tx.commit().await.map_err(failed)?;
         self.hub.tell_all(|| Command::Evict(users.clone())).await;
         self.hub.close(&boards).await;

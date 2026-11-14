@@ -148,9 +148,15 @@ refetch the comments.
 | `POST` | `/boards/{id}/ai/generate` | `{"prompt", "kind": "mindmap|flowchart|stickies", "accent"?}` (prompt at most 2000 characters): Bulle drafts it and Toile lays it out right of the board's content as colored stickies joined by arrows. `accent` is the person's Bulle assistant color as `#rrggbb` and fills flowchart decisions; anything else falls back to `#EE7E89`. `{"created": [{"id", "ref"?, "type", "x", "y", "w", "h"}]}` |
 | `GET` | `/me/entitlements?space_id=` | `{"scope": "personal|space", "entitlements": {"ai.access": bool, "toile.upload_mb": n}, "upgrade_url"}`. No `space_id` is the caller's own plan; a space they are not in is 404. `-1` is unlimited |
 | `POST` | `/boards/meeting` | `{"room", "name"?, "space_id"?}`: the Echo room's board and edit link (see below); 201 when made, 200 after |
-| `GET` | `/mcp/actions` | The caller's agent actions awaiting confirmation, each with `state` (`ready|changed|missing`) |
-| `POST` | `/mcp/actions/{id}/confirm` | Runs the action: `{"status": "done"}`; an agent token (with an actor) gets 403 |
-| `POST` | `/mcp/actions/{id}/dismiss` | Refuses the action, 204 |
+| `GET` | `/mcp/pending` | `{"actions": [...], "truncated"?: true}`: the caller's agent actions awaiting confirmation, newest first (100 at most), each `{id, kind, client_id, summary, created_at, expires_at, state, target}` with `state` `ready|changed|missing` |
+| `POST` | `/mcp/pending/{id}/confirm` | Runs the action: `{"status": "done"}` |
+| `POST` | `/mcp/pending/{id}/dismiss` | Refuses the action: `{"status": "dismissed"}` |
+
+Only the person's own browser login confirms (porte `require_own_session`): the three
+`/mcp/pending` routes answer 403 `permission_denied` "only the person's own session can confirm
+actions" to a bearer of any kind (the mobile and desktop apps included), a CLI or named API token
+sent as the cookie, an agent token, and a cookie minted before porte-rs v0.8.0 (sign in again in
+the browser). The confirm page and these routes always send `frame-ancestors 'none'`.
 
 ### Live cards
 
