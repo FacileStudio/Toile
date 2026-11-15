@@ -23,7 +23,7 @@ export function openShape(editor: Editor, shape: Shape): void {
 	if (!editor.editable || shape.locked) return;
 	if (TEXT_TYPES.has(shape.type) || shape.type === 'frame') {
 		editor.select([shape.id]);
-		editor.editing = shape.id;
+		editor.edit(shape.id);
 	}
 }
 

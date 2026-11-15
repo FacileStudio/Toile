@@ -75,7 +75,7 @@ export class CreateTool implements Tool {
 		if (!id) return;
 		this.editor.tool = 'select';
 		this.editor.select([id]);
-		if (this.type !== 'frame') this.editor.editing = id;
+		if (this.type !== 'frame') this.editor.edit(id);
 	}
 
 	cancel(): void {

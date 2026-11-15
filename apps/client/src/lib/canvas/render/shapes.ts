@@ -3,7 +3,7 @@ import type { Lookup } from '../bounds';
 import { strokeWidth } from '../bounds';
 import { FRAME_LABEL } from '../hit';
 import { drawCard } from './cards';
-import { inkOn, STICKY_FILL, type Palette } from './palette';
+import { fillOf, inkOn, STICKY_FILL, type Palette } from './palette';
 import { drawArrow, drawInk } from './paths';
 import { drawText, fontSize } from './text';
 
@@ -30,7 +30,7 @@ function outline(ctx: CanvasRenderingContext2D, shape: Shape, radius: number): v
 }
 
 function drawSticky(ctx: CanvasRenderingContext2D, shape: Shape, env: DrawEnv): void {
-	const fill = shape.style.fill ?? STICKY_FILL;
+	const fill = fillOf(shape) ?? STICKY_FILL;
 	ctx.fillStyle = fill;
 	outline(ctx, shape, 4);
 	ctx.fill();

@@ -1,4 +1,4 @@
-import type { Shape } from '$lib/board/schema';
+import { PATH_TYPES, type Shape } from '$lib/board/schema';
 import { localPoints, routePoints, strokeWidth, type Lookup } from './bounds';
 import type { Box, Point } from './camera';
 import { center, contains, intersects, rotate, rotatedBox } from './geometry';
@@ -76,10 +76,51 @@ export function topHit(scene: Scene, p: Point, tolerance: number, skip?: (shape:
 	return null;
 }
 
-/** The shapes a marquee selects: frames only when wholly inside it, everything else when touched. Locked skip. */
+/** Whether segment `a`-`b` crosses or lies inside `area` (Liang-Barsky clipping). */
+function segmentTouches(area: Box, a: Point, b: Point): boolean {
+	const dx = b.x - a.x;
+	const dy = b.y - a.y;
+	let t0 = 0;
+	let t1 = 1;
+	const edges: [number, number][] = [
+		[-dx, a.x - area.x],
+		[dx, area.x + area.w - a.x],
+		[-dy, a.y - area.y],
+		[dy, area.y + area.h - a.y]
+	];
+	for (const [p, q] of edges) {
+		if (p === 0) {
+			if (q < 0) return false;
+			continue;
+		}
+		const t = q / p;
+		if (p < 0) t0 = Math.max(t0, t);
+		else t1 = Math.min(t1, t);
+		if (t0 > t1) return false;
+	}
+	return true;
+}
+
+/** Whether the stroke of `points` passes through `area`, not merely its bounding box. */
+export function polylineTouches(area: Box, points: Point[]): boolean {
+	if (points.length === 1) return segmentTouches(area, points[0], points[0]);
+	return points.slice(1).some((q, i) => segmentTouches(area, points[i], q));
+}
+
+function strokePoints(shape: Shape, lookup: Lookup): Point[] {
+	if (shape.type !== 'ink') return routePoints(shape, lookup);
+	const c = center(shape);
+	return localPoints(shape).map((q) => rotate({ x: shape.x + q.x, y: shape.y + q.y }, c, shape.rot));
+}
+
+/**
+ * The shapes a marquee selects: frames only when wholly inside it, lines, arrows and ink only when it touches their
+ * stroke, everything else when it touches their box. Locked shapes are skipped.
+ */
 export function marqueeHits(scene: Scene, area: Box): Shape[] {
 	return scene.within(area).filter((shape) => {
 		if (shape.locked) return false;
+		if (PATH_TYPES.has(shape.type)) return polylineTouches(area, strokePoints(shape, scene.get));
 		const box = shape.type === 'frame' ? rotatedBox(shape) : (scene.index.box(shape.id) as Box);
 		return shape.type === 'frame' ? contains(area, box) : intersects(area, box);
 	});

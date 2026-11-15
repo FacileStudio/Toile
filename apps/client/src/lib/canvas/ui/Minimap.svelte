@@ -7,6 +7,7 @@
 	import { localPoints, routePoints, strokeWidth } from '../bounds';
 	import { CONNECTOR_RADIUS, traceRounded } from '../render/paths';
 	import { fitCanvas } from '../render/renderer';
+	import { fillOf } from '../render/palette';
 
 	let { editor }: { editor: Editor } = $props();
 
@@ -56,7 +57,7 @@
 				trace(ctx, shape, scale);
 				continue;
 			}
-			ctx.fillStyle = shape.style.fill ?? editor.palette.muted;
+			ctx.fillStyle = fillOf(shape) ?? editor.palette.muted;
 			const b = editor.scene.index.box(shape.id);
 			if (!b) continue;
 			const w = Math.max(b.w, 1 / scale);

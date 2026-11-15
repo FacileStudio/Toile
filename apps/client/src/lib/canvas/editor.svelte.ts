@@ -171,6 +171,12 @@ export class Editor {
 		this.invalidateOverlay();
 	}
 
+	/** Opens shape `id` for text editing and repaints, so the canvas stops drawing its text under the field. */
+	edit(id: string): void {
+		this.editing = id;
+		this.invalidate();
+	}
+
 	/** Commits or removes any shape currently being edited. */
 	finishEditing(): void {
 		const id = this.editing;

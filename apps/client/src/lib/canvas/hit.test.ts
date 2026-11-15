@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { BoardDoc } from '$lib/board/doc';
-import { frameAt, hitShape, marqueeHits, topHit } from './hit';
+import { frameAt, hitShape, marqueeHits, polylineTouches, topHit } from './hit';
 import { Scene } from './scene';
 import { SpatialIndex } from './spatial';
 
@@ -105,5 +105,19 @@ describe('hit testing', () => {
 		expect(frameAt(scene, { x: 120, y: 120 }, new Set())?.id).toBe(frame);
 		expect(frameAt(scene, { x: 120, y: 120 }, new Set([frame]))).toBeNull();
 		expect(locked).toBeTruthy();
+	});
+});
+
+describe('polylineTouches', () => {
+	const diagonal = [
+		{ x: 0, y: 0 },
+		{ x: 100, y: 100 }
+	];
+
+	it('selects a diagonal only where the marquee meets its stroke', () => {
+		expect(polylineTouches({ x: 60, y: 0, w: 40, h: 30 }, diagonal)).toBe(false);
+		expect(polylineTouches({ x: 40, y: 40, w: 20, h: 20 }, diagonal)).toBe(true);
+		expect(polylineTouches({ x: 45, y: -10, w: 10, h: 200 }, diagonal)).toBe(true);
+		expect(polylineTouches({ x: -50, y: -50, w: 300, h: 300 }, diagonal)).toBe(true);
 	});
 });

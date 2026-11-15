@@ -1,4 +1,5 @@
 import { USER_COLORS } from '@facile/muse';
+import type { Shape } from '$lib/board/schema';
 
 /** The muse tokens the canvas paints with, read from the live CSS so light and dark both follow the theme. */
 export type Palette = {
@@ -38,6 +39,11 @@ export const FILLS: readonly string[] = USER_COLORS;
 
 /** The default sticky fill. */
 export const STICKY_FILL = USER_COLORS[3];
+
+/** The fill a shape paints with: its own, the default sticky fill for a sticky that has none, else none. */
+export function fillOf(shape: Shape): string | undefined {
+	return shape.style.fill ?? (shape.type === 'sticky' ? STICKY_FILL : undefined);
+}
 
 /** Ink that stays legible on `hex`, from its luminance: the identity pastels all take dark ink. */
 export function inkOn(hex: string): string {

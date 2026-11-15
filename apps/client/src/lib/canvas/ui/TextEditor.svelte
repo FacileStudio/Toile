@@ -6,7 +6,7 @@
 	import { setText } from '$lib/board/text';
 	import type { Editor } from '../editor.svelte';
 	import { toScreen } from '../camera';
-	import { inkOn, STICKY_FILL } from '../render/palette';
+	import { fillOf, inkOn } from '../render/palette';
 	import { fontOf, fontSize, textHeight, textPadding } from '../render/text';
 	import { FRAME_LABEL } from '../hit';
 
@@ -24,7 +24,7 @@
 		if (!shape) return null;
 		const c = editor.camera;
 		const at = toScreen(c, { x: shape.x, y: shape.type === 'frame' ? shape.y - FRAME_LABEL : shape.y });
-		const fill = shape.type === 'sticky' ? (shape.style.fill ?? STICKY_FILL) : shape.style.fill;
+		const fill = fillOf(shape);
 		const color =
 			shape.type === 'text' ? (shape.style.stroke ?? 'var(--color-fc-fg)') : fill ? inkOn(fill) : 'var(--color-fc-fg)';
 		return { x: at.x, y: at.y, z: c.z, color };

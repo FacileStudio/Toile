@@ -154,7 +154,7 @@ function insertShape(editor: Editor, type: 'sticky' | 'text' | 'rect' | 'frame',
 	const id = createShape(editor, type, bounds, type === 'frame' ? 'Cadre' : undefined);
 	if (!id) return;
 	editor.select([id]);
-	if (type === 'sticky' || type === 'text') editor.editing = id;
+	if (type === 'sticky' || type === 'text') editor.edit(id);
 }
 
 export function canvasMenuItems(editor: Editor, ui: CommandUi, world: Point): ContextMenuItem[] {
