@@ -1,2 +1,4 @@
-/** One message in every landing locale, in the order en, fr, es, de. */
-export type Row = readonly [en: string, fr: string, es: string, de: string];
+import type { Message } from '@facile/muse';
+
+/** One message in every locale, in the order en, fr, es, de. */
+export type Row = readonly [en: Message, fr: Message, es: Message, de: Message];

@@ -1,3 +1,4 @@
+import { t } from '$lib/i18n/index.svelte';
 import { toast } from '@facile/muse';
 import { resolveCard } from '$lib/api/cards';
 import { deleteSelection, createShape } from './actions';
@@ -59,7 +60,7 @@ function addLink(editor: Editor, trimmed: string, at: Point): string | null {
 			h: 200,
 			kind: 'youtube',
 			url: trimmed,
-			title: 'Vidéo YouTube',
+			title: t('board.youtube'),
 			image: youtubeThumbnail(video),
 			site: 'YouTube'
 		});
@@ -109,7 +110,7 @@ export async function pasteInto(editor: Editor, data: DataTransfer, at: Point | 
 	const text = data.getData('text/plain');
 	const shapes = parseClip(text);
 	if (!shapes && CLIP.test(text)) {
-		toast.danger('Ces éléments copiés sont illisibles : copiez-les à nouveau.');
+		toast.danger(t('paste.unreadable'));
 		return;
 	}
 	if (!shapes) return addText(editor, text, point);

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '$lib/i18n/index.svelte';
 	import { tick } from 'svelte';
 	import { Tooltip, toast } from '@facile/muse';
 	import { boardApi } from '$lib/board/api';
@@ -25,7 +26,7 @@
 			shown = trimmed;
 		} catch {
 			draft = shown;
-			toast.danger('Renommage impossible');
+			toast.danger(t('title.failed'));
 		}
 	}
 
@@ -38,7 +39,7 @@
 </script>
 
 {#if board}
-	<Tooltip text="Renommer le tableau" disabled={editing} class="inline-grid max-w-[40vw] min-w-0" data-testid="board-title">
+	<Tooltip text={t('title.rename')} disabled={editing} class="inline-grid max-w-[40vw] min-w-0" data-testid="board-title">
 		{#if editing}
 			<span aria-hidden="true" class="invisible {cell} overflow-hidden whitespace-pre">{draft || ' '}</span>
 			<input
@@ -46,7 +47,7 @@
 				bind:value={draft}
 				size="1"
 				class="{cell} w-full min-w-0 bg-fc-surface focus:outline-2 focus:outline-fc-ring"
-				aria-label="Nom du tableau"
+				aria-label={t('title.field')}
 				onblur={save}
 				onkeydown={(e) => {
 					if (e.key === 'Enter') void save();
@@ -57,7 +58,7 @@
 			<button
 				type="button"
 				class="{cell} cursor-pointer truncate text-left hover:bg-fc-surface/60 focus-visible:outline-2 focus-visible:outline-fc-ring"
-				aria-label="Renommer le tableau {shown}"
+				aria-label={t('title.renameNamed', { name: shown })}
 				onclick={start}
 			>
 				{shown}

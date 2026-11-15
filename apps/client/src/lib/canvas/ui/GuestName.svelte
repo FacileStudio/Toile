@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '$lib/i18n/index.svelte';
 	import { Button, Card, Field, Input } from '@facile/muse';
 	import { rememberGuest } from '$lib/board/guest';
 	import { logoIcon } from '$lib/brand';
@@ -22,13 +23,13 @@
 		</div>
 		<div class="flex flex-col gap-1">
 			<h1 class="text-fc-xl font-semibold text-fc-fg">{board}</h1>
-			<p class="text-fc-sm text-fc-fg-muted">Choisissez le nom que les autres verront à côté de votre curseur.</p>
+			<p class="text-fc-sm text-fc-fg-muted">{t('guest.intro')}</p>
 		</div>
 		<form class="flex flex-col gap-3" onsubmit={submit}>
-			<Field label="Votre nom">
+			<Field label={t('guest.name')}>
 				<Input bind:value={name} maxlength={40} required autocomplete="nickname" placeholder="Camille" />
 			</Field>
-			<Button type="submit" disabled={!name.trim()}>Ouvrir le tableau</Button>
+			<Button type="submit" disabled={!name.trim()}>{t('guest.open')}</Button>
 		</form>
 	</Card>
 </div>

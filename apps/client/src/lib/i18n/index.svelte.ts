@@ -2,7 +2,7 @@ import { browser } from '$app/environment';
 import { createTranslator, LOCALE_COOKIE, resolveLocale, type Locale } from '@facile/muse';
 import { catalogs } from './messages';
 
-let active: () => Locale = () => 'fr';
+let active: () => Locale = () => 'en';
 
 function cookieLocale(): string | null {
 	if (!browser) return null;
@@ -11,12 +11,12 @@ function cookieLocale(): string | null {
 	return found ? decodeURIComponent(found.slice(prefix.length)) : null;
 }
 
-/** The landing's locale source for `provideLocale`: the picked cookie, then the browser. */
+/** The locale source for `provideLocale`: the picked cookie, then the browser. */
 export function localeSource(): string | null {
 	return cookieLocale() ?? (browser ? navigator.language : null);
 }
 
-/** Persists the locale picked on the landing for the next visit. */
+/** Persists the picked locale for the next visit. */
 export function rememberLocale(locale: Locale) {
 	document.cookie = `${LOCALE_COOKIE}=${locale}; path=/; max-age=31536000; samesite=lax`;
 }
@@ -31,5 +31,7 @@ export function locale(): Locale {
 	return resolveLocale(active());
 }
 
-/** Translates a landing message in the current locale. */
+/** Translates an app message in the current locale. */
 export const t = createTranslator(catalogs, () => active());
+
+export type { AppKey } from './messages';

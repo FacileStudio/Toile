@@ -1,3 +1,4 @@
+import { t, type AppKey } from '$lib/i18n/index.svelte';
 import * as decoding from 'lib0/decoding';
 import { WebsocketProvider } from 'y-websocket';
 import type * as Y from 'yjs';
@@ -19,24 +20,24 @@ export function stopOf(code: number): Stop | null {
 	return STOPS[code] ?? null;
 }
 
-const STOP_TEXT: Record<Stop, string> = {
-	refused: 'Le serveur a refusé une modification.',
-	'too-large': 'La dernière modification est trop volumineuse.',
-	failed: 'Le tableau a rencontré une erreur. Rechargez la page.'
+const STOP_TEXT: Record<Stop, AppKey> = {
+	refused: 'stop.refused',
+	'too-large': 'stop.tooLarge',
+	failed: 'stop.failed'
 };
 
-const REASONS: Record<string, string> = {
-	'access revoked': 'Votre accès à ce tableau a été retiré.',
-	'board deleted': 'Ce tableau a été supprimé.'
+const REASONS: Record<string, AppKey> = {
+	'access revoked': 'stop.revoked',
+	'board deleted': 'stop.deleted'
 };
 
 /** What the stop banner says for a terminal close: the known reasons in words, any other with the server's detail. */
 export function stopMessage(stop: Stop, reason: string): string {
 	const known = REASONS[reason.trim()];
-	if (known) return known;
+	if (known) return t(known);
 	const detail = reason.trim();
-	if (stop !== 'refused' || !detail) return STOP_TEXT[stop];
-	return `${STOP_TEXT.refused} Rechargez la page. Détail : ${detail}`;
+	if (stop !== 'refused' || !detail) return t(STOP_TEXT[stop]);
+	return t('stop.detail', { refused: t('stop.refused'), detail });
 }
 
 /** Where a board's room lives: a member's board id, or a guest's share token and display name. */

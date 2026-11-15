@@ -23,6 +23,7 @@
 	import { boardIcon } from '$lib/brand';
 	import { formatDate } from '$lib/format';
 	import { session } from '$lib/session.svelte';
+	import { t } from '$lib/i18n/index.svelte';
 
 	let boards = $state<BoardInfo[]>([]);
 	let loading = $state(true);
@@ -42,7 +43,7 @@
 		try {
 			boards = await boardApi.list(spaceId);
 		} catch (error) {
-			failed(error, 'Chargement impossible');
+			failed(error, t('boards.loadFailed'));
 		} finally {
 			loading = false;
 		}
@@ -70,13 +71,13 @@
 		event?.preventDefault();
 		busy = true;
 		try {
-			const title = customTitle ?? (name.trim() || 'Sans titre');
+			const title = customTitle ?? (name.trim() || t('common.untitled'));
 			const board = await boardApi.create(title, session.spaceId);
 			boards = [board, ...boards];
 			name = '';
 			if (customTitle) await goto(`/b/${board.id}`);
 		} catch (error) {
-			failed(error, 'Création impossible');
+			failed(error, t('boards.createFailed'));
 		} finally {
 			busy = false;
 		}
@@ -91,9 +92,9 @@
 			const updated = await boardApi.rename(board.id, trimmed);
 			boards = boards.map((b) => (b.id === board.id ? { ...b, name: updated.name } : b));
 			renaming = null;
-			toast.success('Tableau renommé.');
+			toast.success(t('boards.renamed'));
 		} catch (error) {
-			failed(error, 'Renommage impossible');
+			failed(error, t('boards.renameFailed'));
 		}
 	}
 
@@ -101,7 +102,7 @@
 		try {
 			boards = [await boardApi.duplicate(board.id), ...boards];
 		} catch (error) {
-			failed(error, 'Copie impossible');
+			failed(error, t('boards.copyFailed'));
 		}
 	}
 
@@ -111,45 +112,45 @@
 		await boardApi.remove(board.id);
 		boards = boards.filter((b) => b.id !== board.id);
 		doomed = null;
-		toast.success('Tableau placé dans la corbeille.');
+		toast.success(t('boards.trashed'));
 	}
 
 	const actions = (board: BoardInfo) => [
-		{ label: 'Ouvrir', icon: icons.external, onselect: () => goto(`/b/${board.id}`) },
+		{ label: t('boards.open'), icon: icons.external, onselect: () => goto(`/b/${board.id}`) },
 		{
-			label: 'Renommer',
+			label: t('boards.rename'),
 			icon: icons.edit,
 			onselect: () => {
 				renaming = board;
 				renameTitle = board.name;
 			}
 		},
-		{ label: 'Dupliquer', icon: icons.copy, onselect: () => duplicate(board) },
+		{ label: t('boards.duplicate'), icon: icons.copy, onselect: () => duplicate(board) },
 		...(board.role === 'owner'
-			? [{ label: 'Supprimer', icon: icons.remove, tone: 'danger' as const, onselect: () => (doomed = board) }]
+			? [{ label: t('common.delete'), icon: icons.remove, tone: 'danger' as const, onselect: () => (doomed = board) }]
 			: [])
 	];
 </script>
 
-<svelte:head><title>Tableaux · Toile</title></svelte:head>
+<svelte:head><title>{t('boards.title')} · Toile</title></svelte:head>
 
 <Page width="xl" class="pb-24 md:pb-32">
-	<PageHeader title="Tableaux" description={session.space?.name ?? 'Espace personnel'} />
+	<PageHeader title={t('boards.title')} description={session.space?.name ?? t('boards.personal')} />
 
 	<form class="toile-rise flex max-w-xl flex-wrap items-end gap-2" onsubmit={create}>
-		<Field label="Nom du tableau" class="min-w-0 flex-1">
-			<Input bind:value={name} placeholder="Atelier du lundi" maxlength={200} />
+		<Field label={t('boards.name')} class="min-w-0 flex-1">
+			<Input bind:value={name} placeholder={t('boards.namePlaceholder')} maxlength={200} />
 		</Field>
-		<Button type="submit" size="lg" icon={icons.plus} disabled={busy}>Nouveau tableau</Button>
+		<Button type="submit" size="lg" icon={icons.plus} disabled={busy}>{t('boards.new')}</Button>
 	</form>
 
 	{#if boards.length === 0 && !loading}
-		<EmptyState icon={boardIcon} title="Aucun tableau" description="Créez un premier tableau pour commencer." />
+		<EmptyState icon={boardIcon} title={t('boards.empty')} description={t('boards.emptyBody')} />
 	{:else}
 		<ul
 			bind:this={gridEl}
 			class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
-			aria-label="Tableaux"
+			aria-label={t('boards.title')}
 		>
 			{#each boards as board, i (board.id)}
 				<li
@@ -168,11 +169,11 @@
 						<BoardPreview seed={board.id} thumbnail={board.thumbnail_url} />
 						<span class="flex min-w-0 flex-col gap-1 px-1 pb-1">
 							<span class="truncate text-fc-sm font-medium text-fc-fg">{board.name}</span>
-							<span class="text-fc-xs text-fc-fg-muted">Modifié le {formatDate(board.updated_at)}</span>
+							<span class="text-fc-xs text-fc-fg-muted">{t('boards.updated', { date: formatDate(board.updated_at) })}</span>
 						</span>
 					</Card>
 					<Menu
-						label="Actions pour {board.name}"
+						label={t('boards.actions', { name: board.name })}
 						items={actions(board)}
 						align="end"
 						class="absolute right-5 top-5 rounded-fc-md shadow-sm transition-opacity focus-within:opacity-100 group-hover/board:opacity-100 motion-reduce:transition-none [@media(hover:hover)_and_(pointer:fine)]:opacity-0"
@@ -185,10 +186,10 @@
 				<li class="h-full">
 					<button
 						type="button"
-						onclick={() => void create(undefined, 'Sans titre')}
+						onclick={() => void create(undefined, t('common.untitled'))}
 						disabled={busy}
 						class="toile-pop group flex h-full min-h-[220px] w-full flex-col items-center justify-center gap-3 rounded-fc-lg bg-fc-surface/50 p-4 text-center transition-[background-color,translate] duration-300 hover:-translate-y-1 hover:bg-fc-surface focus-visible:ring-2 focus-visible:ring-fc-accent motion-reduce:transition-none cursor-pointer disabled:cursor-not-allowed"
-						aria-label="Nouveau tableau"
+						aria-label={t('boards.new')}
 					>
 						<span
 							class="flex size-10 items-center justify-center rounded-full bg-fc-component text-fc-fg-muted transition-colors group-hover:bg-fc-page group-hover:text-fc-fg"
@@ -196,8 +197,8 @@
 							<Icon icon={icons.plus} size={20} />
 						</span>
 						<span class="flex flex-col gap-0.5">
-							<span class="text-fc-sm font-medium text-fc-fg">Nouveau tableau</span>
-							<span class="text-fc-xs text-fc-fg-muted">Créer un tableau</span>
+							<span class="text-fc-sm font-medium text-fc-fg">{t('boards.new')}</span>
+							<span class="text-fc-xs text-fc-fg-muted">{t('boards.create')}</span>
 						</span>
 					</button>
 				</li>
@@ -208,27 +209,27 @@
 
 <ConfirmModal
 	open={!!doomed}
-	title="Supprimer « {doomed?.name ?? ''} » ?"
-	description="Le tableau part dans la corbeille ; ses liens de partage cessent de fonctionner."
-	confirmLabel="Supprimer"
-	cancelLabel="Annuler"
+	title={t('boards.deleteTitle', { name: doomed?.name ?? '' })}
+	description={t('boards.deleteBody')}
+	confirmLabel={t('common.delete')}
+	cancelLabel={t('common.cancel')}
 	tone="danger"
 	onConfirm={remove}
 	onCancel={() => (doomed = null)}
 />
 
 {#if renaming}
-	<Modal open={!!renaming} title="Renommer le tableau" onClose={() => (renaming = null)}>
+	<Modal open={!!renaming} title={t('boards.renameTitle')} onClose={() => (renaming = null)}>
 		<form id="rename-board" class="flex flex-col gap-4" onsubmit={saveRename}>
-			<Field label="Nom du tableau" helper="1 à 200 caractères">
+			<Field label={t('boards.name')} helper={t('boards.nameHelper')}>
 				{#snippet children({ id, describedBy })}
 					<Input {id} aria-describedby={describedBy} bind:value={renameTitle} maxlength={200} autocomplete="off" />
 				{/snippet}
 			</Field>
 		</form>
 		{#snippet footer()}
-			<Button variant="ghost" onclick={() => (renaming = null)}>Annuler</Button>
-			<Button type="submit" form="rename-board" disabled={!renameTitle.trim()}>Enregistrer</Button>
+			<Button variant="ghost" onclick={() => (renaming = null)}>{t('common.cancel')}</Button>
+			<Button type="submit" form="rename-board" disabled={!renameTitle.trim()}>{t('common.save')}</Button>
 		{/snippet}
 	</Modal>
 {/if}

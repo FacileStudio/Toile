@@ -1,18 +1,22 @@
 <script lang="ts">
 	import { Modal } from '@facile/muse';
 	import { SHORTCUTS, SHORTCUT_GROUPS, keyCaps } from '$lib/shortcuts';
+	import { t } from '$lib/i18n/index.svelte';
 
 	let { open = $bindable(false) }: { open?: boolean } = $props();
 
-	const EXTRA = [
-		{ label: 'Déplacer la sélection', keys: ['←', '↑', '→', '↓'] },
-		{ label: 'Déplacer sans aimantation', keys: ['Alt'] },
-		{ label: 'Zoomer', keys: ['Ctrl', 'molette'] }
-	];
-	const groups = SHORTCUT_GROUPS.map((group) => ({
-		...group,
-		rows: SHORTCUTS.filter((s) => s.group === group.id).map((s) => ({ label: s.label, keys: keyCaps(s.keys[0]) }))
-	}));
+	const extra = $derived([
+		{ label: t('cheatsheet.move'), keys: ['←', '↑', '→', '↓'] },
+		{ label: t('cheatsheet.noSnap'), keys: ['Alt'] },
+		{ label: t('cheatsheet.zoom'), keys: ['Ctrl', t('cheatsheet.wheel')] }
+	]);
+	const groups = $derived(
+		SHORTCUT_GROUPS.map((group) => ({
+			id: group.id,
+			label: group.label,
+			rows: SHORTCUTS.filter((s) => s.group === group.id).map((s) => ({ label: s.label, keys: keyCaps(s.keys[0]) }))
+		}))
+	);
 </script>
 
 {#snippet row(label: string, keys: string[])}
@@ -26,7 +30,7 @@
 	</div>
 {/snippet}
 
-<Modal bind:open title="Raccourcis clavier" showClose size="lg">
+<Modal bind:open title={t('cheatsheet.title')} showClose size="lg">
 	<div class="grid grid-cols-1 gap-6 sm:grid-cols-2">
 		{#each groups as group (group.id)}
 			<section class="flex flex-col gap-1">
@@ -34,7 +38,7 @@
 				<dl>
 					{#each group.rows as r (r.label)}{@render row(r.label, r.keys)}{/each}
 					{#if group.id === 'view'}
-						{#each EXTRA as r (r.label)}{@render row(r.label, r.keys)}{/each}
+						{#each extra as r (r.label)}{@render row(r.label, r.keys)}{/each}
 					{/if}
 				</dl>
 			</section>

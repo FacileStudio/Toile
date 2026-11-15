@@ -6,6 +6,7 @@
 </script>
 
 <script lang="ts">
+	import { t } from '$lib/i18n/index.svelte';
 	import { tick } from 'svelte';
 	import { Icon, Tooltip } from '@facile/muse';
 	import type { Editor } from '../editor.svelte';
@@ -77,7 +78,11 @@
 		return () => window.removeEventListener('pointerdown', outside, true);
 	});
 
-	const hint = $derived(grouped ? `${current.label} (${current.key}), ${label.toLowerCase()} : cliquer à nouveau pour choisir` : `${current.label} (${current.key})`);
+	const hint = $derived(
+		grouped
+			? t('toolbar.groupHint', { tool: current.label, key: current.key, group: label.toLowerCase() })
+			: t('toolbar.hint', { tool: current.label, key: current.key })
+	);
 </script>
 
 <Tooltip text={hint} disabled={open} class="contents">

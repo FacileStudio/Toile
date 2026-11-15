@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '$lib/i18n/index.svelte';
 	import { Icon, IconButton, icons } from '@facile/muse';
 	import type { Editor } from '../editor.svelte';
 	import { toScreen } from '../camera';
@@ -42,7 +43,7 @@
 		<iframe
 			class="h-full w-full rounded-fc-md bg-fc-component shadow-lg"
 			{src}
-			title={shape?.title || 'Vidéo YouTube'}
+			title={shape?.title || t('board.youtube')}
 			allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
 			allowfullscreen
 			referrerpolicy="strict-origin-when-cross-origin"
@@ -50,7 +51,7 @@
 		<IconButton
 			variant="secondary"
 			class="absolute -top-11 right-0 shadow-lg"
-			aria-label="Fermer la vidéo"
+			aria-label={t('handles.closeVideo')}
 			onclick={close}
 		>
 			<Icon icon={icons.close} size={16} />

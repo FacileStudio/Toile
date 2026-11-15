@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '$lib/i18n/index.svelte';
 	import { untrack } from 'svelte';
 	import type * as Y from 'yjs';
 	import { LOCAL } from '$lib/board/doc';
@@ -101,7 +102,7 @@
 			style:transform="translate({view.x}px, {view.y}px)"
 			style:font="500 14px var(--font-fc-body)"
 			style:width="{Math.max(160, shape.w * view.z)}px"
-			aria-label="Nom du cadre"
+			aria-label={t('board.frameName')}
 			maxlength={200}
 			{oninput}
 			onblur={finish}
@@ -121,7 +122,7 @@
 			style:line-height="1.3"
 			style:color={view.color}
 			style:text-align={shape.style.align ?? (shape.type === 'text' ? 'left' : 'center')}
-			aria-label="Texte"
+			aria-label={t('board.textField')}
 			maxlength={LIMITS.textChars}
 			{oninput}
 			onblur={finish}

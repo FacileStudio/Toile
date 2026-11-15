@@ -1,3 +1,5 @@
+import { t, type AppKey } from '$lib/i18n/index.svelte';
+
 /** Where a shortcut is listed on the cheatsheet and in settings. */
 export type ShortcutGroup = 'tools' | 'edit' | 'arrange' | 'view';
 
@@ -8,68 +10,75 @@ export type ShortcutGroup = 'tools' | 'edit' | 'arrange' | 'view';
  */
 export type Shortcut = { id: string; group: ShortcutGroup; label: string; keys: readonly string[] };
 
+/** Gives each entry a `label` read from the catalog at `<prefix>.<id>`, in the locale in force when it is read. */
+function withLabels<T extends { id: string }>(prefix: string, entries: T[]): (T & { label: string })[] {
+	return entries.map((entry) => ({
+		...entry,
+		get label() {
+			return t(`${prefix}.${entry.id}` as AppKey);
+		}
+	}));
+}
+
 /** The headings of the groups, in display order. */
-export const SHORTCUT_GROUPS: readonly { id: ShortcutGroup; label: string }[] = [
-	{ id: 'tools', label: 'Outils' },
-	{ id: 'edit', label: 'Édition' },
-	{ id: 'arrange', label: 'Disposition' },
-	{ id: 'view', label: 'Vue' }
-];
+export const SHORTCUT_GROUPS: readonly { id: ShortcutGroup; label: string }[] = withLabels<{ id: ShortcutGroup }>('shortcuts.group', [
+	{ id: 'tools' },
+	{ id: 'edit' },
+	{ id: 'arrange' },
+	{ id: 'view' }
+]);
 
 /** Every keyboard shortcut of the board: the canvas binds these and settings lists them. */
-export const SHORTCUTS: readonly Shortcut[] = [
-	{ id: 'tool.select', group: 'tools', label: 'Sélection', keys: ['V'] },
-	{ id: 'tool.hand', group: 'tools', label: 'Main', keys: ['H'] },
-	{ id: 'tool.sticky', group: 'tools', label: 'Post-it', keys: ['S'] },
-	{ id: 'tool.text', group: 'tools', label: 'Texte', keys: ['T'] },
-	{ id: 'tool.rect', group: 'tools', label: 'Rectangle', keys: ['R'] },
-	{ id: 'tool.ellipse', group: 'tools', label: 'Ellipse', keys: ['O'] },
-	{ id: 'tool.diamond', group: 'tools', label: 'Losange', keys: ['D'] },
-	{ id: 'tool.line', group: 'tools', label: 'Ligne', keys: ['L'] },
-	{ id: 'tool.arrow', group: 'tools', label: 'Flèche', keys: ['A'] },
-	{ id: 'tool.pen', group: 'tools', label: 'Crayon', keys: ['P'] },
-	{ id: 'tool.eraser', group: 'tools', label: 'Gomme', keys: ['E'] },
-	{ id: 'tool.image', group: 'tools', label: 'Image', keys: ['I'] },
-	{ id: 'tool.frame', group: 'tools', label: 'Cadre', keys: ['F'] },
-	{ id: 'tool.comment', group: 'tools', label: 'Commentaire', keys: ['C'] },
-	{ id: 'edit.undo', group: 'edit', label: 'Annuler', keys: ['Mod+Z'] },
-	{ id: 'edit.redo', group: 'edit', label: 'Rétablir', keys: ['Mod+Shift+Z', 'Mod+Y'] },
-	{ id: 'edit.copy', group: 'edit', label: 'Copier', keys: ['Mod+C'] },
-	{ id: 'edit.cut', group: 'edit', label: 'Couper', keys: ['Mod+X'] },
-	{ id: 'edit.paste', group: 'edit', label: 'Coller', keys: ['Mod+V'] },
-	{ id: 'edit.duplicate', group: 'edit', label: 'Dupliquer', keys: ['Mod+D'] },
-	{ id: 'edit.delete', group: 'edit', label: 'Supprimer', keys: ['Delete', 'Backspace'] },
-	{ id: 'edit.selectAll', group: 'edit', label: 'Tout sélectionner', keys: ['Mod+A'] },
-	{ id: 'edit.text', group: 'edit', label: 'Modifier le texte', keys: ['Enter'] },
-	{ id: 'edit.deselect', group: 'edit', label: 'Désélectionner', keys: ['Escape'] },
-	{ id: 'arrange.forward', group: 'arrange', label: 'Avancer', keys: [']'] },
-	{ id: 'arrange.backward', group: 'arrange', label: 'Reculer', keys: ['['] },
-	{ id: 'arrange.front', group: 'arrange', label: 'Mettre au premier plan', keys: ['Mod+]'] },
-	{ id: 'arrange.back', group: 'arrange', label: 'Mettre à l’arrière-plan', keys: ['Mod+['] },
-	{ id: 'arrange.lock', group: 'arrange', label: 'Verrouiller ou déverrouiller', keys: ['Mod+Shift+L'] },
-	{ id: 'view.pan', group: 'view', label: 'Déplacer la vue (maintenir)', keys: ['Space'] },
-	{ id: 'view.zoomIn', group: 'view', label: 'Zoom avant', keys: ['Mod+=', 'Mod++'] },
-	{ id: 'view.zoomOut', group: 'view', label: 'Zoom arrière', keys: ['Mod+-'] },
-	{ id: 'view.zoomReset', group: 'view', label: 'Zoom à 100 %', keys: ['Shift+0'] },
-	{ id: 'view.zoomFit', group: 'view', label: 'Tout afficher', keys: ['Shift+1'] },
-	{ id: 'view.zoomSelection', group: 'view', label: 'Zoomer sur la sélection', keys: ['Shift+2'] },
-	{ id: 'view.minimap', group: 'view', label: 'Mini-carte', keys: ['M'] },
-	{ id: 'view.search', group: 'view', label: 'Rechercher dans le tableau', keys: ['Mod+K'] },
-	{ id: 'view.help', group: 'view', label: 'Raccourcis clavier', keys: ['?'] }
-];
+export const SHORTCUTS: readonly Shortcut[] = withLabels<Omit<Shortcut, 'label'>>('shortcut', [
+	{ id: 'tool.select', group: 'tools', keys: ['V'] },
+	{ id: 'tool.hand', group: 'tools', keys: ['H'] },
+	{ id: 'tool.sticky', group: 'tools', keys: ['S'] },
+	{ id: 'tool.text', group: 'tools', keys: ['T'] },
+	{ id: 'tool.rect', group: 'tools', keys: ['R'] },
+	{ id: 'tool.ellipse', group: 'tools', keys: ['O'] },
+	{ id: 'tool.diamond', group: 'tools', keys: ['D'] },
+	{ id: 'tool.line', group: 'tools', keys: ['L'] },
+	{ id: 'tool.arrow', group: 'tools', keys: ['A'] },
+	{ id: 'tool.pen', group: 'tools', keys: ['P'] },
+	{ id: 'tool.eraser', group: 'tools', keys: ['E'] },
+	{ id: 'tool.image', group: 'tools', keys: ['I'] },
+	{ id: 'tool.frame', group: 'tools', keys: ['F'] },
+	{ id: 'tool.comment', group: 'tools', keys: ['C'] },
+	{ id: 'edit.undo', group: 'edit', keys: ['Mod+Z'] },
+	{ id: 'edit.redo', group: 'edit', keys: ['Mod+Shift+Z', 'Mod+Y'] },
+	{ id: 'edit.copy', group: 'edit', keys: ['Mod+C'] },
+	{ id: 'edit.cut', group: 'edit', keys: ['Mod+X'] },
+	{ id: 'edit.paste', group: 'edit', keys: ['Mod+V'] },
+	{ id: 'edit.duplicate', group: 'edit', keys: ['Mod+D'] },
+	{ id: 'edit.delete', group: 'edit', keys: ['Delete', 'Backspace'] },
+	{ id: 'edit.selectAll', group: 'edit', keys: ['Mod+A'] },
+	{ id: 'edit.text', group: 'edit', keys: ['Enter'] },
+	{ id: 'edit.deselect', group: 'edit', keys: ['Escape'] },
+	{ id: 'arrange.forward', group: 'arrange', keys: [']'] },
+	{ id: 'arrange.backward', group: 'arrange', keys: ['['] },
+	{ id: 'arrange.front', group: 'arrange', keys: ['Mod+]'] },
+	{ id: 'arrange.back', group: 'arrange', keys: ['Mod+['] },
+	{ id: 'arrange.lock', group: 'arrange', keys: ['Mod+Shift+L'] },
+	{ id: 'view.pan', group: 'view', keys: ['Space'] },
+	{ id: 'view.zoomIn', group: 'view', keys: ['Mod+=', 'Mod++'] },
+	{ id: 'view.zoomOut', group: 'view', keys: ['Mod+-'] },
+	{ id: 'view.zoomReset', group: 'view', keys: ['Shift+0'] },
+	{ id: 'view.zoomFit', group: 'view', keys: ['Shift+1'] },
+	{ id: 'view.zoomSelection', group: 'view', keys: ['Shift+2'] },
+	{ id: 'view.minimap', group: 'view', keys: ['M'] },
+	{ id: 'view.search', group: 'view', keys: ['Mod+K'] },
+	{ id: 'view.help', group: 'view', keys: ['?'] }
+]);
 
 type Combo = { mods: string[]; key: string };
 
 const MAC_NAMES: Record<string, string> = { Mod: '⌘', Shift: '⇧', Alt: '⌥' };
-const NAMES: Record<string, string> = {
-	Mod: 'Ctrl',
-	Shift: 'Maj',
-	Alt: 'Alt',
-	Delete: 'Suppr',
-	Backspace: '⌫',
-	Escape: 'Échap',
-	Space: 'Espace'
-};
+const NAMES: Record<string, string> = { Mod: 'Ctrl', Alt: 'Alt', Backspace: '⌫' };
+const SPOKEN = new Set(['Shift', 'Delete', 'Escape', 'Space']);
+
+function keyName(part: string): string {
+	return SPOKEN.has(part) ? t(`key.${part}` as AppKey) : (NAMES[part] ?? part);
+}
 
 /** Splits a combo into its modifiers and key; the key may itself be `+`. */
 export function parseCombo(combo: string): Combo {
@@ -82,10 +91,10 @@ export function isApple(platform = typeof navigator === 'undefined' ? '' : navig
 	return /mac|iphone|ipad|ipod/i.test(platform);
 }
 
-/** The key caps of a combo, in display order: `['⌘', '⇧', 'Z']` on a Mac, `['Ctrl', 'Maj', 'Z']` elsewhere. */
+/** The key caps of a combo, in display order: `['⌘', '⇧', 'Z']` on a Mac, `['Ctrl', 'Shift', 'Z']` elsewhere, in the current locale. */
 export function keyCaps(combo: string, apple = isApple()): string[] {
 	const { mods, key } = parseCombo(combo);
-	return [...mods, key].map((part) => (apple && MAC_NAMES[part]) || NAMES[part] || part);
+	return [...mods, key].map((part) => (apple && MAC_NAMES[part]) || keyName(part));
 }
 
 function eventKey(event: KeyboardEvent): string {

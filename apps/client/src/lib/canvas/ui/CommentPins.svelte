@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '$lib/i18n/index.svelte';
 	import { Icon, Tooltip } from '@facile/muse';
 	import type { Anchor, Comment } from '$lib/board/api';
 	import type { BoardSession } from '$lib/board/session.svelte';
@@ -22,12 +23,12 @@
 
 {#each roots as comment (comment.id)}
 	{@const at = place(comment.anchor)}
-	<Tooltip text="Commentaire de {comment.author}" describe={false} class="contents">
+	<Tooltip text={t('comments.by', { author: comment.author })} describe={false} class="contents">
 		<button
 			type="button"
 			class="pointer-events-auto absolute top-0 left-0 flex h-9 min-w-9 items-center gap-1 rounded-fc-pill rounded-bl-fc-xs bg-fc-accent px-2 text-fc-xs font-medium text-fc-accent-fg shadow-lg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-fc-ring"
 			style:transform="translate({at.x}px, {at.y}px) translateY(-100%)"
-			aria-label="Commentaire de {comment.author}"
+			aria-label={t('comments.by', { author: comment.author })}
 			onclick={() => onopen(comment.id)}
 			data-board-ui
 		>

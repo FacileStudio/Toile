@@ -1,3 +1,4 @@
+import { t } from '$lib/i18n/index.svelte';
 import { ApiError } from '@facile/client';
 import { api } from '$lib/backend';
 
@@ -27,7 +28,7 @@ export function assetUrl(boardId: string, asset: string, token?: string): string
 export function uploadError(error: unknown): string {
 	if (error instanceof ApiError && error.status === 402) {
 		const limit = error.details.limit;
-		return typeof limit === 'number' ? `Votre forfait limite les images à ${limit} Mo.` : error.message;
+		return typeof limit === 'number' ? t('image.limit', { limit }) : error.message;
 	}
-	return error instanceof ApiError ? error.message : "L'image n'a pas pu être envoyée.";
+	return error instanceof ApiError ? error.message : t('image.failed');
 }

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { locale, t, type AppKey } from '$lib/i18n/index.svelte';
 	import { Input, Modal } from '@facile/muse';
 	import type { Shape } from '$lib/board/schema';
 	import type { Editor } from '../editor.svelte';
@@ -11,13 +12,18 @@
 	let active = $state(0);
 
 	const label = (shape: Shape) => shape.text || shape.name || shape.title || shape.url || '';
-	const KIND: Partial<Record<Shape['type'], string>> = { sticky: 'Note', text: 'Texte', frame: 'Cadre', card: 'Lien' };
+	const KIND: Partial<Record<Shape['type'], AppKey>> = {
+		sticky: 'search.sticky',
+		text: 'search.text',
+		frame: 'search.frame',
+		card: 'search.card'
+	};
 
 	const results = $derived.by(() => {
 		void editor.version;
-		const needle = query.trim().toLocaleLowerCase('fr');
+		const needle = query.trim().toLocaleLowerCase(locale());
 		if (!needle) return editor.scene.order.filter((s) => s.type === 'frame').slice(0, 20);
-		return editor.scene.order.filter((s) => label(s).toLocaleLowerCase('fr').includes(needle)).slice(0, 20);
+		return editor.scene.order.filter((s) => label(s).toLocaleLowerCase(locale()).includes(needle)).slice(0, 20);
 	});
 
 	function go(shape: Shape) {
@@ -36,17 +42,17 @@
 	}
 </script>
 
-<Modal bind:open title="Rechercher dans le tableau" showClose>
+<Modal bind:open title={t('search.title')} showClose>
 	<div class="flex flex-col gap-3">
 		<Input
 			bind:value={query}
-			placeholder="Texte, cadre, lien…"
-			aria-label="Rechercher"
+			placeholder={t('search.placeholder')}
+			aria-label={t('search.label')}
 			onkeydown={keydown}
 			oninput={() => (active = 0)}
 		/>
 		{#if results.length}
-			<ul class="flex max-h-80 flex-col gap-1 overflow-y-auto" role="listbox" aria-label="Résultats">
+			<ul class="flex max-h-80 flex-col gap-1 overflow-y-auto" role="listbox" aria-label={t('search.results')}>
 				{#each results as shape, i (shape.id)}
 					<li role="option" aria-selected={i === active}>
 						<button
@@ -57,14 +63,14 @@
 								: 'hover:bg-fc-surface'}"
 							onclick={() => go(shape)}
 						>
-							<span class="shrink-0 text-fc-xs text-fc-fg-muted">{KIND[shape.type] ?? 'Forme'}</span>
+							<span class="shrink-0 text-fc-xs text-fc-fg-muted">{t(KIND[shape.type] ?? 'search.shape')}</span>
 							<span class="min-w-0 flex-1 truncate text-fc-fg">{label(shape) || 'Sans titre'}</span>
 						</button>
 					</li>
 				{/each}
 			</ul>
 		{:else}
-			<p class="py-4 text-center text-fc-sm text-fc-fg-muted">Aucun résultat.</p>
+			<p class="py-4 text-center text-fc-sm text-fc-fg-muted">{t('search.none')}</p>
 		{/if}
 	</div>
 </Modal>

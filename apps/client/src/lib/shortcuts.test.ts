@@ -30,7 +30,7 @@ describe('shortcuts', () => {
 
 	it('names the keys for each platform', () => {
 		expect(keyCaps('Mod+Shift+Z', true)).toEqual(['⌘', '⇧', 'Z']);
-		expect(keyCaps('Mod+Shift+Z', false)).toEqual(['Ctrl', 'Maj', 'Z']);
+		expect(keyCaps('Mod+Shift+Z', false)).toEqual(['Ctrl', 'Shift', 'Z']);
 		expect(keyCaps('Mod++', false)).toEqual(['Ctrl', '+']);
 		expect(keyCaps('?', false)).toEqual(['?']);
 	});

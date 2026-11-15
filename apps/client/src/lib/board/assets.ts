@@ -1,3 +1,4 @@
+import { t } from '$lib/i18n/index.svelte';
 import { toast } from '@facile/muse';
 
 /** An uploaded image: its Toile asset id and natural size. */
@@ -10,7 +11,7 @@ export type Uploader = (board: string, file: File) => Promise<Uploaded | null>;
 export type AssetUrl = (board: string, asset: string) => string | null;
 
 let uploader: Uploader = async () => {
-	toast.info("L'envoi d'images arrive bientôt.");
+	toast.info(t('image.soon'));
 	return null;
 };
 

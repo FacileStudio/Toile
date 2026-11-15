@@ -1,3 +1,4 @@
+import { t } from '$lib/i18n/index.svelte';
 import { Browser } from '@capacitor/browser';
 import { invoke } from '@tauri-apps/api/core';
 import { listen } from '@tauri-apps/api/event';
@@ -9,7 +10,6 @@ import { apiOrigin, isDesktop, setToken } from '$lib/platform';
 export type LoopbackAnswer = { code: string; state: string; error: string };
 
 const LOGIN_EVENT = 'toile://login';
-const FAILED = 'La connexion a échoué. Réessayez.';
 
 /** A login state in the characters porte keeps on its CLI flow (`[A-Za-z0-9_-]`, at most 128). */
 export function randomState(): string {
@@ -41,16 +41,16 @@ export async function redeem(code: string): Promise<void> {
 		credentials: 'omit',
 		body: JSON.stringify({ code })
 	});
-	if (!response.ok) throw new Error(response.status === 401 ? 'Code invalide ou expiré.' : FAILED);
+	if (!response.ok) throw new Error(response.status === 401 ? t('native.invalidCode') : t('native.failed'));
 	const body = (await response.json()) as { token?: string };
-	if (!body.token) throw new Error(FAILED);
+	if (!body.token) throw new Error(t('native.failed'));
 	await setToken(body.token);
 }
 
 /** Checks the loopback answer against the state the app sent, then redeems its code. */
 export async function finishLoopback(answer: LoopbackAnswer, state: string): Promise<void> {
 	if (answer.error) throw new Error(answer.error);
-	if (answer.state !== state || !answer.code) throw new Error('La connexion ne correspond pas. Réessayez.');
+	if (answer.state !== state || !answer.code) throw new Error(t('native.mismatch'));
 	await redeem(answer.code);
 }
 

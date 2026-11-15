@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '$lib/i18n/index.svelte';
 	import { ConnectionHint, Icon, Presence, icons } from '@facile/muse';
 	import type { BoardSession } from '$lib/board/session.svelte';
 	import { presencePeers } from '$lib/board/presence';
@@ -22,7 +23,7 @@
 		class="pointer-events-auto flex h-11 items-center gap-2 rounded-fc-pill bg-fc-component px-4 text-fc-sm font-medium text-fc-fg shadow-lg hover:bg-fc-surface focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-fc-ring"
 		data-board-ui
 	>
-		Ouvrir dans Toile
+		{t('board.openInToile')}
 		<Icon icon={icons.external} size={16} />
 	</a>
 </div>

@@ -15,7 +15,7 @@
 		type UserMenuOptions
 	} from '@facile/muse';
 	import { backend } from '$lib/backend';
-	import { bindLocale, localeSource } from '$lib/i18n/index.svelte';
+	import { bindLocale, localeSource, rememberLocale, t } from '$lib/i18n/index.svelte';
 	import { boardIcon, logoIcon } from '$lib/brand';
 	import { reconnect } from '$lib/reconnect.svelte';
 	import { takeReturn } from '$lib/returnTo';
@@ -33,7 +33,7 @@
 	const landing = $derived(path === '/');
 	const fullscreen = $derived(path.startsWith('/s/') || (path.startsWith('/b/') && !!session.user));
 
-	const i18n = provideLocale(() => (landing && !session.user ? localeSource() : 'fr'));
+	const i18n = provideLocale(localeSource);
 	bindLocale(() => i18n.locale);
 	theme.restore();
 
@@ -46,16 +46,16 @@
 	});
 
 	const pages = $derived([
-		{ label: 'Tableaux', href: '/boards', icon: boardIcon, active: path.startsWith('/boards') }
+		{ label: t('nav.boards'), href: '/boards', icon: boardIcon, active: path.startsWith('/boards') }
 	]);
 	const navUser = $derived({
-		name: session.user?.name || session.user?.email || 'Compte',
+		name: session.user?.name || session.user?.email || t('nav.account'),
 		email: session.user?.email,
 		avatar: session.user?.avatar_url || undefined
 	});
 	const userMenu = $derived<UserMenuOptions>({
 		settingsHref: '/settings',
-		showLanguage: false,
+		onLocaleChange: rememberLocale,
 		onThemeChange: (mode) => theme.set(mode),
 		onSignOut: async () => {
 			await session.logout();
@@ -86,7 +86,7 @@
 				{spaces}
 				activeSpaceId={session.spaceId}
 				onSpaceSelect={(id) => session.select(id)}
-				personalSpaceLabel="Personnel"
+				personalSpaceLabel={t('nav.personal')}
 				user={navUser}
 				userHref="/settings"
 				userActive={onSettings}
@@ -110,10 +110,10 @@
 
 <ConfirmModal
 	bind:open={reconnect.needed}
-	title="Reconnectez votre session Facile"
-	description="Votre session Facile a expiré. Reconnectez-vous pour utiliser les autres apps de la suite depuis Toile."
-	confirmLabel="Se reconnecter"
-	cancelLabel="Plus tard"
+	title={t('reconnect.title')}
+	description={t('reconnect.body')}
+	confirmLabel={t('reconnect.confirm')}
+	cancelLabel={t('reconnect.later')}
 	onConfirm={() => window.location.assign(backend.loginUrl())}
 />
 

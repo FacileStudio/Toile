@@ -6,6 +6,7 @@
 	import { colorFor } from '$lib/board/presence';
 	import { BoardSession } from '$lib/board/session.svelte';
 	import { boardIcon } from '$lib/brand';
+	import { t } from '$lib/i18n/index.svelte';
 	import { session as account } from '$lib/session.svelte';
 	import BoardView from '$lib/canvas/ui/BoardView.svelte';
 	import GuestName from '$lib/canvas/ui/GuestName.svelte';
@@ -45,11 +46,11 @@
 	});
 </script>
 
-<svelte:head><title>{board?.name ?? 'Tableau partagé'} · Toile</title></svelte:head>
+<svelte:head><title>{board?.name ?? t('boards.shared')} · Toile</title></svelte:head>
 
 {#if missing}
 	<div class="flex h-dvh items-center justify-center bg-fc-page p-6">
-		<EmptyState icon={boardIcon} title="Lien invalide" description="Ce lien a été révoqué ou n’existe pas." />
+		<EmptyState icon={boardIcon} title={t('boards.invalidLink')} description={t('boards.invalidLinkBody')} />
 	</div>
 {:else if !board}
 	<div class="flex h-dvh items-center justify-center bg-fc-page"><Spinner /></div>

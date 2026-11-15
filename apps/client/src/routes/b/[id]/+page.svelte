@@ -6,6 +6,7 @@
 	import { colorFor } from '$lib/board/presence';
 	import { BoardSession } from '$lib/board/session.svelte';
 	import { boardIcon } from '$lib/brand';
+	import { t } from '$lib/i18n/index.svelte';
 	import { session as account } from '$lib/session.svelte';
 	import BoardView from '$lib/canvas/ui/BoardView.svelte';
 
@@ -24,7 +25,7 @@
 			.then((info) => {
 				if (cancelled) return;
 				board = info;
-				const name = user?.name || user?.email || 'Membre';
+				const name = user?.name || user?.email || t('board.member');
 				const me = { name, color: colorFor(user?.email ?? name), picture: user?.avatar_url || undefined, guest: false };
 				live = open = new BoardSession({ board: id }, info.role, me, id);
 			})
@@ -37,7 +38,7 @@
 	});
 </script>
 
-<svelte:head><title>{board?.name ?? 'Tableau'} · Toile</title></svelte:head>
+<svelte:head><title>{board?.name ?? t('board.label')} · Toile</title></svelte:head>
 
 {#if open && board}
 	<BoardView session={open} name={board.name} back={embed ? undefined : '/boards'} {embed} />
@@ -45,8 +46,8 @@
 	<div class="flex h-dvh items-center justify-center bg-fc-page p-6">
 		<EmptyState
 			icon={boardIcon}
-			title="Tableau introuvable"
-			description="Il a été supprimé, ou vous n’y avez pas accès."
+			title={t('boards.missing')}
+			description={t('boards.missingBody')}
 		/>
 	</div>
 {:else}

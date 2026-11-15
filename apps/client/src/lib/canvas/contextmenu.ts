@@ -1,3 +1,4 @@
+import { t } from '$lib/i18n/index.svelte';
 import { icons, toast } from '@facile/muse';
 import type { ContextMenuItem } from '$lib/components/ContextMenu.svelte';
 import { TEXT_TYPES, type Shape } from '$lib/board/schema';
@@ -26,7 +27,7 @@ function copySelection(editor: Editor): void {
 	const text = serialize(editor);
 	if (!text) return;
 	void navigator.clipboard.writeText(text);
-	toast.success('Copié dans le presse-papier');
+	toast.success(t('menu.copied'));
 }
 
 export function elementMenuItems(editor: Editor, ui: CommandUi, shape: Shape): ContextMenuItem[] {
@@ -37,19 +38,19 @@ export function elementMenuItems(editor: Editor, ui: CommandUi, shape: Shape): C
 
 	if (single?.type === 'card' && single.url) {
 		if (single.kind === 'youtube' && youtubeId(single.url))
-			items.push({ label: 'Lire la vidéo', icon: toolIcons.play, onselect: () => openCard(editor, single) });
+			items.push({ label: t('menu.play'), icon: toolIcons.play, onselect: () => openCard(editor, single) });
 		items.push(
 			{
-				label: 'Ouvrir le lien',
+				label: t('style.openLink'),
 				icon: icons.external,
 				onselect: () => single.url && window.open(single.url, '_blank', 'noopener')
 			},
 			{
-				label: 'Copier le lien',
+				label: t('style.copyLink'),
 				icon: icons.copy,
 				onselect: () => {
 					void navigator.clipboard.writeText(single.url!);
-					toast.success('Lien copié');
+					toast.success(t('style.linkCopied'));
 				}
 			},
 			{ label: '', separator: true, onselect: () => {} }
@@ -59,9 +60,9 @@ export function elementMenuItems(editor: Editor, ui: CommandUi, shape: Shape): C
 	if (single && (TEXT_TYPES.has(single.type) || single.type === 'frame') && editor.editable && !single.locked) {
 		items.push(
 			{
-				label: 'Modifier le texte',
+				label: t('menu.editText'),
 				icon: icons.edit,
-				shortcut: 'Entrée',
+				shortcut: t('menu.enter'),
 				onselect: () => openShape(editor, single)
 			},
 			{ label: '', separator: true, onselect: () => {} }
@@ -70,7 +71,7 @@ export function elementMenuItems(editor: Editor, ui: CommandUi, shape: Shape): C
 
 	if (editor.editable) {
 		items.push({
-			label: 'Couper',
+			label: t('menu.cut'),
 			icon: toolIcons.cut,
 			shortcut: keyCaps('Mod+X').join(''),
 			onselect: () => cutSelection(editor)
@@ -78,7 +79,7 @@ export function elementMenuItems(editor: Editor, ui: CommandUi, shape: Shape): C
 	}
 
 	items.push({
-		label: 'Copier',
+		label: t('menu.copy'),
 		icon: icons.copy,
 		shortcut: keyCaps('Mod+C').join(''),
 		onselect: () => copySelection(editor)
@@ -87,13 +88,13 @@ export function elementMenuItems(editor: Editor, ui: CommandUi, shape: Shape): C
 	if (editor.editable) {
 		items.push(
 			{
-				label: 'Dupliquer',
+				label: t('style.duplicate'),
 				icon: icons.copy,
 				shortcut: keyCaps('Mod+D').join(''),
 				onselect: () => duplicate(editor)
 			},
 			{
-				label: 'Supprimer',
+				label: t('style.delete'),
 				icon: icons.remove,
 				tone: 'danger',
 				shortcut: keyCaps('Delete').join(''),
@@ -101,20 +102,20 @@ export function elementMenuItems(editor: Editor, ui: CommandUi, shape: Shape): C
 			},
 			{ label: '', separator: true, onselect: () => {} },
 			{
-				label: 'Premier plan',
+				label: t('style.front'),
 				icon: toolIcons.front,
 				shortcut: keyCaps('Mod+]').join(''),
 				onselect: () => restack(editor, 'front')
 			},
 			{
-				label: 'Arrière-plan',
+				label: t('style.back'),
 				icon: toolIcons.back,
 				shortcut: keyCaps('Mod+[').join(''),
 				onselect: () => restack(editor, 'back')
 			},
 			{ label: '', separator: true, onselect: () => {} },
 			{
-				label: locked ? 'Déverrouiller' : 'Verrouiller',
+				label: locked ? t('style.unlock') : t('style.lock'),
 				icon: locked ? toolIcons.unlock : toolIcons.lock,
 				shortcut: keyCaps('Mod+Shift+L').join(''),
 				onselect: () => runCommand(editor, { run: 'lock' }, ui)
@@ -123,7 +124,7 @@ export function elementMenuItems(editor: Editor, ui: CommandUi, shape: Shape): C
 	}
 
 	items.push({
-		label: 'Zoomer sur la sélection',
+		label: t('menu.zoomSelection'),
 		icon: icons.search,
 		shortcut: keyCaps('Shift+2').join(''),
 		onselect: () => zoomSelection(editor)
@@ -163,32 +164,32 @@ export function canvasMenuItems(editor: Editor, ui: CommandUi, world: Point): Co
 	if (editor.editable) {
 		items.push(
 			{
-				label: 'Coller',
+				label: t('menu.paste'),
 				icon: toolIcons.paste,
 				shortcut: keyCaps('Mod+V').join(''),
 				onselect: () => pasteText(editor, world)
 			},
 			{ label: '', separator: true, onselect: () => {} },
 			{
-				label: 'Ajouter une note',
+				label: t('menu.addSticky'),
 				icon: toolIcons.sticky,
 				shortcut: 'S',
 				onselect: () => insertShape(editor, 'sticky', world)
 			},
 			{
-				label: 'Ajouter un texte',
+				label: t('menu.addText'),
 				icon: toolIcons.text,
 				shortcut: 'T',
 				onselect: () => insertShape(editor, 'text', world)
 			},
 			{
-				label: 'Ajouter un rectangle',
+				label: t('menu.addRect'),
 				icon: toolIcons.rect,
 				shortcut: 'R',
 				onselect: () => insertShape(editor, 'rect', world)
 			},
 			{
-				label: 'Ajouter un cadre',
+				label: t('menu.addFrame'),
 				icon: toolIcons.frame,
 				shortcut: 'F',
 				onselect: () => insertShape(editor, 'frame', world)
@@ -199,19 +200,19 @@ export function canvasMenuItems(editor: Editor, ui: CommandUi, world: Point): Co
 
 	items.push(
 		{
-			label: 'Tout sélectionner',
+			label: t('menu.selectAll'),
 			icon: toolIcons.select,
 			shortcut: keyCaps('Mod+A').join(''),
 			onselect: () => runCommand(editor, { run: 'selectAll' }, ui)
 		},
 		{
-			label: 'Tout afficher',
+			label: t('menu.zoomFit'),
 			icon: toolIcons.fit,
 			shortcut: keyCaps('Shift+1').join(''),
 			onselect: () => zoomFit(editor)
 		},
 		{
-			label: 'Zoom à 100 %',
+			label: t('menu.zoomReset'),
 			icon: icons.search,
 			shortcut: keyCaps('Shift+0').join(''),
 			onselect: () => zoomReset(editor)

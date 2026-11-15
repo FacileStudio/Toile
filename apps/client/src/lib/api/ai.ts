@@ -1,3 +1,4 @@
+import { t } from '$lib/i18n/index.svelte';
 import { ApiError } from "@facile/client";
 import { planLimitFrom, type PlanLimitError } from "@facile/muse";
 import { api } from "$lib/backend";
@@ -92,8 +93,8 @@ export function aiPlanLimit(error: unknown): PlanLimitError | null {
 /** The toast for a failed AI call that is not a plan refusal. */
 export function aiError(error: unknown): string {
   if (error instanceof ApiError && error.status === 429)
-    return "Trop de demandes à l’IA pour le moment. Réessayez plus tard.";
+    return t('assistant.busy');
   return error instanceof ApiError
     ? error.message
-    : "L’IA n’a pas pu répondre.";
+    : t('assistant.failed');
 }

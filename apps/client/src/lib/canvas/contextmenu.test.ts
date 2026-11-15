@@ -132,14 +132,14 @@ describe('canvas and element context menu operations', () => {
 		const ui = { help: vi.fn(), search: vi.fn(), image: vi.fn(), minimap: vi.fn() };
 		const items = canvasMenuItems(editor, ui, { x: 100, y: 200 });
 		const labels = items.map((i) => i.label);
-		expect(labels).toContain('Coller');
-		expect(labels).toContain('Ajouter une note');
-		expect(labels).toContain('Ajouter un texte');
-		expect(labels).toContain('Ajouter un rectangle');
-		expect(labels).toContain('Ajouter un cadre');
-		expect(labels).toContain('Tout sélectionner');
-		expect(labels).toContain('Tout afficher');
-		expect(labels).toContain('Zoom à 100 %');
+		expect(labels).toContain('Paste');
+		expect(labels).toContain('Add a sticky');
+		expect(labels).toContain('Add text');
+		expect(labels).toContain('Add a rectangle');
+		expect(labels).toContain('Add a frame');
+		expect(labels).toContain('Select all');
+		expect(labels).toContain('Show everything');
+		expect(labels).toContain('Zoom to 100%');
 	});
 
 	it('builds element menu items with smart options for cards', () => {
@@ -165,15 +165,15 @@ describe('canvas and element context menu operations', () => {
 		const ui = { help: vi.fn(), search: vi.fn(), image: vi.fn(), minimap: vi.fn() };
 		const items = elementMenuItems(editor, ui, card);
 		const labels = items.map((i) => i.label);
-		expect(labels).toContain('Ouvrir le lien');
-		expect(labels).toContain('Copier le lien');
-		expect(labels).toContain('Couper');
-		expect(labels).toContain('Copier');
-		expect(labels).toContain('Dupliquer');
-		expect(labels).toContain('Supprimer');
-		expect(labels).toContain('Premier plan');
-		expect(labels).toContain('Arrière-plan');
-		expect(labels).toContain('Verrouiller');
-		expect(labels).toContain('Zoomer sur la sélection');
+		expect(labels).toContain('Open link');
+		expect(labels).toContain('Copy link');
+		expect(labels).toContain('Cut');
+		expect(labels).toContain('Copy');
+		expect(labels).toContain('Duplicate');
+		expect(labels).toContain('Delete');
+		expect(labels).toContain('Bring to front');
+		expect(labels).toContain('Send to back');
+		expect(labels).toContain('Lock');
+		expect(labels).toContain('Zoom to selection');
 	});
 });

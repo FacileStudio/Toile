@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '$lib/i18n/index.svelte';
 	import { Button, IconButton, Icon, Textarea, icons, toast } from '@facile/muse';
 	import { canComment, type Comment } from '$lib/board/api';
 	import type { BoardSession } from '$lib/board/session.svelte';
@@ -25,7 +26,7 @@
 		try {
 			await action();
 		} catch (error) {
-			toast.danger(error instanceof Error ? error.message : 'Action impossible');
+			toast.danger(error instanceof Error ? error.message : t('comments.failed'));
 		} finally {
 			busy = false;
 		}
@@ -54,7 +55,7 @@
 {#snippet entry(c: Comment)}
 	<div class="flex flex-col gap-1">
 		<div class="flex items-center gap-2 text-fc-xs text-fc-fg-muted">
-			<span class="font-medium text-fc-fg">{c.author}{c.guest ? ' (invité)' : ''}</span>
+			<span class="font-medium text-fc-fg">{c.author}{c.guest ? t('comments.guest') : ''}</span>
 			<span>{formatDate(c.created_at)}</span>
 			{#if may && (mine(c) || session.role === 'owner')}
 				<button
@@ -72,12 +73,12 @@
 
 <aside
 	class="pointer-events-auto flex max-h-[70dvh] w-full flex-col gap-4 overflow-y-auto rounded-fc-lg bg-fc-component p-4 shadow-lg md:max-h-full md:w-80"
-	aria-label="Commentaires"
+	aria-label={t('comments.title')}
 	data-board-ui
 >
 	<header class="flex items-center justify-between gap-2">
-		<h2 class="text-fc-md font-semibold text-fc-fg">Commentaires</h2>
-		<IconButton variant="ghost" aria-label="Fermer les commentaires" onclick={onclose}
+		<h2 class="text-fc-md font-semibold text-fc-fg">{t('comments.title')}</h2>
+		<IconButton variant="ghost" aria-label={t('comments.close')} onclick={onclose}
 			><Icon icon={icons.close} size={18} /></IconButton
 		>
 	</header>
@@ -87,16 +88,16 @@
 				bind:value={body}
 				rows={3}
 				maxlength={4000}
-				placeholder="Écrire un commentaire…"
-				aria-label="Nouveau commentaire"
+				placeholder={t('comments.write')}
+				aria-label={t('comments.new')}
 			/>
 			<div class="flex justify-end gap-2">
-				<Button variant="ghost" onclick={() => (session.draft = null)}>Annuler</Button>
-				<Button type="submit" disabled={busy || !body.trim()}>Publier</Button>
+				<Button variant="ghost" onclick={() => (session.draft = null)}>{t('comments.cancel')}</Button>
+				<Button type="submit" disabled={busy || !body.trim()}>{t('comments.post')}</Button>
 			</div>
 		</form>
 	{:else if may && !roots.length}
-		<p class="text-fc-sm text-fc-fg-muted">Choisissez l’outil Commentaire (C), puis touchez le tableau.</p>
+		<p class="text-fc-sm text-fc-fg-muted">{t('comments.empty')}</p>
 	{/if}
 	<ul class="flex flex-col gap-3">
 		{#each roots as root (root.id)}
@@ -107,12 +108,12 @@
 				{/each}
 				{#if may && active === root.id}
 					<form class="flex flex-col gap-2" onsubmit={(e) => answer(e, root)}>
-						<Textarea bind:value={reply} rows={2} maxlength={4000} placeholder="Répondre…" aria-label="Réponse" />
+						<Textarea bind:value={reply} rows={2} maxlength={4000} placeholder={t('comments.replyPlaceholder')} aria-label={t('comments.replyLabel')} />
 						<div class="flex justify-end gap-2">
 							<Button variant="ghost" onclick={() => attempt(() => session.resolveComment(root.id, !root.resolved_at))}>
-								{root.resolved_at ? 'Rouvrir' : 'Résoudre'}
+								{root.resolved_at ? t('comments.reopen') : t('comments.resolve')}
 							</Button>
-							<Button type="submit" disabled={busy || !reply.trim()}>Répondre</Button>
+							<Button type="submit" disabled={busy || !reply.trim()}>{t('comments.reply')}</Button>
 						</div>
 					</form>
 				{/if}
@@ -124,6 +125,6 @@
 		class="self-start text-fc-xs text-fc-fg-muted hover:text-fc-fg"
 		onclick={() => (showResolved = !showResolved)}
 	>
-		{showResolved ? 'Masquer les fils résolus' : 'Afficher les fils résolus'}
+		{showResolved ? t('comments.hideResolved') : t('comments.showResolved')}
 	</button>
 </aside>

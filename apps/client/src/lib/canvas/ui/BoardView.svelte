@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '$lib/i18n/index.svelte';
 	import { goto } from '$app/navigation';
 	import { Blob } from '@facile/blob';
 	import { Alert, ConnectionHint, Icon, IconButton, Presence, Tooltip, icons } from '@facile/muse';
@@ -110,7 +111,7 @@
 			<div class="flex items-start justify-between gap-2">
 				<div class={chrome} data-board-ui>
 					{#if back}
-						<IconButton variant="ghost" aria-label="Retour aux tableaux" onclick={() => back && goto(back)}>
+						<IconButton variant="ghost" aria-label={t('board.back')} onclick={() => back && goto(back)}>
 							<Icon icon={icons.chevronLeft} size={20} />
 						</IconButton>
 					{/if}
@@ -126,24 +127,24 @@
 						data-board-ui
 					/>
 					<div class={chrome} data-board-ui>
-						<IconButton variant="ghost" aria-label="Rechercher" tooltip="Rechercher (⌘ K)" onclick={() => (search = true)}
+						<IconButton variant="ghost" aria-label={t('board.search')} tooltip={t('board.searchTip')} onclick={() => (search = true)}
 							><Icon icon={icons.search} size={20} /></IconButton
 						>
 						<IconButton
 							variant="ghost"
-							aria-label="Commentaires"
+							aria-label={t('board.comments')}
 							aria-pressed={comments}
 							onclick={() => (comments = !comments)}
 						>
 							<Icon icon={toolIcons.comment} size={20} />
 						</IconButton>
 						<span class="hidden md:inline-flex">
-							<IconButton variant="ghost" aria-label="Raccourcis clavier" tooltip="Raccourcis (?)" onclick={() => (help = true)}
+							<IconButton variant="ghost" aria-label={t('board.shortcuts')} tooltip={t('board.shortcutsTip')} onclick={() => (help = true)}
 								><Icon icon={toolIcons.keyboard} size={20} /></IconButton
 							>
 						</span>
 						{#if session.role === 'owner' && 'board' in session.target}
-							<IconButton variant="ghost" aria-label="Partager" onclick={() => (sharing = true)}
+							<IconButton variant="ghost" aria-label={t('board.share')} onclick={() => (sharing = true)}
 								><Icon icon={toolIcons.share} size={20} /></IconButton
 							>
 						{/if}
@@ -158,7 +159,7 @@
 			<p
 				class="pointer-events-auto mx-auto rounded-fc-pill bg-fc-component px-4 py-2 text-fc-xs text-fc-fg-muted shadow-lg"
 			>
-				{session.role === 'commenter' ? 'Vous pouvez commenter ce tableau.' : 'Lecture seule.'}
+				{session.role === 'commenter' ? t('board.canComment') : t('board.readOnly')}
 			</p>
 		{/if}
 

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t, type AppKey } from '$lib/i18n/index.svelte';
 	import { Tooltip } from '@facile/muse';
 	import type { Editor } from '../editor.svelte';
 	import type { Input } from '../input';
@@ -58,16 +59,12 @@
 		sw: [0, 1],
 		w: [0, 0.5]
 	};
-	const LABEL: Record<Handle, string> = {
-		nw: 'haut gauche',
-		n: 'haut',
-		ne: 'haut droite',
-		e: 'droite',
-		se: 'bas droite',
-		s: 'bas',
-		sw: 'bas gauche',
-		w: 'gauche'
-	};
+	const LABEL = $derived(
+		Object.fromEntries((['nw', 'n', 'ne', 'e', 'se', 's', 'sw', 'w'] as const).map((side) => [side, t(`side.${side}`)])) as Record<
+			Handle,
+			string
+		>
+	);
 
 	function handleCursor(handle: Handle, rot = 0): string {
 		const base: Record<Handle, number> = {
@@ -91,11 +88,11 @@
 		return 'ns-resize';
 	}
 
-	const OUTWARD: { id: string; label: string; left: string; top: string; anchor: [number, number] }[] = [
-		{ id: 'n', label: 'Connecter (haut)', left: '50%', top: '-22px', anchor: [0.5, 0] },
-		{ id: 'e', label: 'Connecter (droite)', left: 'calc(100% + 22px)', top: '50%', anchor: [1, 0.5] },
-		{ id: 's', label: 'Connecter (bas)', left: '50%', top: 'calc(100% + 22px)', anchor: [0.5, 1] },
-		{ id: 'w', label: 'Connecter (gauche)', left: '-22px', top: '50%', anchor: [0, 0.5] }
+	const OUTWARD: { id: string; label: AppKey; left: string; top: string; anchor: [number, number] }[] = [
+		{ id: 'n', label: 'handles.connectTop', left: '50%', top: '-22px', anchor: [0.5, 0] },
+		{ id: 'e', label: 'handles.connectRight', left: 'calc(100% + 22px)', top: '50%', anchor: [1, 0.5] },
+		{ id: 's', label: 'handles.connectBottom', left: '50%', top: 'calc(100% + 22px)', anchor: [0.5, 1] },
+		{ id: 'w', label: 'handles.connectLeft', left: '-22px', top: '50%', anchor: [0, 0.5] }
 	];
 
 	function point(event: PointerEvent) {
@@ -130,28 +127,28 @@
 			type="button"
 			class="pointer-events-auto absolute -top-1.5 left-2 right-2 h-3 touch-none"
 			style:cursor={handleCursor('n', frame.rot)}
-			aria-label="Redimensionner ({LABEL.n})"
+			aria-label={t('handles.resize', { side: LABEL.n })}
 			onpointerdown={(e) => resize('n', e)}
 		></button>
 		<button
 			type="button"
 			class="pointer-events-auto absolute -bottom-1.5 left-2 right-2 h-3 touch-none"
 			style:cursor={handleCursor('s', frame.rot)}
-			aria-label="Redimensionner ({LABEL.s})"
+			aria-label={t('handles.resize', { side: LABEL.s })}
 			onpointerdown={(e) => resize('s', e)}
 		></button>
 		<button
 			type="button"
 			class="pointer-events-auto absolute top-2 bottom-2 -left-1.5 w-3 touch-none"
 			style:cursor={handleCursor('w', frame.rot)}
-			aria-label="Redimensionner ({LABEL.w})"
+			aria-label={t('handles.resize', { side: LABEL.w })}
 			onpointerdown={(e) => resize('w', e)}
 		></button>
 		<button
 			type="button"
 			class="pointer-events-auto absolute top-2 bottom-2 -right-1.5 w-3 touch-none"
 			style:cursor={handleCursor('e', frame.rot)}
-			aria-label="Redimensionner ({LABEL.e})"
+			aria-label={t('handles.resize', { side: LABEL.e })}
 			onpointerdown={(e) => resize('e', e)}
 		></button>
 		{#each CORNERS as handle (handle)}
@@ -161,7 +158,7 @@
 				style:left="{POS[handle][0] * 100}%"
 				style:top="{POS[handle][1] * 100}%"
 				style:cursor={handleCursor(handle, frame.rot)}
-				aria-label="Redimensionner ({LABEL[handle]})"
+				aria-label={t('handles.resize', { side: LABEL[handle] })}
 				onpointerdown={(e) => resize(handle, e)}
 			>
 				<span class="size-3 rounded-[3px] bg-fc-info shadow-sm"></span>
@@ -175,7 +172,7 @@
 					style:left={c.left}
 					style:top={c.top}
 					style:cursor="crosshair"
-					aria-label={c.label}
+					aria-label={t(c.label)}
 					onpointerdown={(e) => connect(c.anchor, e)}
 				>
 					<span
@@ -187,20 +184,20 @@
 		{#if single?.type === 'card' && single.url}
 			{@const topH = (single.image ? Math.min(single.h * 0.6, 120) : 0) * editor.camera.z}
 			{#if single.kind === 'youtube'}
-				<Tooltip text="Lire la vidéo" describe={false} class="contents">
+				<Tooltip text={t('handles.play')} describe={false} class="contents">
 					<button
 						type="button"
 						class="pointer-events-auto absolute left-1/2 flex -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-fc-pill transition-transform hover:scale-110 active:scale-95 cursor-pointer z-10"
 						style:top="{topH / 2}px"
 						style:width="{Math.min(48, topH * 0.6)}px"
 						style:height="{Math.min(48, topH * 0.6)}px"
-						aria-label="Lire la vidéo"
+						aria-label={t('handles.play')}
 						onclick={(e) => {
 							e.stopPropagation();
 							openCard(editor, single);
 						}}
 					>
-						<span class="sr-only">Lire la vidéo</span>
+						<span class="sr-only">{t('handles.play')}</span>
 					</button>
 				</Tooltip>
 			{/if}
@@ -216,7 +213,7 @@
 			class="handle absolute top-0 left-0 flex touch-none items-center justify-center"
 			style:transform="translate({ends[end].x}px, {ends[end].y}px) translate(-50%, -50%)"
 			style:cursor="crosshair"
-			aria-label={end === 'from' ? 'Déplacer le début de la flèche' : 'Déplacer la fin de la flèche'}
+			aria-label={end === 'from' ? t('handles.arrowStart') : t('handles.arrowEnd')}
 			onpointerdown={(e) => drag(end, e)}
 			data-board-ui
 		>

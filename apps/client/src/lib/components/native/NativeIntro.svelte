@@ -1,26 +1,15 @@
 <script lang="ts">
+	import { t } from '$lib/i18n/index.svelte';
 	import { Button, Icon, Tooltip, icons } from '@facile/muse';
 	import { logoIcon } from '$lib/brand';
 
 	type Slide = { title: string; body: string; icon: string };
 
-	const SLIDES: Slide[] = [
-		{
-			title: 'Un tableau sans bords',
-			body: 'Post-it, formes, flèches et dessin à main levée sur une toile infinie.',
-			icon: logoIcon
-		},
-		{
-			title: 'À plusieurs, en direct',
-			body: 'Voyez les curseurs des autres et dessinez ensemble, au bureau comme en déplacement.',
-			icon: icons.usersGroup
-		},
-		{
-			title: 'Au doigt ou au stylet',
-			body: 'Pincez pour zoomer, glissez à deux doigts, écrivez au stylet avec la pression.',
-			icon: icons.edit
-		}
-	];
+	const SLIDES = $derived<Slide[]>([
+		{ title: t('native.slide1Title'), body: t('native.slide1Body'), icon: logoIcon },
+		{ title: t('native.slide2Title'), body: t('native.slide2Body'), icon: icons.usersGroup },
+		{ title: t('native.slide3Title'), body: t('native.slide3Body'), icon: icons.edit }
+	]);
 
 	let { onfinish }: { onfinish: () => void } = $props();
 
@@ -47,7 +36,7 @@
 	<header class="flex h-14 items-center justify-between px-5">
 		<span class="flex items-center gap-2 text-fc-md font-semibold"><Icon icon={logoIcon} size={22} />Toile</span>
 		{#if !last}
-			<Button variant="ghost" size="sm" onclick={onfinish}>Passer</Button>
+			<Button variant="ghost" size="sm" onclick={onfinish}>{t('native.skip')}</Button>
 		{/if}
 	</header>
 
@@ -55,12 +44,12 @@
 		bind:this={track}
 		{onscroll}
 		class="flex min-h-0 flex-1 snap-x snap-mandatory overflow-x-auto overscroll-x-contain [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-		aria-roledescription="carrousel"
+		aria-roledescription={t('native.carousel')}
 	>
 		{#each SLIDES as slide, i (slide.title)}
 			<section
 				class="flex w-full shrink-0 snap-center flex-col items-center justify-center gap-8 px-8 text-center"
-				aria-roledescription="diapositive"
+				aria-roledescription={t('native.slide')}
 				aria-label="{i + 1} sur {SLIDES.length}"
 				aria-hidden={i !== index}
 			>
@@ -76,14 +65,14 @@
 	</div>
 
 	<footer class="flex flex-col items-center gap-6 px-6 pt-4 pb-6">
-		<div class="flex items-center gap-1" role="tablist" aria-label="Diapositives">
+		<div class="flex items-center gap-1" role="tablist" aria-label={t('native.slides')}>
 			{#each SLIDES as slide, i (slide.title)}
-				<Tooltip text="Diapositive {i + 1}" describe={false} class="contents">
+				<Tooltip text={t('native.slideN', { n: i + 1 })} describe={false} class="contents">
 					<button
 						type="button"
 						role="tab"
 						aria-selected={i === index}
-						aria-label="Aller à la diapositive {i + 1}"
+						aria-label={t('native.goTo', { n: i + 1 })}
 						class="flex size-11 items-center justify-center"
 						onclick={() => show(i)}
 					>

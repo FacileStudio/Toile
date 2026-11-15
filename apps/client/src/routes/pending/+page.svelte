@@ -6,6 +6,7 @@
 	import { formatDate } from '$lib/format';
 	import { isApp } from '$lib/platform';
 	import { rememberReturn } from '$lib/returnTo';
+	import { t } from '$lib/i18n/index.svelte';
 
 	const id = $derived(page.url.searchParams.get('action') ?? '');
 
@@ -34,7 +35,7 @@
 			.then((list) => (action = list.find((item) => item.id === wanted) ?? null))
 			.catch((error) => {
 				action = null;
-				failed(error, 'Demandes indisponibles');
+				failed(error, t('pending.unavailable'));
 			});
 	});
 
@@ -60,24 +61,21 @@
 			else await pending.dismiss(action.id);
 			outcome = confirm ? 'confirmed' : 'dismissed';
 		} catch (error) {
-			failed(error, 'Réponse impossible');
+			failed(error, t('pending.answerFailed'));
 		} finally {
 			busy = false;
 		}
 	}
 </script>
 
-<svelte:head><title>Demande d’un agent · Toile</title></svelte:head>
+<svelte:head><title>{t('pending.title')} · Toile</title></svelte:head>
 
 <div class="mx-auto flex w-full max-w-3xl flex-col gap-6 px-4 py-6 sm:px-6 md:py-10">
-	<PageHeader title="Demande d’un agent" description="Un agent veut faire une modification qui demande votre accord." />
+	<PageHeader title={t('pending.title')} description={t('pending.intro')} />
 	{#if refused}
 		<Alert tone="warning" class="flex flex-col items-start gap-3">
-			<p>
-				Pour confirmer, reconnectez-vous dans votre navigateur. L’app mobile ou de bureau, la CLI et les
-				jetons d’API ne peuvent pas confirmer une demande d’agent.
-			</p>
-			{#if !isApp()}<Button variant="primary" onclick={signIn}>Se reconnecter</Button>{/if}
+			<p>{t('pending.refused')}</p>
+			{#if !isApp()}<Button variant="primary" onclick={signIn}>{t('pending.signIn')}</Button>{/if}
 		</Alert>
 	{/if}
 	{#if action === undefined}
@@ -85,29 +83,27 @@
 	{:else if outcome}
 		<EmptyState
 			icon={outcome === 'confirmed' ? icons.check : icons.close}
-			title={outcome === 'confirmed' ? 'Modification appliquée' : 'Demande refusée'}
-			description={outcome === 'confirmed'
-				? 'Les formes ont été supprimées du tableau.'
-				: 'Le tableau reste tel quel.'}
+			title={outcome === 'confirmed' ? t('pending.applied') : t('pending.declined')}
+			description={outcome === 'confirmed' ? t('pending.appliedBody') : t('pending.declinedBody')}
 		>
-			{#if boardId && outcome === 'confirmed'}<Button href="/b/{boardId}">Ouvrir le tableau</Button>{/if}
+			{#if boardId && outcome === 'confirmed'}<Button href="/b/{boardId}">{t('pending.openBoard')}</Button>{/if}
 		</EmptyState>
 	{:else if !action || !approval || !status}
 		{#if !refused}
 			<EmptyState
 				icon={icons.warning}
-				title="Demande introuvable"
-				description="Elle a déjà été confirmée, refusée ou a expiré, ou elle n’est pas à votre nom."
+				title={t('pending.missing')}
+				description={t('pending.missingBody')}
 			>
-				<Button href="/">Retour à l’accueil</Button>
+				<Button href="/">{t('common.home')}</Button>
 			</EmptyState>
 		{/if}
 	{:else}
 		<div class="flex flex-wrap items-center gap-3 text-fc-xs text-fc-fg-muted">
 			<StatusDot tone={status.tone} label={status.label} />
-			<span>Client {action.client_id}</span>
-			<span>Expire le {formatDate(action.expires_at)}</span>
-			{#if boardId}<a class="text-fc-fg underline" href="/b/{boardId}">Voir le tableau</a>{/if}
+			<span>{t('pending.client', { id: action.client_id })}</span>
+			<span>{t('pending.expires', { date: formatDate(action.expires_at) })}</span>
+			{#if boardId}<a class="text-fc-fg underline" href="/b/{boardId}">{t('pending.viewBoard')}</a>{/if}
 		</div>
 		<ApprovalCard {approval} {busy} onApprove={() => answer(true)} onDecline={() => answer(false)} />
 	{/if}

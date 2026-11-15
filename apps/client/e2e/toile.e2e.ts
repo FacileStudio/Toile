@@ -15,8 +15,8 @@ afterAll(async () => {
 	await stack?.stop();
 });
 
-async function pageAs(who: Person | null, path: string): Promise<Page> {
-	const context = await browser.newContext({ locale: 'fr-FR' });
+async function pageAs(who: Person | null, path: string, locale = 'fr-FR'): Promise<Page> {
+	const context = await browser.newContext({ locale });
 	if (who) await context.addCookies([{ name: 'session', value: stack.cookies[who], url: stack.base }]);
 	const page = await context.newPage();
 	await page.goto(`${stack.base}${path}`);
@@ -29,6 +29,23 @@ test('a signed-out visitor gets the landing with sign-up and sign-in links', asy
 	expect(await page.locator('a[href^="/api/auth/oidc"]').count()).toBeGreaterThan(0);
 	expect(await page.locator('a[href^="https://sso.facile.studio/signup"]').count()).toBeGreaterThan(0);
 	expect(await page.locator('a[href*="/releases/"]').count()).toBe(0);
+});
+
+test('a member whose browser is not French gets the boards page in their language', async () => {
+	const expected = [
+		['en-US', 'New board', 'Boards'],
+		['de-DE', 'Neues Board', 'Boards'],
+		['es-ES', 'Nueva pizarra', 'Pizarras']
+	] as const;
+	for (const [locale, button, heading] of expected) {
+		const page = await pageAs('alice', '/boards', locale);
+		await page.getByRole('button', { name: button }).first().waitFor();
+		await page.getByRole('heading', { name: heading, level: 1 }).waitFor();
+		const body = await page.locator('body').innerText();
+		expect(body).not.toContain('Nouveau tableau');
+		expect(body).not.toContain('Tableaux');
+		await page.context().close();
+	}
 });
 
 test('a member creates a board and lands on the list after sign-in', async () => {

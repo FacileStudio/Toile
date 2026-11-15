@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '$lib/i18n/index.svelte';
 	import { Blob, thinking } from '@facile/blob';
 	import '@facile/blob/motion.css';
 	import { Button, Icon, IconButton, PlanLimit, Textarea, Tooltip, icons, toast } from '@facile/muse';
@@ -13,11 +14,11 @@
 	let { board, editor, name, onclose }: { board: string; editor: Editor; name: string; onclose: () => void } =
 		$props();
 
-	const KINDS: { value: DrawKind; label: string; hint: string }[] = [
-		{ value: 'stickies', label: 'Post-it', hint: 'Des idées en post-it' },
-		{ value: 'mindmap', label: 'Carte mentale', hint: 'Un sujet et ses branches' },
-		{ value: 'flowchart', label: 'Logigramme', hint: 'Des étapes et des décisions' }
-	];
+	const KINDS = $derived<{ value: DrawKind; label: string; hint: string }[]>([
+		{ value: 'stickies', label: t('assistant.stickies'), hint: t('assistant.stickiesHint') },
+		{ value: 'mindmap', label: t('assistant.mindmap'), hint: t('assistant.mindmapHint') },
+		{ value: 'flowchart', label: t('assistant.flowchart'), hint: t('assistant.flowchartHint') }
+	]);
 	const heading = { 2: 'text-fc-md', 3: 'text-fc-sm', 4: 'text-fc-sm' } as const;
 
 	let prompt = $state('');
@@ -65,7 +66,7 @@
 				pending = created.map((shape) => shape.id);
 				const box = union(created);
 				if (box) showBox(editor, box);
-				toast.success(`${name} a ajouté ${created.length} formes au tableau.`);
+				toast.success(t('assistant.added', { name, count: created.length }));
 			}
 		);
 	}
@@ -78,7 +79,7 @@
 		const ids = stickies;
 		void run(
 			() => clusterShapes(board, ids),
-			(frames) => toast.success(`${ids.length} post-it rangés en ${frames.length} thèmes.`)
+			(frames) => toast.success(t('assistant.clustered', { count: ids.length, themes: frames.length }))
 		);
 	}
 
@@ -111,7 +112,7 @@
 	<header class="flex items-center gap-2">
 		<Blob {name} size={32} animate={busy ? 'always' : undefined} expression={busy ? thinking : undefined} />
 		<h2 class="flex-1 truncate text-fc-md font-semibold text-fc-fg">{name}</h2>
-		<IconButton variant="ghost" aria-label="Fermer" onclick={onclose}><Icon icon={icons.close} size={18} /></IconButton>
+		<IconButton variant="ghost" aria-label={t('assistant.close')} onclick={onclose}><Icon icon={icons.close} size={18} /></IconButton>
 	</header>
 
 	{#if summary !== null}
@@ -130,17 +131,17 @@
 		</div>
 	{/if}
 
-	<p class="text-fc-xs text-fc-fg-muted" aria-live="polite">{busy ? `${name} réfléchit…` : ''}</p>
+	<p class="text-fc-xs text-fc-fg-muted" aria-live="polite">{busy ? t('assistant.thinking', { name }) : ''}</p>
 
 	<form class="flex flex-col gap-3" onsubmit={generate}>
 		<Textarea
 			bind:value={prompt}
 			rows={2}
 			maxlength={2000}
-			aria-label="Que voulez-vous dessiner ?"
-			placeholder="Demandez à {name} de dessiner, par exemple le lancement de la rentrée"
+			aria-label={t('assistant.prompt')}
+			placeholder={t('assistant.placeholder', { name })}
 		/>
-		<div class="flex flex-wrap gap-1" role="radiogroup" aria-label="Forme">
+		<div class="flex flex-wrap gap-1" role="radiogroup" aria-label={t('assistant.kind')}>
 			{#each KINDS as option, i (option.value)}
 				<Tooltip text={option.hint}>
 					<button
@@ -160,11 +161,11 @@
 			{/each}
 		</div>
 		<div class="flex flex-wrap items-center gap-2">
-			<Button variant="secondary" size="sm" disabled={busy} onclick={summarize}>Résumer le tableau</Button>
+			<Button variant="secondary" size="sm" disabled={busy} onclick={summarize}>{t('assistant.summarize')}</Button>
 			{#if stickies.length >= 2}
-				<Button variant="secondary" size="sm" disabled={busy} onclick={cluster}>Ranger {stickies.length} post-it</Button>
+				<Button variant="secondary" size="sm" disabled={busy} onclick={cluster}>{t('assistant.cluster', { count: stickies.length })}</Button>
 			{/if}
-			<Button type="submit" size="sm" class="ml-auto" disabled={busy || !prompt.trim()}>Dessiner</Button>
+			<Button type="submit" size="sm" class="ml-auto" disabled={busy || !prompt.trim()}>{t('assistant.draw')}</Button>
 		</div>
 	</form>
 </div>

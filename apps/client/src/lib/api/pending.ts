@@ -1,5 +1,6 @@
 import { ApiError } from '@facile/client';
 import { api } from '$lib/backend';
+import { t } from '$lib/i18n/index.svelte';
 
 /** An agent action waiting for the person, one of `GET /api/mcp/pending`'s `actions`. */
 export type PendingAction = {
@@ -14,10 +15,25 @@ export type PendingAction = {
 };
 
 /** How the confirm page describes an action's state: ready, or its shapes changed or vanished since. */
-export const STATES: Record<string, { tone: 'success' | 'warning' | 'danger'; label: string }> = {
-	ready: { tone: 'success', label: 'Prête' },
-	changed: { tone: 'warning', label: 'Le tableau a changé depuis la demande : la confirmation échouera' },
-	missing: { tone: 'danger', label: 'Le tableau n’existe plus ou vous n’y avez plus accès' }
+export const STATES: Record<string, { tone: 'success' | 'warning' | 'danger'; readonly label: string }> = {
+	ready: {
+		tone: 'success',
+		get label() {
+			return t('pending.ready');
+		}
+	},
+	changed: {
+		tone: 'warning',
+		get label() {
+			return t('pending.changed');
+		}
+	},
+	missing: {
+		tone: 'danger',
+		get label() {
+			return t('pending.gone');
+		}
+	}
 };
 
 /** The board an action touches, read from its target (`{"board_id", …}`), or null. */

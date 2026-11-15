@@ -1,10 +1,11 @@
 <script lang="ts">
 	import { SettingsSection } from '@facile/muse';
 	import { SHORTCUTS, SHORTCUT_GROUPS, isApple, keyCaps } from '$lib/shortcuts';
+	import { t } from '$lib/i18n/index.svelte';
 
 	const apple = isApple();
 	const groups = SHORTCUT_GROUPS.map((group) => ({
-		...group,
+		group,
 		items: SHORTCUTS.filter((shortcut) => shortcut.group === group.id)
 	}));
 </script>
@@ -16,15 +17,15 @@ The board's keyboard shortcuts, read from `$lib/shortcuts`, one section per grou
 -->
 
 <div class="flex flex-col gap-8">
-	{#each groups as group (group.id)}
+	{#each groups as { group, items } (group.id)}
 		<SettingsSection title={group.label}>
 			<dl class="grid gap-x-8 sm:grid-cols-2">
-				{#each group.items as shortcut (shortcut.id)}
+				{#each items as shortcut (shortcut.id)}
 					<div class="flex min-h-11 items-center justify-between gap-4 py-1">
 						<dt class="text-fc-sm text-fc-fg">{shortcut.label}</dt>
 						<dd class="flex flex-wrap items-center justify-end gap-2">
 							{#each shortcut.keys as combo, at (combo)}
-								{#if at > 0}<span class="text-fc-xs text-fc-fg-muted">ou</span>{/if}
+								{#if at > 0}<span class="text-fc-xs text-fc-fg-muted">{t('cheatsheet.or')}</span>{/if}
 								<span class="flex items-center gap-1">
 									{#each keyCaps(combo, apple) as cap, index (index)}
 										<kbd

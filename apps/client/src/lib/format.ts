@@ -1,7 +1,8 @@
-const DATE = new Intl.DateTimeFormat('fr-FR', { dateStyle: 'medium', timeStyle: 'short' });
+import { locale } from '$lib/i18n/index.svelte';
 
-/** A timestamp from the API as a French date and time, or the raw value when it does not parse. */
+/** A timestamp from the API as a date and time in the current locale, or the raw value when it does not parse. */
 export function formatDate(value: string): string {
 	const date = new Date(value);
-	return Number.isNaN(date.getTime()) ? value : DATE.format(date);
+	if (Number.isNaN(date.getTime())) return value;
+	return new Intl.DateTimeFormat(locale(), { dateStyle: 'medium', timeStyle: 'short' }).format(date);
 }

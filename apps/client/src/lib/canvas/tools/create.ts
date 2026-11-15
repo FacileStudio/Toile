@@ -1,3 +1,4 @@
+import { t } from '$lib/i18n/index.svelte';
 import type { ShapeType } from '$lib/board/schema';
 import { createShape, styleFor } from '../actions';
 import type { Box, Point } from '../camera';
@@ -70,7 +71,7 @@ export class CreateTool implements Tool {
 		const id = createShape(this.editor, this.type, {
 			...box,
 			parent: parent?.id,
-			...(this.type === 'frame' ? { name: 'Cadre' } : {})
+			...(this.type === 'frame' ? { name: t('board.untitledFrame') } : {})
 		});
 		if (!id) return;
 		this.editor.tool = 'select';

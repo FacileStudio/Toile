@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '$lib/i18n/index.svelte';
 	import { onMount } from 'svelte';
 	import ContextMenu, { type ContextMenuItem } from '$lib/components/ContextMenu.svelte';
 	import type { Editor } from '../editor.svelte';
@@ -94,8 +95,8 @@
 	class="relative h-full w-full touch-none overflow-hidden select-none"
 	style:cursor
 	role="application"
-	aria-label="Tableau"
-	aria-roledescription="tableau blanc"
+	aria-label={t('board.label')}
+	aria-roledescription={t('board.role')}
 	onpointermove={() => (cursor = input?.cursor ?? 'default')}
 	onscroll={() => host.scrollTo(0, 0)}
 	ondragover={(e) => e.preventDefault()}

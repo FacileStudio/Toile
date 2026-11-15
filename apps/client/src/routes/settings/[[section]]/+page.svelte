@@ -7,18 +7,21 @@
 	import ShortcutsSection from '$lib/components/settings/ShortcutsSection.svelte';
 	import { session } from '$lib/session.svelte';
 	import { theme } from '$lib/theme';
+	import { rememberLocale, t } from '$lib/i18n/index.svelte';
 
-	const sections = [
-		{ id: 'profile', label: 'Profil', icon: icons.userCircle },
-		{ id: 'preferences', label: 'Apparence', icon: icons.palette },
-		{ id: 'shortcuts', label: 'Raccourcis', icon: icons.bolt },
-		{ id: 'apps', label: 'Applications', icon: icons.plug },
-		{ id: 'subscription', label: 'Forfait', icon: icons.card }
-	].map((section) => ({ ...section, href: sectionHref('/settings', section.id) }));
+	const sections = $derived(
+		[
+			{ id: 'profile', label: t('settings.profile'), icon: icons.userCircle },
+			{ id: 'preferences', label: t('settings.appearance'), icon: icons.palette },
+			{ id: 'shortcuts', label: t('settings.shortcuts'), icon: icons.bolt },
+			{ id: 'apps', label: t('settings.apps'), icon: icons.plug },
+			{ id: 'subscription', label: t('settings.plan'), icon: icons.card }
+		].map((section) => ({ ...section, href: sectionHref('/settings', section.id) }))
+	);
 
 	const route = $derived(settingsRoute(page.params.section, sections));
 	const role = $derived(
-		session.space ? { member: 'Membre', admin: 'Administrateur', owner: 'Propriétaire' }[session.space.role] : undefined
+		session.space ? { member: t('settings.member'), admin: t('settings.admin'), owner: t('settings.owner') }[session.space.role] : undefined
 	);
 
 	$effect(() => {
@@ -26,14 +29,14 @@
 	});
 </script>
 
-<svelte:head><title>Réglages · Toile</title></svelte:head>
+<svelte:head><title>{t('settings.title')} · Toile</title></svelte:head>
 
 <div class="mx-auto w-full max-w-5xl px-4 py-6 sm:px-6 md:py-10">
-	<SettingsLayout {sections} active={page.params.section} backHref="/settings" title="Réglages">
+	<SettingsLayout {sections} active={page.params.section} backHref="/settings" title={t('settings.title')}>
 		{#snippet children(current)}
 			{#if current === 'profile'}
 				<ProfileSection
-					title="Profil"
+					title={t('settings.profile')}
 					name={session.user?.name || session.user?.email || ''}
 					email={session.user?.email}
 					avatar={session.user?.avatar_url}
@@ -41,8 +44,8 @@
 				/>
 			{:else if current === 'preferences'}
 				<PreferencesSection
-					title="Apparence"
-					showLanguage={false}
+					title={t('settings.appearance')}
+					onLocaleChange={rememberLocale}
 					theme={theme.mode}
 					onThemeChange={(mode) => theme.set(mode)}
 				/>

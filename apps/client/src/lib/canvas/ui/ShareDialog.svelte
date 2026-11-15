@@ -1,15 +1,16 @@
 <script lang="ts">
+	import { t } from '$lib/i18n/index.svelte';
 	import { Button, IconButton, Icon, Modal, Select, icons, toast } from '@facile/muse';
 	import { boardApi, type NewShare, type Share, type ShareRole } from '$lib/board/api';
 	import { formatDate } from '$lib/format';
 
 	let { board, open = $bindable(false) }: { board: string; open?: boolean } = $props();
 
-	const ROLES: { value: ShareRole; label: string }[] = [
-		{ value: 'view', label: 'Lecture seule' },
-		{ value: 'comment', label: 'Commentaire' },
-		{ value: 'edit', label: 'Modification' }
-	];
+	const ROLES = $derived<{ value: ShareRole; label: string }[]>([
+		{ value: 'view', label: t('share.view') },
+		{ value: 'comment', label: t('share.comment') },
+		{ value: 'edit', label: t('share.edit') }
+	]);
 	const roleLabel = (role: ShareRole) => ROLES.find((r) => r.value === role)?.label ?? role;
 
 	let shares = $state<Share[]>([]);
@@ -24,7 +25,7 @@
 		try {
 			await action();
 		} catch (error) {
-			toast.danger(error instanceof Error ? error.message : 'Action impossible');
+			toast.danger(error instanceof Error ? error.message : t('share.failed'));
 		} finally {
 			busy = false;
 		}
@@ -54,22 +55,21 @@
 	async function copy(share: NewShare) {
 		try {
 			await navigator.clipboard.writeText(linkOf(share));
-			toast.success('Lien copié.');
+			toast.success(t('share.copied'));
 		} catch {
-			toast.info('Copiez le lien affiché.');
+			toast.info(t('share.copyShown'));
 		}
 	}
 </script>
 
-<Modal bind:open title="Partager le tableau" showClose>
+<Modal bind:open title={t('share.title')} showClose>
 	<div class="flex flex-col gap-5">
 		<p class="text-fc-sm text-fc-fg-muted">
-			Les membres de l’espace y ont déjà accès. Un lien ouvre le tableau à toute personne qui le reçoit, sans compte,
-			jusqu’à ce que vous le révoquiez. Il n’est affiché qu’une fois : copiez-le maintenant.
+			{t('share.intro')}
 		</p>
 		<div class="flex flex-wrap items-end gap-2">
-			<Select bind:value={role} options={ROLES} aria-label="Droit du lien" class="min-w-0 flex-1" />
-			<Button icon={icons.plus} disabled={busy} onclick={create}>Nouveau lien</Button>
+			<Select bind:value={role} options={ROLES} aria-label={t('share.role')} class="min-w-0 flex-1" />
+			<Button icon={icons.plus} disabled={busy} onclick={create}>{t('share.new')}</Button>
 		</div>
 		{#if fresh}
 			<div class="flex items-center gap-2 rounded-fc-md bg-fc-surface py-1 pr-1 pl-3">
@@ -77,16 +77,16 @@
 					class="min-w-0 flex-1 bg-transparent font-fc-mono text-fc-xs text-fc-fg outline-none"
 					readonly
 					value={linkOf(fresh)}
-					aria-label="Lien {roleLabel(fresh.role)}"
+					aria-label={t('share.link', { role: roleLabel(fresh.role) })}
 					onfocus={(e) => e.currentTarget.select()}
 				/>
-				<IconButton variant="ghost" aria-label="Copier le lien" onclick={() => fresh && copy(fresh)}>
+				<IconButton variant="ghost" aria-label={t('share.copy')} onclick={() => fresh && copy(fresh)}>
 					<Icon icon={icons.copy} size={18} />
 				</IconButton>
 			</div>
 		{/if}
 		{#if shares.length}
-			<ul class="flex flex-col gap-2" aria-label="Liens de partage">
+			<ul class="flex flex-col gap-2" aria-label={t('share.links')}>
 				{#each shares as share (share.id)}
 					<li class="flex items-center gap-2 py-1 pl-3">
 						<span class="min-w-0 flex-1 truncate text-fc-sm text-fc-fg">{roleLabel(share.role)}</span>
@@ -95,7 +95,7 @@
 							>{/if}
 						<IconButton
 							variant="ghost-danger"
-							aria-label="Révoquer le lien {roleLabel(share.role)}"
+							aria-label={t('share.revoke', { role: roleLabel(share.role) })}
 							onclick={() => revoke(share)}
 						>
 							<Icon icon={icons.revoke} size={18} />
