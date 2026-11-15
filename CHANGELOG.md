@@ -4,6 +4,18 @@ All notable changes to Toile. Versions follow SemVer.
 
 ## [Unreleased]
 
+## [0.17.0] - 2026-11-15
+
+### Added
+
+- Connectors: dropping an arrow or a line from a shape onto empty board creates a new shape there, connected and ready to type in, as in FigJam. Stickies and basic shapes are copied with their size and colour; other sources get a default sticky.
+
+### Fixed
+
+- Editing a sticky or a shape no longer shows its text twice: the board now repaints when the text field opens, so the canvas stops drawing the old text under it.
+- Marquee selection picks a line, an arrow or an ink stroke only when the box touches the stroke itself, not just its bounding box.
+- The minimap shows stickies left on the default colour in that colour instead of grey.
+
 ## [0.16.3] - 2026-11-14
 
 ### Fixed
