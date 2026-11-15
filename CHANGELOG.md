@@ -4,6 +4,12 @@ All notable changes to Toile. Versions follow SemVer.
 
 ## [Unreleased]
 
+## [0.17.1] - 2026-11-15
+
+### Fixed
+
+- Editing a sticky or a shape of several lines keeps the text where the board drew it: the edit field centres the same number of lines as the canvas and no longer scrolls when it opens.
+
 ## [0.17.0] - 2026-11-15
 
 ### Added
