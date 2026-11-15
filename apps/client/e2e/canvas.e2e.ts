@@ -162,6 +162,24 @@ test('a double click on a sticky opens its text for editing', async () => {
 	expect((await stored).status()).toBe(204);
 }, 60_000);
 
+test('editing a sticky of several lines keeps its text in place', async () => {
+	const page = await open('alice', `/b/${setup.board}`);
+	await page.locator('[data-testid=board][data-editable=true]').waitFor({ timeout: 20_000 });
+	await addSticky(page, 'Un\nDeux\nTrois', { x: 700, y: 400 });
+	const field = page.getByRole('textbox', { name: 'Texte' });
+	await field.waitFor({ state: 'hidden' });
+	await page.mouse.dblclick(700, 400);
+	await field.waitFor({ timeout: 5_000 });
+	const layout = await field.evaluate((el) => ({
+		scroll: el.scrollTop,
+		top: parseFloat(getComputedStyle(el).paddingTop),
+		height: el.clientHeight
+	}));
+	expect(layout.scroll).toBe(0);
+	expect(layout.top).toBeLessThan((layout.height - 18 * 1.3) / 2 - 10);
+	await page.keyboard.press('Escape');
+}, 60_000);
+
 test('the assistant composer opens above the toolbar and closes with Escape', async () => {
 	const page = await open('alice', `/b/${setup.board}`);
 	await page.locator('[data-testid=board][data-editable=true]').waitFor({ timeout: 20_000 });

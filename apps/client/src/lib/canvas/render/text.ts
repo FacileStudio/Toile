@@ -53,6 +53,12 @@ export function wrap(ctx: CanvasRenderingContext2D, text: string, width: number)
 	return lines;
 }
 
+/** How far below a shape's top its first line of `lines` starts: centred in the box except in text shapes. */
+export function textTop(shape: Shape, lines: number): number {
+	const pad = textPadding(shape);
+	return shape.type === 'text' ? pad : Math.max(pad, (shape.h - lines * fontSize(shape) * 1.3) / 2);
+}
+
 const cache = new WeakMap<Shape, string[]>();
 
 /** Draws a shape's text in its box: wrapped, aligned, vertically centred except in text shapes. */
@@ -66,8 +72,7 @@ export function drawText(ctx: CanvasRenderingContext2D, shape: Shape, color: str
 	if (!lines) cache.set(shape, (lines = wrap(ctx, shape.text, width)));
 	const lineHeight = size * 1.3;
 	const align = shape.style.align ?? (shape.type === 'text' ? 'left' : 'center');
-	const top =
-		shape.type === 'text' ? shape.y + pad : shape.y + Math.max(pad, (shape.h - lines.length * lineHeight) / 2);
+	const top = shape.y + textTop(shape, lines.length);
 	const x = align === 'left' ? shape.x + pad : align === 'right' ? shape.x + shape.w - pad : shape.x + shape.w / 2;
 	ctx.fillStyle = color;
 	ctx.textAlign = align;

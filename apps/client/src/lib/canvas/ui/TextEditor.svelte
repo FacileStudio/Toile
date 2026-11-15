@@ -7,13 +7,14 @@
 	import type { Editor } from '../editor.svelte';
 	import { toScreen } from '../camera';
 	import { fillOf, inkOn } from '../render/palette';
-	import { fontOf, fontSize, textHeight, textPadding } from '../render/text';
+	import { fontOf, textHeight, textPadding, textTop, wrap } from '../render/text';
 	import { FRAME_LABEL } from '../hit';
 
 	let { editor }: { editor: Editor } = $props();
 
 	let field = $state<HTMLTextAreaElement | HTMLInputElement | null>(null);
 	let measure: CanvasRenderingContext2D | null = null;
+	let draft = $state('');
 
 	const shape = $derived.by(() => {
 		void editor.version;
@@ -30,6 +31,15 @@
 		return { x: at.x, y: at.y, z: c.z, color };
 	});
 
+	const top = $derived.by(() => {
+		if (!shape || shape.type === 'frame' || shape.type === 'text') return shape ? textPadding(shape) : 0;
+		measure ??= document.createElement('canvas').getContext('2d');
+		if (!measure) return textPadding(shape);
+		measure.font = fontOf(shape, editor.palette.font);
+		const lines = wrap(measure, draft, Math.max(1, shape.w - textPadding(shape) * 2)).length;
+		return Math.max(textPadding(shape), textTop(shape, lines) - 1);
+	});
+
 	$effect(() => {
 		const id = editor.editing;
 		const text = id ? editor.doc.text(id) : null;
@@ -38,6 +48,7 @@
 		untrack(() => {
 			const current = editor.scene.get(id);
 			target.value = current?.type === 'frame' ? (current.name ?? '') : (text?.toString() ?? '');
+			draft = target.value;
 		});
 		target.focus({ preventScroll: true });
 		target.select();
@@ -45,7 +56,7 @@
 		const sync = (_event: Y.YTextEvent, tr: Y.Transaction) => {
 			if (tr.origin === LOCAL || !field) return;
 			const [start, end] = [field.selectionStart, field.selectionEnd];
-			field.value = text.toString();
+			field.value = draft = text.toString();
 			field.setSelectionRange(start, end);
 		};
 		text.observe(sync);
@@ -58,7 +69,7 @@
 		if (shape.type === 'frame') return editor.doc.update(id, { name: field.value.slice(0, 200) });
 		const text = editor.doc.text(id);
 		if (!text) return;
-		const value = field.value;
+		const value = (draft = field.value);
 		editor.doc.transact(() => {
 			setText(text, value);
 			if (shape.type !== 'text') return;
@@ -105,9 +116,7 @@
 			rotate({shape.rot}rad) translate({-shape.w / 2}px, {-shape.h / 2}px)"
 			style:width="{shape.w}px"
 			style:height="{shape.h}px"
-			style:padding="{shape.type === 'text'
-				? textPadding(shape)
-				: Math.max(textPadding(shape), (shape.h - fontSize(shape) * 1.3) / 2 - 1)}px {textPadding(shape)}px"
+			style:padding="{top}px {textPadding(shape)}px {textPadding(shape)}px"
 			style:font={fontOf(shape, 'var(--font-fc-body)')}
 			style:line-height="1.3"
 			style:color={view.color}
