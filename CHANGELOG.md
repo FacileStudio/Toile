@@ -4,6 +4,16 @@ All notable changes to Toile. Versions follow SemVer.
 
 ## [Unreleased]
 
+## [0.18.0] - 2026-11-15
+
+### Added
+
+- The whole app is translated into English, French, Spanish and German: the boards list, the board (toolbar, style bar, menus, comments, search, sharing, the assistant), settings, the agent confirm page, errors and the desktop and mobile sign-in. The language follows the one picked in the user menu or in Settings > Appearance, then the browser's. Dates follow it too.
+
+### Changed
+
+- Settings > Apps describes each suite app with the same lines as the landing, so it no longer promises turning a sticky into an Opus task.
+
 ## [0.17.1] - 2026-11-15
 
 ### Fixed
