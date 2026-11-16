@@ -63,7 +63,7 @@ pub async fn socket(
 ) -> Result<Response> {
     let name = guest_name(&query.name)?;
     let share = service::resolve(&state, &token).await?;
-    let who = Who { user_id: None, share: Some(share.id), name, writer: share.role == Role::Edit };
+    let who = Who { user_id: None, share: Some(share.id), name: Some(name), writer: share.role == Role::Edit };
     Ok(accept(state, share.board_id, Caller { who, session_id: 0 }, upgrade))
 }
 

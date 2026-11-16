@@ -4,7 +4,7 @@ use uuid::Uuid;
 use super::types::{Anchor, Comment, CreateRequest, PatchRequest, columns, text};
 use crate::extract::db;
 use crate::modules::boards::access::{self, Access};
-use crate::modules::rooms::{Command, comments_changed};
+use crate::modules::rooms::comments_changed;
 use crate::state::AppState;
 
 /// Who writes a comment.
@@ -18,7 +18,7 @@ pub enum Author {
 
 /// Tells the board's open clients to refetch its comments.
 pub async fn notify(state: &AppState, board: Uuid) {
-    state.hub.tell(board, Command::Broadcast(comments_changed())).await;
+    state.hub.broadcast(board, comments_changed()).await;
 }
 
 /// Every comment of `board`, oldest first; `me` marks the caller's own.

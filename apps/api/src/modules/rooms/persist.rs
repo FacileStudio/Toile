@@ -1,11 +1,8 @@
 //! Storage: accepted updates append to `board_updates`; a snapshot replaces them in
-//! `board_state` every [`SNAPSHOT_EVERY`] updates or [`SNAPSHOT_AFTER`].
+//! `board_state` (salon decides when, from the policy in `host.rs`).
 
 use sqlx::{PgConnection, PgPool};
-use tokio::time::Instant;
 use uuid::Uuid;
-
-use super::room::{FLUSH, Room, SNAPSHOT_AFTER, SNAPSHOT_BYTES, SNAPSHOT_EVERY};
 
 async fn touch(tx: &mut PgConnection, id: Uuid) -> Result<bool, sqlx::Error> {
     let done = sqlx::query(
@@ -50,53 +47,4 @@ pub async fn store(pool: &PgPool, id: Uuid, state: &[u8]) -> Result<bool, sqlx::
     sqlx::query("DELETE FROM board_updates WHERE board_id = $1").bind(id).execute(&mut *tx).await?;
     tx.commit().await?;
     Ok(true)
-}
-
-impl Room {
-    pub(super) fn snapshot_due(&self, now: Instant) -> bool {
-        let pending = self.core.log.len();
-        pending >= SNAPSHOT_EVERY
-            || self.core.bytes >= SNAPSHOT_BYTES
-            || self.since.is_some_and(|at| at + SNAPSHOT_AFTER <= now)
-    }
-
-    fn stored(&mut self, outcome: Result<bool, sqlx::Error>, what: &str) -> bool {
-        match outcome {
-            Ok(true) => true,
-            Ok(false) => {
-                self.vanish();
-                false
-            }
-            Err(error) => {
-                tracing::error!(board = %self.id, error = %error, "rooms: {what} failed, retrying");
-                self.flush_at = Some(Instant::now() + FLUSH * 4);
-                false
-            }
-        }
-    }
-
-    /// Appends the updates accepted since the last flush.
-    pub(super) async fn flush(&mut self) {
-        self.flush_at = None;
-        if self.flushed >= self.core.log.len() {
-            return;
-        }
-        let outcome = append(&self.state.pool, self.id, &self.core.log[self.flushed..]).await;
-        if self.stored(outcome, "append") {
-            self.flushed = self.core.log.len();
-        }
-    }
-
-    /// Writes a snapshot of the whole board and drops the pending updates it covers.
-    pub(super) async fn snapshot(&mut self) {
-        if self.since.is_none() && self.core.log.is_empty() {
-            return;
-        }
-        let state = self.core.state();
-        let outcome = store(&self.state.pool, self.id, &state).await;
-        if self.stored(outcome, "snapshot") {
-            self.core.compacted(state);
-            (self.flushed, self.flush_at, self.since) = (0, None, None);
-        }
-    }
 }

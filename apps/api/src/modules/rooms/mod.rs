@@ -1,22 +1,25 @@
-//! Live boards: one in-memory Y.Doc per open board, spoken to over y-websocket, every update
-//! validated against schema 1 and stored as pending updates plus periodic snapshots.
+//! Live boards: one in-memory Y.Doc per open board, hosted by salon over y-websocket, every
+//! update validated against schema 1 and stored as pending updates plus periodic snapshots.
 
-mod command;
 mod core;
-mod drain;
+mod host;
 mod hub;
+mod live;
 mod load;
-mod members;
 pub mod persist;
-mod presence;
-mod room;
 mod router;
-mod sync;
-mod writes;
-pub mod ws;
+mod space;
 
-pub use command::{Command, Edit, Who};
-pub use hub::Hub;
-pub use router::{accept, routes};
-pub use sync::comments_changed;
-pub use ws::{Caller, SOCKET_RECHECK};
+use std::time::Duration;
+
+pub use hub::{Edit, Hub};
+pub use router::routes;
+pub use salon::{Caller, Who, accept};
+
+/// How often a socket re-checks its session or share link in production.
+pub const SOCKET_RECHECK: Duration = Duration::from_secs(30);
+
+/// The comments notice: message type 100 carrying `{"type":"comments-changed"}`.
+pub fn comments_changed() -> Vec<u8> {
+    salon::custom(r#"{"type":"comments-changed"}"#)
+}
