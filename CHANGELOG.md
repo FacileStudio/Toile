@@ -4,6 +4,12 @@ All notable changes to Toile. Versions follow SemVer.
 
 ## [Unreleased]
 
+## [0.18.2] - 2026-11-16
+
+### Changed
+
+- Bump muse to v0.32.0: tabs and segmented option cards match button height (36px, 44px on touch).
+
 ## [0.18.1] - 2026-11-16
 
 ### Security
