@@ -1,11 +1,12 @@
 //! A board as salon's room document: member updates checked against schema 1, exact revert.
 
+use planche::schema;
 use salon::{Refusal, Space};
 use yrs::updates::decoder::Decode;
 use yrs::{Doc, Transact, Update};
 
 use super::core::Core;
-use crate::modules::board::{self, schema};
+use crate::modules::board;
 
 impl Space for Core {
     fn doc(&self) -> &Doc {
@@ -13,7 +14,7 @@ impl Space for Core {
     }
 
     fn apply(&mut self, update: &[u8]) -> Result<bool, Refusal> {
-        if update.len() > schema::MAX_UPDATE {
+        if update.len() > planche::MAX_UPDATE {
             return Err(Refusal(1009, "update over 1 MiB".to_owned()));
         }
         let decoded = Update::decode_v1(update).map_err(|e| Refusal(1008, format!("undecodable update: {e}")))?;

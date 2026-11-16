@@ -55,7 +55,7 @@ fn planned_shapes_pass_the_schema_and_read_back_then_change_and_go() {
     let child =
         NewShape { frame: Some("f".into()), color: Some("#fde68a".into()), ..NewShape::new(Kind::Sticky, "hi") };
     write::insert(&mut doc.transact_mut(), &shapes, &plan(&[], vec![frame, child], counter()).unwrap());
-    crate::modules::board::schema::check_all(&doc).unwrap();
+    planche::schema::check_all(&doc, planche::Profile::Board).unwrap();
     let change = Change {
         id: "n1".into(),
         text: Some("Renamed".into()),

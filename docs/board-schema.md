@@ -1,13 +1,14 @@
 # Board schema
 
-Normative. This is the board document contract every track codes against, copied verbatim from
-the v1 plan ([plan.md](plan.md)). When code and this page disagree, the code is wrong. A change
-here is a schema version bump.
+Schema 1 is now specified by planche's
+[spec/FORMAT.md](https://github.com/FacileStudio/planche/blob/main/spec/FORMAT.md) under the
+`board` profile. planche is the canvas format Toile, Diapo and Clap share, and the server
+validates every board with `planche::schema` and `Profile::Board`. When this page and the spec
+disagree, the spec wins. A change to the board profile is a schema version bump.
 
-## Board document contract (schema 1)
+## Board document contract (schema 1), summary
 
-Written first as `docs/board-schema.md`, mirrored by `apps/client/src/lib/board/schema.ts` and
-`apps/api/src/modules/board/schema.rs`. Every track codes against it.
+The client mirrors it in `apps/client/src/lib/board/schema.ts`.
 
 - `meta`: Y.Map `{ schema: 1 }`.
 - `shapes`: Y.Map<id, Y.Map>. Common keys: `type`, `x`, `y`, `w`, `h`, `rot`, `z` (fractional
