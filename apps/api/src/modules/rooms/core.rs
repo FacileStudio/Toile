@@ -2,54 +2,51 @@
 
 use std::sync::{Arc, Mutex};
 
-use yrs::updates::decoder::Decode;
-use yrs::{Doc, Transact, Update};
+use salon::{Refusal, Space};
+use yrs::{Doc, Transact};
 
-use super::command::Edit;
+use super::hub::Edit;
 use crate::modules::board::schema::{self, Touched};
 use crate::modules::board::{self, DecodeError, SHAPES};
-
-/// Why an update was refused: the close code and reason for its sender.
-#[derive(Debug, PartialEq, Eq)]
-pub struct Refusal(pub u16, pub String);
 
 /// The document of one room. `base` and `log` are what is stored: the last snapshot and every
 /// update accepted since, so a refused update reverts to exactly the state before it.
 pub struct Core {
     /// The live document.
     pub doc: Doc,
-    touched: Arc<Mutex<Touched>>,
+    pub(super) touched: Arc<Mutex<Touched>>,
     /// The last snapshot, a full v1 update.
     pub base: Vec<u8>,
     /// Every update accepted since `base`, in order.
     pub log: Vec<Vec<u8>>,
     /// The bytes of `log`.
     pub bytes: usize,
+    /// How many updates of `log` are already in `board_updates`.
+    pub flushed: usize,
+}
+
+impl Default for Core {
+    fn default() -> Self {
+        let doc = board::new_doc();
+        let touched = schema::watch(&doc);
+        Core { doc, touched, base: Vec::new(), log: Vec::new(), bytes: 0, flushed: 0 }
+    }
 }
 
 impl Core {
-    /// The document of `base` then `log`.
+    /// The document of `base` then `log`, every update of `log` already stored.
     pub fn new(base: Vec<u8>, log: Vec<Vec<u8>>) -> Result<Core, DecodeError> {
         let doc = board::from_state(&base, log.iter().map(Vec::as_slice))?;
         let touched = schema::watch(&doc);
-        let bytes = log.iter().map(Vec::len).sum();
-        Ok(Core { doc, touched, base, log, bytes })
+        let (bytes, flushed) = (log.iter().map(Vec::len).sum(), log.len());
+        Ok(Core { doc, touched, base, log, bytes, flushed })
     }
 
-    fn take(&self) -> Touched {
+    pub(super) fn take(&self) -> Touched {
         std::mem::take(&mut *self.touched.lock().unwrap_or_else(|poisoned| poisoned.into_inner()))
     }
 
-    /// Rebuilds the document from `base` and `log`, dropping anything not accepted.
-    pub fn reload(&mut self) -> Result<(), Refusal> {
-        let doc = board::from_state(&self.base, self.log.iter().map(Vec::as_slice))
-            .map_err(|e| Refusal(1011, format!("revert failed: {e}")))?;
-        self.touched = schema::watch(&doc);
-        self.doc = doc;
-        Ok(())
-    }
-
-    fn settle(&mut self, outcome: Result<Vec<u8>, Refusal>) -> Result<Vec<u8>, Refusal> {
+    pub(super) fn settle(&mut self, outcome: Result<Vec<u8>, Refusal>) -> Result<Vec<u8>, Refusal> {
         let touched = self.take();
         let checked = outcome.and_then(|update| {
             schema::check(&self.doc, &touched).map(|()| update).map_err(|reason| Refusal(1008, reason))
@@ -60,23 +57,8 @@ impl Core {
                 self.log.push(update.clone());
                 Ok(update)
             }
-            Err(refusal) => self.reload().and(Err(refusal)),
+            Err(refusal) => self.recover().and(Err(refusal)),
         }
-    }
-
-    /// Applies a client's `update` and keeps it only when the board still validates; otherwise
-    /// the document goes back to the state before it, exactly. Answers whether it held anything.
-    pub fn apply(&mut self, update: &[u8]) -> Result<bool, Refusal> {
-        if update.len() > schema::MAX_UPDATE {
-            return Err(Refusal(1009, "update over 1 MiB".to_owned()));
-        }
-        let decoded = Update::decode_v1(update).map_err(|e| Refusal(1008, format!("undecodable update: {e}")))?;
-        if decoded.is_empty() {
-            return Ok(false);
-        }
-        let applied = self.doc.transact_mut().apply_update(decoded);
-        let applied = applied.map_err(|e| Refusal(1008, format!("update refused: {e}")));
-        self.settle(applied.map(|()| update.to_vec())).map(|_| true)
     }
 
     /// Runs a server-side `edit` as one transaction; answers its update, or undoes it.
@@ -98,6 +80,6 @@ impl Core {
     pub fn compacted(&mut self, state: Vec<u8>) {
         self.base = state;
         self.log.clear();
-        self.bytes = 0;
+        (self.bytes, self.flushed) = (0, 0);
     }
 }

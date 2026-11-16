@@ -2,7 +2,7 @@ use porte::directory::{DirectoryError, PersonDeleted, StateStore};
 use sqlx::{PgConnection, PgPool};
 use uuid::Uuid;
 
-use crate::modules::rooms::{Command, Hub};
+use crate::modules::rooms::Hub;
 
 /// The app's half of a GDPR erase: personal boards, memberships, then the account row (their
 /// comments go with it). Space boards stay with their space. The person's sockets close in every
@@ -55,7 +55,7 @@ impl PersonDeleted for AppData {
                 .map_err(failed)?;
         let boards = erase(&mut tx, &users, subject).await?;
         tx.commit().await.map_err(failed)?;
-        self.hub.tell_all(|| Command::Evict(users.clone())).await;
+        self.hub.evict(&users).await;
         self.hub.close(&boards).await;
         Ok(())
     }

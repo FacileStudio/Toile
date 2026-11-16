@@ -5,7 +5,6 @@ use uuid::Uuid;
 
 use crate::extract::db;
 use crate::modules::boards::access::{self, Access};
-use crate::modules::rooms::Command;
 use crate::state::AppState;
 
 /// What a link lets its holder do.
@@ -101,7 +100,7 @@ pub async fn revoke(state: &AppState, user_id: i64, board: Uuid, id: Uuid) -> Re
     if done.rows_affected() == 0 {
         return Err(Error::not_found("share link not found"));
     }
-    state.hub.tell(board, Command::Revoke(id)).await;
+    state.hub.revoke(board, id).await;
     Ok(())
 }
 

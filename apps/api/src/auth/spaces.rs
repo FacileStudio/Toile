@@ -2,7 +2,7 @@ use porte::directory::{Apply, DirectoryError, Snapshot, Space};
 use sqlx::{PgConnection, PgPool};
 
 use super::retire::{refuse_empty, retire};
-use crate::modules::rooms::{Command, Hub};
+use crate::modules::rooms::Hub;
 use crate::modules::suite::Plans;
 
 /// Applies Registre's directory snapshot to `spaces` and `space_members`, then closes the room
@@ -110,7 +110,7 @@ impl SpacesApply {
         let Some(applied) = applied else { return Ok(false) };
         self.hub.close(&applied.trashed).await;
         if !applied.lost.is_empty() {
-            self.hub.tell_all(|| Command::Evict(applied.lost.clone())).await;
+            self.hub.evict(&applied.lost).await;
         }
         Ok(true)
     }

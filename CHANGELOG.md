@@ -4,6 +4,12 @@ All notable changes to Toile. Versions follow SemVer.
 
 ## [Unreleased]
 
+## [0.18.3] - 2026-11-16
+
+### Changed
+
+- The live board rooms now run on [salon](https://github.com/FacileStudio/salon) v0.1.0, the room engine Toile and Docs share. Nothing changes on the wire: sync, presence, share links, close codes and timings are the same.
+
 ## [0.18.2] - 2026-11-16
 
 ### Changed
