@@ -4,6 +4,10 @@ All notable changes to Toile. Versions follow SemVer.
 
 ## [Unreleased]
 
+### Changed
+
+- The board validator now comes from planche v0.1.0, the canvas format Toile, Diapo and Clap share, under its board profile. Boards accept and refuse exactly what they did.
+
 ## [0.18.3] - 2026-11-16
 
 ### Changed

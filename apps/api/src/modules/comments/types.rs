@@ -4,7 +4,7 @@ use time::OffsetDateTime;
 use tronc::{Error, Result};
 use uuid::Uuid;
 
-use crate::modules::board::schema::{MAX_COORD, MAX_TEXT};
+use planche::{MAX_COORD, MAX_TEXT};
 
 /// The longest shape id an anchor names, in characters.
 pub const MAX_SHAPE_ID: usize = 128;

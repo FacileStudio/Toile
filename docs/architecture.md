@@ -19,7 +19,7 @@ Internet ──▶ Traefik ──▶ api (:4000, one replica) ─┬──▶ /h
 | `src/server.rs` | Boot: env, logger, pool, `migrate` subcommand, migrations, kits, loops, router, drain |
 | `src/auth/` | porte wiring: sessions, Registre sign-in, the spaces store, directory apply, GDPR erase |
 | `src/modules/boards/` | Board CRUD, duplicate, trash, restore, purge loop, thumbnails, and the one `access()` function |
-| `src/modules/board/` | The board document: schema 1 validator, seed state, `GET /api/board-schema` |
+| `src/modules/board/` | The board document from planche (schema 1, board profile): seed state, `GET /api/board-schema` |
 | `src/modules/rooms/` | Live rooms: hub, room task, y-websocket sync, presence, storage, drain |
 | `src/modules/share/` | Share links and the guest routes |
 | `src/modules/comments/` | Comment threads and their room notice |
@@ -50,10 +50,10 @@ permanent delete.
 One room task per open board (`rooms/hub.rs`), in memory, so the app runs one replica. A room
 loads `board_state.snapshot` plus every `board_updates` row, oldest first.
 
-- Each update from an editor is applied, then checked: `board/schema.rs` watches `shapes` with a
-  deep observer and validates only the shapes the transaction touched, plus the roots, `meta` and
-  the shape count. A failing update is undone by rebuilding the document from the stored
-  snapshot and the accepted updates since, and its sender is closed with 1008.
+- Each update from an editor is applied, then checked: `planche::schema` (board profile) watches
+  `shapes` with a deep observer and validates only the shapes the transaction touched, plus the
+  roots, `meta` and the shape count. A failing update is undone by rebuilding the document from
+  the stored snapshot and the accepted updates since, and its sender is closed with 1008.
 - Accepted updates are broadcast at once, then appended to `board_updates` after 250 ms. Every
   200 pending updates, 4 MiB or 60 s, and when the last member leaves, the room writes a snapshot
   and deletes the pending rows in one transaction.

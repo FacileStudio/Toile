@@ -46,7 +46,7 @@ which porte-rs lacks today: track L adds it to the libraries instead of hand-rol
 ## Board document contract (schema 1)
 
 Written first as `docs/board-schema.md`, mirrored by `apps/client/src/lib/board/schema.ts` and
-`apps/api/src/modules/board/schema.rs`. Every track codes against it.
+planche's board profile (was `apps/api/src/modules/board/schema.rs`). Every track codes against it.
 
 - `meta`: Y.Map `{ schema: 1 }`.
 - `shapes`: Y.Map<id, Y.Map>. Common keys: `type`, `x`, `y`, `w`, `h`, `rot`, `z` (fractional
@@ -127,7 +127,7 @@ through Registre works end to end.
    `comments` (id, board, anchor jsonb, body, author user or guest name, resolved_at, parent).
 2. `modules/boards/{router,handlers,service,access,trash}.rs`: CRUD, list by scope, duplicate,
    trash/restore/purge. One `access()` returns the role or `None` (404), like Docs.
-3. `modules/board/schema.rs`: the schema 1 validator over a yrs doc.
+3. `modules/board/schema.rs`: the schema 1 validator over a yrs doc (now in planche).
 4. `modules/rooms/*`: Docs' room code adapted: hub, room task, sync, awareness, persist
    (snapshot every 200 updates or 60 s), drain on shutdown, validate every update and revert +
    close 1008 on failure, viewers and commenters may send awareness only, revoked links close

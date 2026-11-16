@@ -2,11 +2,12 @@
 
 use std::sync::{Arc, Mutex};
 
+use planche::Profile;
+use planche::schema::{self, Touched};
 use salon::{Refusal, Space};
 use yrs::{Doc, Transact};
 
 use super::hub::Edit;
-use crate::modules::board::schema::{self, Touched};
 use crate::modules::board::{self, DecodeError, SHAPES};
 
 /// The document of one room. `base` and `log` are what is stored: the last snapshot and every
@@ -49,7 +50,7 @@ impl Core {
     pub(super) fn settle(&mut self, outcome: Result<Vec<u8>, Refusal>) -> Result<Vec<u8>, Refusal> {
         let touched = self.take();
         let checked = outcome.and_then(|update| {
-            schema::check(&self.doc, &touched).map(|()| update).map_err(|reason| Refusal(1008, reason))
+            schema::check(&self.doc, &touched, Profile::Board).map(|()| update).map_err(|reason| Refusal(1008, reason))
         });
         match checked {
             Ok(update) => {
