@@ -4,6 +4,10 @@ All notable changes to Toile. Versions follow SemVer.
 
 ## [Unreleased]
 
+### Security
+
+- The Vision analytics tracker loads from Toile's own origin at `/vision-tracker.js`. The Content Security Policy no longer allows scripts from `vision.facile.studio`, so a script served by another app no longer runs inside Toile.
+
 ## [0.18.0] - 2026-11-15
 
 ### Added

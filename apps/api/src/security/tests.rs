@@ -67,9 +67,9 @@ async fn nothing_frames_the_confirm_page_the_other_pages_or_the_api() {
 }
 
 #[test]
-fn the_policy_loads_the_vision_tracker() {
+fn the_policy_names_no_vision_origin() {
     let sources = sources(Path::new("/nonexistent"));
-    assert_eq!(sources.get("script-src"), Some(&vec![ANALYTICS.to_owned()]));
+    assert!(sources["script-src"].iter().all(|source| !source.contains("vision.facile.studio")));
 }
 
 #[test]

@@ -18,10 +18,6 @@ pub const PLAYER: &str = "https://www.youtube-nocookie.com";
 /// The origin of the suite plan catalog.
 pub const CATALOG: &str = "https://api-ardoise.facile.studio";
 
-/// The origin of the Vision analytics tracker `app.html` loads on the production host. Its
-/// pixels are https images, which tronc's default `img-src` already allows.
-pub const ANALYTICS: &str = "https://vision.facile.studio";
-
 /// The pages that may frame a client page Docs embeds ([`embeddable`]): Toile itself and Docs.
 pub const FRAMERS: [&str; 2] = ["'self'", "https://docs.facile.studio"];
 
@@ -29,11 +25,11 @@ pub const FRAMERS: [&str; 2] = ["'self'", "https://docs.facile.studio"];
 pub const DEV_FRAMER: &str = "http://localhost:*";
 
 /// The CSP sources Toile's client needs on top of tronc's policy: the inline scripts
-/// adapter-static writes, hashed from the build the binary serves, the Vision tracker, the suite
-/// plan catalog muse's `PricingPlans` fetches and the YouTube player link cards embed. Every
-/// response keeps tronc's `frame-ancestors 'none'`; [`spa`] opens it for the client's pages.
+/// adapter-static writes, hashed from the build the binary serves, the suite plan catalog
+/// muse's `PricingPlans` fetches and the YouTube player link cards embed. Every response keeps
+/// tronc's `frame-ancestors 'none'`; [`spa`] opens it for the client's pages.
 pub fn sources(client_dir: &Path) -> Sources {
-    let mut scripts = vec![ANALYTICS.to_owned()];
+    let mut scripts = Vec::new();
     if tronc::spa::available(client_dir) {
         match tronc::spa::inline_script_hashes(client_dir) {
             Ok(hashes) => scripts.extend(hashes),
