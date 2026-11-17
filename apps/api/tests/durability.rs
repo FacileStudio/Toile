@@ -51,12 +51,12 @@ async fn a_killed_server_keeps_every_flushed_update_and_a_stopped_one_snapshots(
     let token = session(&pool).await;
     let id = board(server.port, &token).await;
     let _peer = draw(server.port, &id, &token, "before-kill").await;
-    tokio::time::sleep(Duration::from_secs(1)).await;
+    common::server::until(async || pending(&pool, &id).await, |stored| *stored > 0).await;
     let server = start(&url, server.kill()).await;
     let survived = read(server.port, &id, &token).await;
     let mut after = draw(server.port, &id, &token, "before-stop").await;
     let took = server.terminate();
-    after.pump(Duration::from_millis(500)).await;
+    after.pump(common::server::SETTLE).await;
     let (left, closed) = (pending(&pool, &id).await, after.closed);
     let server = start(&url, free_port()).await;
     let shapes = read(server.port, &id, &token).await;
