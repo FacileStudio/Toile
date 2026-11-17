@@ -8,6 +8,7 @@ All notable changes to Toile. Versions follow SemVer.
 
 ### Changed
 
+- salon v0.1.1: on a restart the server now waits for every open board's close frame, so clients see 1013 and reconnect cleanly instead of 1006.
 - planche v0.3.1 for the client's board model and the server's board validator. Boards accept and refuse exactly what they did; nothing changes for users.
 
 ### Fixed
