@@ -4,6 +4,12 @@ All notable changes to Toile. Versions follow SemVer.
 
 ## [Unreleased]
 
+## [0.18.5] - 2026-11-17
+
+### Changed
+
+- The client now takes the board model and the canvas engine from [planche](https://github.com/FacileStudio/planche) v0.2.0, the package Toile, Diapo and Clap share. Nothing changes for users.
+
 ## [0.18.4] - 2026-11-16
 
 ### Changed
