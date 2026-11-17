@@ -1,5 +1,4 @@
-import type { Shape } from '$lib/board/schema';
-import { FADE_MS, POP_MS } from '../scene';
+import { type Shape, FADE_MS, POP_MS } from '@facile/planche';
 
 /** What the renderer animates this frame: pop-ins, fade-outs and the shapes lifted by a drag. */
 export type MotionInput = {

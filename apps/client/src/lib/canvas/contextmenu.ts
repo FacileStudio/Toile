@@ -1,7 +1,7 @@
 import { t } from '$lib/i18n/index.svelte';
 import { icons, toast } from '@facile/muse';
 import type { ContextMenuItem } from '$lib/components/ContextMenu.svelte';
-import { TEXT_TYPES, type Shape } from '$lib/board/schema';
+import { TEXT_TYPES, type Shape, type Point } from '@facile/planche';
 import { keyCaps } from '$lib/shortcuts';
 import type { Editor } from './editor.svelte';
 import type { CommandUi } from './commands';
@@ -14,7 +14,6 @@ import { youtubeId } from './youtube';
 import { restack } from './order';
 import { zoomFit, zoomReset, zoomSelection } from './view';
 import { toolIcons } from './icons';
-import type { Point } from './camera';
 
 function cutSelection(editor: Editor): void {
 	const text = serialize(editor);

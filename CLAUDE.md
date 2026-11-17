@@ -11,7 +11,7 @@ board document contract is `docs/board-schema.md` (normative).
   `github.com/FacileStudio` repos by tag (bump: `docs/deployment.md`). Never copy their code
   here; report a gap instead. Toile does not depend on encre
 - **Client** (`apps/client`): SvelteKit 2, Svelte 5 runes, Tailwind 4, `@facile/muse`,
-  `@facile/client`
+  `@facile/client`, `@facile/planche` (the board model and canvas engine)
 
 ## Commands
 

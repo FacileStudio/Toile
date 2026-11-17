@@ -1,6 +1,4 @@
-import { keyBetween } from '$lib/board/fractional';
-import type { Shape, ShapeFields, ShapeType, Style } from '$lib/board/schema';
-import { pathPoints } from './bounds';
+import { keyBetween, type Shape, type ShapeFields, type ShapeType, type Style, pathPoints } from '@facile/planche';
 import type { Editor, ToolStyle } from './editor.svelte';
 
 /** A fractional index above every shape. */

@@ -1,7 +1,5 @@
 import { getStroke } from 'perfect-freehand';
-import type { Shape } from '$lib/board/schema';
-import type { Point } from '../camera';
-import { routePoints, strokeWidth } from '../bounds';
+import { type Shape, type Point, routePoints, strokeWidth } from '@facile/planche';
 import type { DrawEnv } from './shapes';
 
 const strokes = new WeakMap<Shape, Path2D>();

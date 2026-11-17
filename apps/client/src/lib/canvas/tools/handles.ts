@@ -1,9 +1,8 @@
-import type { Shape, ShapeFields } from '$lib/board/schema';
-import type { Box, Point } from '../camera';
+import {
+	type Shape, type ShapeFields, type Box, type Point, center, rotate, rotatedBox, union, resizeBox,
+	scaleInto, type Handle, type PointerSample, type Tool
+} from '@facile/planche';
 import type { Editor } from '../editor.svelte';
-import { center, rotate, rotatedBox, union } from '../geometry';
-import { resizeBox, scaleInto, type Handle } from '../transform';
-import type { PointerSample, Tool } from './tool';
 
 function editableShapes(editor: Editor): Shape[] {
 	return editor.selection.map((id) => editor.scene.get(id)).filter((s): s is Shape => !!s && !s.locked);

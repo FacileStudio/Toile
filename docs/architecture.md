@@ -108,14 +108,11 @@ Editor ◀── Input (pointer, wheel, pinch, keys) ──▶ tool gestures
 
 | Path | Role |
 |---|---|
-| `src/lib/board/schema.ts` | Schema 1 types, limits and allowed keys, mirroring `docs/board-schema.md` |
-| `src/lib/board/doc.ts` | `BoardDoc`: typed reads and writes over the Y.Doc, every write with the `LOCAL` origin |
-| `src/lib/board/fractional.ts` | Fractional `z` keys; ties break by shape id |
+| `@facile/planche` | The board model (schema 1 types, `BoardDoc` with its `LOCAL` origin, fractional `z`, text, undo tracking only `LOCAL`) and the canvas engine (camera, geometry, spatial index, snap, transform, hit-testing, `Scene`, the tool contract) |
 | `src/lib/board/provider.ts` | y-websocket 3 wrapper: `disableBc`, stop on 1008/1009/1011, reconnect otherwise, message 100 refreshes comments |
-| `src/lib/board/undo.ts` | `Y.UndoManager` tracking only `LOCAL`, so undo never reverts a peer |
 | `src/lib/board/presence.ts` | Awareness `user`, `cursor`, `selection`, `viewport`, sent at most once per frame |
 | `src/lib/board/assets.ts` | `uploadImage` and asset URL hooks; until the Nuage track wires them, images say "arrive soon" and no data URL enters the document |
-| `src/lib/canvas/` | Camera, spatial index, hit-testing, renderer, tools, clipboard, z-order, shortcuts |
+| `src/lib/canvas/` | Editor, input, renderer, tools, clipboard, z-order, shortcuts |
 | `src/lib/canvas/ui/` | `BoardView` and its parts: toolbar, style bar, handles, text editor, minimap, comments, share dialog |
 
 Conventions the canvas relies on:

@@ -1,7 +1,5 @@
-import { keysBetween } from '$lib/board/fractional';
-import type { Shape } from '$lib/board/schema';
+import { keysBetween, type Shape, intersects } from '@facile/planche';
 import type { Editor } from './editor.svelte';
-import { intersects } from './geometry';
 
 /** A z-order move. */
 export type OrderMove = 'front' | 'back' | 'forward' | 'backward';

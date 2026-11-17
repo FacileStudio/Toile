@@ -2,14 +2,10 @@
 	import { t } from '$lib/i18n/index.svelte';
 	import { untrack } from 'svelte';
 	import type * as Y from 'yjs';
-	import { LOCAL } from '$lib/board/doc';
-	import { LIMITS } from '$lib/board/schema';
-	import { setText } from '$lib/board/text';
+	import { LOCAL, LIMITS, setText, toScreen, FRAME_LABEL } from '@facile/planche';
 	import type { Editor } from '../editor.svelte';
-	import { toScreen } from '../camera';
 	import { fillOf, inkOn } from '../render/palette';
 	import { fontOf, textHeight, textPadding, textTop, wrap } from '../render/text';
-	import { FRAME_LABEL } from '../hit';
 
 	let { editor }: { editor: Editor } = $props();
 

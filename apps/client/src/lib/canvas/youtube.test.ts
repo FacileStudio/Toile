@@ -1,9 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { BoardDoc } from '$lib/board/doc';
-import type { Shape } from '$lib/board/schema';
+import { BoardDoc, type Shape, Scene } from '@facile/planche';
 import type { Editor } from './editor.svelte';
 import { pasteInto } from './paste';
-import { Scene } from './scene';
 import { SelectTool } from './tools/select';
 import { youtubeEmbed, youtubeId } from './youtube';
 

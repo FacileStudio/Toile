@@ -1,7 +1,5 @@
 import type * as Y from 'yjs';
-import { BoardDoc } from '../src/lib/board/doc';
-import { keysBetween } from '../src/lib/board/fractional';
-import type { ShapeType } from '../src/lib/board/schema';
+import { BoardDoc, keysBetween, type ShapeType } from '@facile/planche';
 
 const COLORS = ['#AD9EF0', '#F09ED6', '#EE7E89', '#EEB47E', '#A9EE7E', '#7EEEDB'];
 const KINDS: ShapeType[] = [

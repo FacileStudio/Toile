@@ -1,4 +1,4 @@
-import type { Shape } from '$lib/board/schema';
+import type { Shape } from '@facile/planche';
 
 /** The default font size of each text-bearing type, in world units. */
 export function fontSize(shape: Shape): number {

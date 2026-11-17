@@ -1,10 +1,9 @@
 <script lang="ts">
 	import { onDestroy } from 'svelte';
 	import type { Editor } from '../editor.svelte';
-	import { viewport, type Box } from '../camera';
-	import { union } from '../geometry';
-	import { PATH_TYPES, type Shape } from '$lib/board/schema';
-	import { localPoints, routePoints, strokeWidth } from '../bounds';
+	import {
+		viewport, type Box, union, PATH_TYPES, type Shape, localPoints, routePoints, strokeWidth
+	} from '@facile/planche';
 	import { CONNECTOR_RADIUS, traceRounded } from '../render/paths';
 	import { fitCanvas } from '../render/renderer';
 	import { fillOf } from '../render/palette';

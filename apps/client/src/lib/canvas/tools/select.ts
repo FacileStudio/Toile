@@ -1,11 +1,9 @@
-import { TEXT_TYPES, type Shape } from '$lib/board/schema';
-import type { Point } from '../camera';
+import {
+	TEXT_TYPES, type Shape, type Point, boxOf, marqueeHits, topHit, type PointerSample, type Tool
+} from '@facile/planche';
 import type { Editor } from '../editor.svelte';
-import { boxOf } from '../geometry';
-import { marqueeHits, topHit } from '../hit';
 import { MoveGesture } from './move';
 import { youtubeId } from '../youtube';
-import type { PointerSample, Tool } from './tool';
 
 /** Plays a YouTube card in place; any other card opens its link in a new tab. */
 export function openCard(editor: Editor, shape: Shape): void {

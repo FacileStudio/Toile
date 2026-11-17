@@ -8,7 +8,7 @@
 	import { blocks } from '$lib/markdown';
 	import { blobColor } from '../blob';
 	import type { Editor } from '../editor.svelte';
-	import { union } from '../geometry';
+	import { union } from '@facile/planche';
 	import { showBox } from '../view';
 
 	let { board, editor, name, onclose }: { board: string; editor: Editor; name: string; onclose: () => void } =

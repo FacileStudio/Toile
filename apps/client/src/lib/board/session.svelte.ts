@@ -1,6 +1,6 @@
 import * as Y from 'yjs';
 import { toast } from '@facile/muse';
-import { fitBox, type Point } from '$lib/canvas/camera';
+import { fitBox, type Point } from '@facile/planche';
 import { Editor } from '$lib/canvas/editor.svelte';
 import { canComment, canEdit, commentApi, type Anchor, type BoardRole, type Comment } from './api';
 import { assetUrl, uploadError, uploadImage as store } from '$lib/api/assets';

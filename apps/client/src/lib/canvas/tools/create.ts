@@ -1,12 +1,8 @@
 import { t } from '$lib/i18n/index.svelte';
-import type { ShapeType } from '$lib/board/schema';
+import { type ShapeType, type Box, type Point, boxOf, frameAt, type PointerSample, type Tool } from '@facile/planche';
 import { createShape, styleFor } from '../actions';
-import type { Box, Point } from '../camera';
 import type { Editor } from '../editor.svelte';
-import { boxOf } from '../geometry';
-import { frameAt } from '../hit';
 import { STICKY_FILL } from '../render/palette';
-import type { PointerSample, Tool } from './tool';
 
 /** The size a click (no drag) gives each box type, in world units. */
 export const DEFAULT_SIZE: Partial<Record<ShapeType, [number, number]>> = {

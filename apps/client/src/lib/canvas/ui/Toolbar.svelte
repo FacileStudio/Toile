@@ -3,7 +3,7 @@
 	import type { Editor } from '../editor.svelte';
 	import { toolAllowed } from '../commands';
 	import { toolIcons } from '../icons';
-	import type { ToolName } from '../tools/tool';
+	import type { ToolName } from '@facile/planche';
 	import { SHORTCUTS, keyCaps } from '$lib/shortcuts';
 	import ToolGroup, { type ToolItem } from './ToolGroup.svelte';
 	import type { AppKey } from '$lib/i18n/index.svelte';

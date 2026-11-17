@@ -1,5 +1,5 @@
 import { USER_COLORS } from '@facile/muse';
-import type { Shape } from '$lib/board/schema';
+import type { Shape } from '@facile/planche';
 
 /** The muse tokens the canvas paints with, read from the live CSS so light and dark both follow the theme. */
 export type Palette = {

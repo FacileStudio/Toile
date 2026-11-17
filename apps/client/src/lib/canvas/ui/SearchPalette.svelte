@@ -1,9 +1,8 @@
 <script lang="ts">
 	import { locale, t, type AppKey } from '$lib/i18n/index.svelte';
 	import { Input, Modal } from '@facile/muse';
-	import type { Shape } from '$lib/board/schema';
+	import { type Shape, rotatedBox } from '@facile/planche';
 	import type { Editor } from '../editor.svelte';
-	import { rotatedBox } from '../geometry';
 	import { showBox } from '../view';
 
 	let { editor, open = $bindable(false) }: { editor: Editor; open?: boolean } = $props();

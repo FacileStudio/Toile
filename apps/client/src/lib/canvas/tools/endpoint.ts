@@ -1,8 +1,6 @@
-import { pathPoints } from '../bounds';
+import { pathPoints, boxOf, type PointerSample, type Tool } from '@facile/planche';
 import type { Editor } from '../editor.svelte';
-import { boxOf } from '../geometry';
 import { bindPoint } from './connector';
-import type { PointerSample, Tool } from './tool';
 
 /** Drags one end of a line or an arrow, binding it to the shape it lands on or freeing it on empty board. */
 export class EndpointGesture implements Tool {

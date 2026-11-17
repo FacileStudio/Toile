@@ -1,17 +1,15 @@
 import type * as Y from 'yjs';
 import { prefersReducedMotion } from '@facile/muse';
-import { BoardDoc } from '$lib/board/doc';
+import {
+	BoardDoc, type Style, createUndo, toWorld, viewport, type Camera, type Point, Scene, type ToolName
+} from '@facile/planche';
 import type { Presence } from '$lib/board/presence';
-import type { Style } from '$lib/board/schema';
-import { createUndo } from '$lib/board/undo';
-import { toWorld, viewport, type Camera, type Point } from './camera';
 import { drawOverlay, type OverlayState } from './render/overlay';
 import { readPalette, type Palette } from './render/palette';
 import { drawScene } from './render/renderer';
-import { Scene } from './scene';
-import type { ToolName } from './tools/tool';
 
 const GLIDE_MS = 460;
+const still = () => typeof matchMedia !== 'function' || prefersReducedMotion();
 
 /** The style new shapes take: `fill` for stickies, `shapeFill` for boxes, `stroke` for lines, ink and text. */
 export type ToolStyle = Style & { shapeFill?: string };
@@ -68,7 +66,7 @@ export class Editor {
 		readonly host: EditorHost
 	) {
 		this.doc = new BoardDoc(ydoc);
-		this.scene = new Scene(this.doc, () => this.invalidate());
+		this.scene = new Scene(this.doc, () => this.invalidate(), still);
 		this.undo = createUndo(this.doc);
 	}
 

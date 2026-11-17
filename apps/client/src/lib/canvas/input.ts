@@ -1,8 +1,7 @@
-import { panBy, pinch, zoomAt, type Point } from './camera';
+import { panBy, pinch, zoomAt, type Point, type PointerSample, type Tool, type ToolName } from '@facile/planche';
 import type { Editor } from './editor.svelte';
 import { HandTool } from './tools/hand';
 import { makeTool } from './tools/index';
-import type { PointerSample, Tool, ToolName } from './tools/tool';
 
 const CLICK_MS = 500;
 const CLICK_SLOP = 6;

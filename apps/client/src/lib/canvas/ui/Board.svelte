@@ -8,7 +8,7 @@
 	import { runCommand, type CommandUi } from '../commands';
 	import { pasteInto, copyOut } from '../paste';
 	import { watchTheme } from '../render/palette';
-	import { topHit } from '../hit';
+	import { topHit } from '@facile/planche';
 	import { canvasMenuItems, elementMenuItems } from '../contextmenu';
 	import SelectionHandles from './SelectionHandles.svelte';
 	import TextEditor from './TextEditor.svelte';

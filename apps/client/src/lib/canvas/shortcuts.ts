@@ -1,5 +1,5 @@
 import { matchShortcut } from '$lib/shortcuts';
-import type { ToolName } from './tools/tool';
+import type { ToolName } from '@facile/planche';
 
 /** A command the board runs by name. */
 export type Run =

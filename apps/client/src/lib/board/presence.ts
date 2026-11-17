@@ -1,6 +1,6 @@
 import { USER_COLORS, type PresencePeer } from '@facile/muse';
 import type { Awareness } from 'y-protocols/awareness';
-import type { Box, Point } from '$lib/canvas/camera';
+import type { Box, Point } from '@facile/planche';
 
 /** Who a peer is, as the awareness `user` field carries it. */
 export type PresenceUser = { name: string; color: string; picture?: string; guest: boolean };

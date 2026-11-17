@@ -1,11 +1,9 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { BoardDoc } from '$lib/board/doc';
+import { BoardDoc, Scene, type Shape } from '@facile/planche';
 import { imageLoader } from '$lib/board/assets';
 import { openShape, SelectTool } from './tools/select';
-import { Scene } from './scene';
 import { pasteInto } from './paste';
 import type { Editor } from './editor.svelte';
-import type { Shape } from '$lib/board/schema';
 
 afterEach(() => vi.unstubAllGlobals());
 

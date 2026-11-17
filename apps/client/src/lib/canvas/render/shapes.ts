@@ -1,7 +1,4 @@
-import type { Shape } from '$lib/board/schema';
-import type { Lookup } from '../bounds';
-import { strokeWidth } from '../bounds';
-import { FRAME_LABEL } from '../hit';
+import { type Shape, type Lookup, strokeWidth, FRAME_LABEL } from '@facile/planche';
 import { drawCard } from './cards';
 import { fillOf, inkOn, STICKY_FILL, type Palette } from './palette';
 import { drawArrow, drawInk } from './paths';

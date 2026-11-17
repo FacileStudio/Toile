@@ -8,7 +8,7 @@ disagree, the spec wins. A change to the board profile is a schema version bump.
 
 ## Board document contract (schema 1), summary
 
-The client mirrors it in `apps/client/src/lib/board/schema.ts`.
+The client takes it from the `@facile/planche` package (`src/lib/schema.ts`).
 
 - `meta`: Y.Map `{ schema: 1 }`.
 - `shapes`: Y.Map<id, Y.Map>. Common keys: `type`, `x`, `y`, `w`, `h`, `rot`, `z` (fractional

@@ -1,9 +1,8 @@
-import { compareZ, keysBetween } from '$lib/board/fractional';
-import { isShapeType, LIMITS, type Binding, type Shape } from '$lib/board/schema';
-import { pathPoints } from './bounds';
-import type { Point } from './camera';
+import {
+	compareZ, keysBetween, isShapeType, LIMITS, type Binding, type Shape, pathPoints, type Point,
+	center, rotatedBox, union
+} from '@facile/planche';
 import type { Editor } from './editor.svelte';
-import { center, rotatedBox, union } from './geometry';
 import { movingIds } from './tools/move';
 
 const MARK = 'toile/shapes';
