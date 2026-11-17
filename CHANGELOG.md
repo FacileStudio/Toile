@@ -4,6 +4,16 @@ All notable changes to Toile. Versions follow SemVer.
 
 ## [Unreleased]
 
+## [0.18.7] - 2026-11-17
+
+### Changed
+
+- planche v0.3.1 for the client's board model and the server's board validator. Boards accept and refuse exactly what they did; nothing changes for users.
+
+### Fixed
+
+- The durability and compaction tests wait until the update reaches Postgres and the socket closes, with a 30 s deadline, instead of sleeping a fixed time.
+
 ## [0.18.6] - 2026-11-17
 
 ### Changed
