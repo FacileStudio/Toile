@@ -1644,8 +1644,8 @@ checksum = "f6b464fbc74e149a392436b17d523f769e057cb6877f6a5c4618bc6f11800548"
 
 [[package]]
 name = "planche"
-version = "0.1.0"
-source = "git+https://github.com/FacileStudio/planche?tag=v0.1.0#657caa58d2107eea844e05f157010c59597903d9"
+version = "0.3.1"
+source = "git+https://github.com/FacileStudio/planche?tag=v0.3.1#432411550d4a6523b5974bf28d678f4eaca7167b"
 dependencies = [
  "encre",
  "serde",
