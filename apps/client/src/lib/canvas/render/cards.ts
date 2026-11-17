@@ -1,4 +1,4 @@
-import type { Shape } from '$lib/board/schema';
+import type { Shape } from '@facile/planche';
 import type { DrawEnv } from './shapes';
 
 function truncate(ctx: CanvasRenderingContext2D, text: string, maxW: number): string {

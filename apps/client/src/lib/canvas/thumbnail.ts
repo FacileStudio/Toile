@@ -1,6 +1,5 @@
-import type { Box } from "./camera";
+import { type Box, union } from "@facile/planche";
 import type { Editor } from "./editor.svelte";
-import { union } from "./geometry";
 import { drawShape, type DrawEnv } from "./render/shapes";
 
 /** The thumbnail size in CSS pixels, the 16:10 of the boards grid. */

@@ -6,7 +6,7 @@ import { EraserTool } from './eraser';
 import { HandTool } from './hand';
 import { PenTool } from './pen';
 import { SelectTool } from './select';
-import { BOX_TOOLS, type Tool, type ToolName } from './tool';
+import { BOX_TOOLS, type Tool, type ToolName } from '@facile/planche';
 
 /** A fresh gesture handler for tool `name`. */
 export function makeTool(editor: Editor, name: ToolName): Tool {

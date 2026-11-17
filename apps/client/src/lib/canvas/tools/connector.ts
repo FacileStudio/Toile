@@ -1,11 +1,10 @@
-import type { Binding, Shape, ShapeType } from '$lib/board/schema';
+import {
+	type Binding, type Shape, type ShapeType, anchorOf, anchorPoint, elbow, type End, type Point,
+	frameAt, topHit, type PointerSample, type Tool
+} from '@facile/planche';
 import { createShape } from '../actions';
-import { anchorOf, anchorPoint, elbow, type End } from '../anchors';
-import type { Point } from '../camera';
 import type { Editor } from '../editor.svelte';
-import { frameAt, topHit } from '../hit';
 import { DEFAULT_SIZE } from './create';
-import type { PointerSample, Tool } from './tool';
 
 const SNAPS: [number, number][] = [
 	[0.5, 0],

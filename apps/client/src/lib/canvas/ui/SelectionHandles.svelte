@@ -3,15 +3,11 @@
 	import { Tooltip } from '@facile/muse';
 	import type { Editor } from '../editor.svelte';
 	import type { Input } from '../input';
-	import { anchorPoint } from '../anchors';
-	import { toScreen } from '../camera';
-	import { rotatedBox, union } from '../geometry';
-	import { CORNERS, type Handle } from '../transform';
+	import { anchorPoint, toScreen, rotatedBox, union, CORNERS, type Handle, pathPoints } from '@facile/planche';
 	import { ResizeGesture } from '../tools/handles';
 	import { ConnectorTool } from '../tools/connector';
 	import { openCard } from '../tools/select';
 	import { EndpointGesture } from '../tools/endpoint';
-	import { pathPoints } from '../bounds';
 
 	let { editor, input }: { editor: Editor; input: Input } = $props();
 

@@ -2,7 +2,7 @@
 	import { t } from '$lib/i18n/index.svelte';
 	import { Icon, IconButton, icons } from '@facile/muse';
 	import type { Editor } from '../editor.svelte';
-	import { toScreen } from '../camera';
+	import { toScreen } from '@facile/planche';
 	import { youtubeEmbed } from '../youtube';
 
 	let { editor }: { editor: Editor } = $props();

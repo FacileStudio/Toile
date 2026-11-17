@@ -1,6 +1,5 @@
 import type { Editor } from '../editor.svelte';
-import { topHit } from '../hit';
-import type { PointerSample, Tool } from './tool';
+import { topHit, type PointerSample, type Tool } from '@facile/planche';
 
 /** A click drops a comment: anchored to the shape under it when there is one. */
 export class CommentTool implements Tool {

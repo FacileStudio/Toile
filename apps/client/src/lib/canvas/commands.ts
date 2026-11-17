@@ -4,7 +4,7 @@ import type { Editor } from './editor.svelte';
 import { restack } from './order';
 import type { Command, Run } from './shortcuts';
 import { openShape } from './tools/select';
-import { VIEW_TOOLS, type ToolName } from './tools/tool';
+import { VIEW_TOOLS, type ToolName } from '@facile/planche';
 import { nudge, zoomBy, zoomFit, zoomReset, zoomSelection } from './view';
 
 /** The page-level panels a command can open. */

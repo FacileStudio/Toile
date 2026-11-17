@@ -14,6 +14,7 @@
         "@facile/client": "github:FacileStudio/facile-client#v0.2.0",
         "@facile/mise-en-scene": "github:FacileStudio/mise-en-scene#v0.2.2",
         "@facile/muse": "github:FacileStudio/muse#v0.32.0",
+        "@facile/planche": "github:FacileStudio/planche#v0.2.0",
         "@facile/salon": "github:FacileStudio/salon#v0.1.0",
         "@tauri-apps/api": "2.12.4",
         "@tauri-apps/plugin-opener": "2.7.3",
@@ -70,6 +71,8 @@
     "@facile/mise-en-scene": ["@facile/mise-en-scene@github:FacileStudio/mise-en-scene#7050c6c", { "peerDependencies": { "svelte": "^5.29.0" } }, "FacileStudio-mise-en-scene-7050c6c", "sha512-qXj5cCxgAwYeck9aLtPqx38D3H2csCHA1xUySzpabHH18QGZyDLSLMj8HuXwMieASr3axBLF7V59lS6GvVtEpQ=="],
 
     "@facile/muse": ["@facile/muse@github:FacileStudio/muse#8a8bbdd", { "dependencies": { "@facile/blob": "github:FacileStudio/blob#v0.2.2", "gsap": "^3.13.0", "tailwind-merge": "^3.5.0" }, "peerDependencies": { "svelte": "^5.0.0", "tailwindcss": "^4.0.0" } }, "FacileStudio-muse-8a8bbdd", "sha512-BIzJGWroE+gc664AbDBRuu6LrrGoKL1pnNXlqjLIZKDNnjrDNFgbVKturywx7Jb4dVzdULD7oe8ok5mG3Uc9Tw=="],
+
+    "@facile/planche": ["@facile/planche@github:FacileStudio/planche#e1fa98c", { "peerDependencies": { "yjs": "^13.6.33" } }, "FacileStudio-planche-e1fa98c", "sha512-X1x31SRlg7aOzIGDPx0AZIu+ij4ZZVSoF32vG92PN90p+GfG/TMTu1h8j1g0vp+F0+OpAdbO1z5RY78VL/Rtag=="],
 
     "@facile/salon": ["@facile/salon@github:FacileStudio/salon#7b55d1b", { "dependencies": { "lib0": "^0.2.120" }, "peerDependencies": { "y-websocket": "^3.1.0", "yjs": "^13.6.33" } }, "FacileStudio-salon-7b55d1b", "sha512-xPQtXZx7yErU3cupLMF5Xg0dFRVHQFabngySL/4vHkoDwRtgDLFwEcv70H1lsZBsh9sWuE5YqK0UgRH/UK576g=="],
 

@@ -1,9 +1,6 @@
-import { LIMITS } from '$lib/board/schema';
+import { LIMITS, pointsBox, frameAt, type PointerSample, type Tool } from '@facile/planche';
 import { createShape } from '../actions';
-import { pointsBox } from '../bounds';
 import type { Editor } from '../editor.svelte';
-import { frameAt } from '../hit';
-import type { PointerSample, Tool } from './tool';
 
 /** The pressure perfect-freehand reads as "no pressure data": it then simulates pressure from speed. */
 const FLAT = 0.5;

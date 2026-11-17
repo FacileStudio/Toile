@@ -1,10 +1,7 @@
-import type { Shape } from '$lib/board/schema';
-import { anchorPoint } from '../anchors';
-import { routePoints } from '../bounds';
-import type { Box, Camera, Point } from '../camera';
-import { toScreen } from '../camera';
-import { corners } from '../geometry';
-import type { Scene } from '../scene';
+import {
+	type Shape, anchorPoint, routePoints, type Box, type Camera, type Point, toScreen, corners,
+	type Scene
+} from '@facile/planche';
 import { fitCanvas } from './renderer';
 import { CONNECTOR_RADIUS, inkPath, strokePolyline, traceRounded } from './paths';
 import type { Palette } from './palette';

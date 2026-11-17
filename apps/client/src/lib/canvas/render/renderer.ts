@@ -1,7 +1,4 @@
-import { PATH_TYPES } from '$lib/board/schema';
-import type { Camera } from '../camera';
-import { viewport } from '../camera';
-import type { Scene } from '../scene';
+import { PATH_TYPES, type Camera, viewport, type Scene } from '@facile/planche';
 import { drawGhosts, drawMoving, type MotionInput } from './motion';
 import type { Palette } from './palette';
 import { drawShape, type DrawEnv } from './shapes';

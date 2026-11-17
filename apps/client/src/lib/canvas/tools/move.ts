@@ -1,10 +1,8 @@
-import type { ShapeFields } from '$lib/board/schema';
-import { viewport, type Box, type Point } from '../camera';
+import {
+	type ShapeFields, viewport, type Box, type Point, center, rotatedBox, union, frameAt, snapBox,
+	type PointerSample, type Tool
+} from '@facile/planche';
 import type { Editor } from '../editor.svelte';
-import { center, rotatedBox, union } from '../geometry';
-import { frameAt } from '../hit';
-import { snapBox } from '../snap';
-import type { PointerSample, Tool } from './tool';
 
 const LIFT_LIMIT = 50;
 

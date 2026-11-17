@@ -1,11 +1,10 @@
 import { describe, expect, it, vi } from 'vitest';
-import { BoardDoc } from '$lib/board/doc';
+import { BoardDoc, type Shape } from '@facile/planche';
 import { createShape, deleteSelection } from './actions';
 import { duplicate, insertShapes, parseClip, serialize } from './clipboard';
 import { pasteInto } from './paste';
 import { canvasMenuItems, elementMenuItems } from './contextmenu';
 import type { Editor } from './editor.svelte';
-import type { Shape } from '$lib/board/schema';
 
 describe('canvas and element context menu operations', () => {
 	it('creates shapes at target world coordinates', () => {

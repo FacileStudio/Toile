@@ -3,7 +3,7 @@
 	import { Icon, Tooltip } from '@facile/muse';
 	import type { Anchor, Comment } from '$lib/board/api';
 	import type { BoardSession } from '$lib/board/session.svelte';
-	import { toScreen } from '../camera';
+	import { toScreen } from '@facile/planche';
 	import { toolIcons } from '../icons';
 
 	let { session, onopen }: { session: BoardSession; onopen: (id: string) => void } = $props();

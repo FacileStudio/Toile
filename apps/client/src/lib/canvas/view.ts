@@ -1,6 +1,5 @@
-import { fitBox, zoomAt, type Box } from './camera';
+import { fitBox, zoomAt, type Box, union } from '@facile/planche';
 import type { Editor } from './editor.svelte';
-import { union } from './geometry';
 
 /** Zooms by `factor` around the centre of the screen. */
 export function zoomBy(editor: Editor, factor: number): void {

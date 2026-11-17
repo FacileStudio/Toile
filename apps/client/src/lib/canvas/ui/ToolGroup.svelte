@@ -1,5 +1,5 @@
 <script lang="ts" module>
-	import type { ToolName } from '../tools/tool';
+	import type { ToolName } from '@facile/planche';
 
 	/** One entry of a toolbar slot: a tool to switch to, or an action such as picking an image. */
 	export type ToolItem = { id: string; label: string; key: string; icon: string; tool?: ToolName; run?: () => void };

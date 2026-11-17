@@ -1,6 +1,5 @@
-import { panBy, type Point } from '../camera';
+import { panBy, type Point, type PointerSample, type Tool } from '@facile/planche';
 import type { Editor } from '../editor.svelte';
-import type { PointerSample, Tool } from './tool';
 
 /** Drags the view. */
 export class HandTool implements Tool {

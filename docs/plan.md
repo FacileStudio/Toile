@@ -45,7 +45,7 @@ which porte-rs lacks today: track L adds it to the libraries instead of hand-rol
 
 ## Board document contract (schema 1)
 
-Written first as `docs/board-schema.md`, mirrored by `apps/client/src/lib/board/schema.ts` and
+Written first as `docs/board-schema.md`, mirrored by the `@facile/planche` package on the client and
 planche's board profile (was `apps/api/src/modules/board/schema.rs`). Every track codes against it.
 
 - `meta`: Y.Map `{ schema: 1 }`.

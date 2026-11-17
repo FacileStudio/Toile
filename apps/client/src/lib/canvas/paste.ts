@@ -2,7 +2,7 @@ import { t } from '$lib/i18n/index.svelte';
 import { toast } from '@facile/muse';
 import { resolveCard } from '$lib/api/cards';
 import { deleteSelection, createShape } from './actions';
-import type { Point } from './camera';
+import type { Point } from '@facile/planche';
 import { insertShapes, parseClip, serialize } from './clipboard';
 import type { Editor } from './editor.svelte';
 import { youtubeId, youtubeThumbnail } from './youtube';

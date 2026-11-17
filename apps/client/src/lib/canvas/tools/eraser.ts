@@ -1,7 +1,5 @@
-import type { Point } from '../camera';
+import { type Point, hitShape, type PointerSample, type Tool } from '@facile/planche';
 import type { Editor } from '../editor.svelte';
-import { hitShape } from '../hit';
-import type { PointerSample, Tool } from './tool';
 
 /** Erases the unlocked ink strokes the pointer passes over; one drag is one undo step. */
 export class EraserTool implements Tool {
