@@ -38,7 +38,7 @@
 		"@facile/client": "github:FacileStudio/facile-client#v0.2.0",
 		"@facile/mise-en-scene": "github:FacileStudio/mise-en-scene#v0.2.2",
 		"@facile/muse": "github:FacileStudio/muse#v0.32.0",
-		"@facile/salon": "github:FacileStudio/salon#v0.1.0",
+		"@facile/salon": "github:FacileStudio/salon#v0.1.1",
 		"@facile/planche": "github:FacileStudio/planche#v0.3.1",
 		"@tauri-apps/api": "2.12.4",
 		"@tauri-apps/plugin-opener": "2.7.3",
