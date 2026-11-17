@@ -8,6 +8,22 @@ pub struct Server {
     pub port: u16,
 }
 
+/// How long [`until`] waits for a condition before handing back the last value it saw.
+pub const SETTLE: Duration = Duration::from_secs(30);
+
+/// Runs `probe` every 50 ms until `done` accepts its value or [`SETTLE`] runs out, and returns
+/// the last value, so the caller's assertion reports what it saw.
+pub async fn until<T>(mut probe: impl AsyncFnMut() -> T, done: impl Fn(&T) -> bool) -> T {
+    let deadline = Instant::now() + SETTLE;
+    loop {
+        let seen = probe().await;
+        if done(&seen) || Instant::now() >= deadline {
+            return seen;
+        }
+        tokio::time::sleep(Duration::from_millis(50)).await;
+    }
+}
+
 pub fn free_port() -> u16 {
     std::net::TcpListener::bind("127.0.0.1:0").unwrap().local_addr().unwrap().port()
 }

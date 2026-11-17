@@ -181,8 +181,8 @@ async fn two_hundred_updates_compact_into_one_snapshot() {
         peer.edit(|txn, shapes| rect(txn, shapes, &format!("s{i}"), i as f64)).await;
     }
     peer.pump(Duration::from_millis(600)).await;
-    assert_eq!(stored(&pool, &id).await, (199, 1));
+    assert_eq!(common::server::until(async || stored(&pool, &id).await, |seen| *seen == (199, 1)).await, (199, 1));
     peer.edit(|txn, shapes| rect(txn, shapes, "s199", 0.0)).await;
     peer.pump(Duration::from_millis(600)).await;
-    assert_eq!(stored(&pool, &id).await, (0, 2));
+    assert_eq!(common::server::until(async || stored(&pool, &id).await, |seen| *seen == (0, 2)).await, (0, 2));
 }
