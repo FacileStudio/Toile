@@ -71,7 +71,8 @@ export function drawText(ctx: CanvasRenderingContext2D, shape: Shape, color: str
 	let lines = cache.get(shape);
 	if (!lines) cache.set(shape, (lines = wrap(ctx, shape.text, width)));
 	const lineHeight = size * 1.3;
-	const align = shape.style.align ?? (shape.type === 'text' ? 'left' : 'center');
+	const chosen = shape.style.align ?? (shape.type === 'text' ? 'left' : 'center');
+	const align = chosen === 'justify' ? 'left' : chosen;
 	const top = shape.y + textTop(shape, lines.length);
 	const x = align === 'left' ? shape.x + pad : align === 'right' ? shape.x + shape.w - pad : shape.x + shape.w / 2;
 	ctx.fillStyle = color;
